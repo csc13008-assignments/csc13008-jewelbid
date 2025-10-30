@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * DTO cho response thông tin đấu giá
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,10 +22,8 @@ public class BidResponse {
     private Boolean isRejected;
     private String rejectionReason;
     
-    // Masked bidder name for public view
     private String bidderName;
     
-    // Full bidder info for owner/admin view
     private UserResponse bidder;
     
     private LocalDateTime createdAt;

@@ -4,14 +4,10 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jewelbid_dev.jewelbid.payload.request.UserRegistrationRequest;
 
-/**
- * Validator implementation cho PasswordMatches annotation
- */
 public class PasswordMatchesValidator implements ConstraintValidator<PasswordMatches, UserRegistrationRequest> {
     
     @Override
     public void initialize(PasswordMatches constraintAnnotation) {
-        // Initialization logic if needed
     }
     
     @Override

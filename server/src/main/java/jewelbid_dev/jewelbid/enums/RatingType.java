@@ -1,8 +1,5 @@
 package jewelbid_dev.jewelbid.enums;
 
-/**
- * Enum định nghĩa loại đánh giá người dùng
- */
 public enum RatingType {
     POSITIVE("Positive", 1),
     NEGATIVE("Negative", -1);

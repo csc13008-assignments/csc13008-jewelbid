@@ -10,9 +10,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * DTO cho response thông tin sản phẩm
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -34,19 +31,14 @@ public class ProductResponse {
     private Integer viewCount;
     private String mainImageUrl;
     
-    // Seller information
     private UserResponse seller;
     
-    // Category information
     private CategoryResponse category;
     
-    // Current highest bidder (masked)
     private String highestBidderName;
     
-    // Additional images
     private List<ProductImageResponse> images;
     
-    // Calculated fields
     private Boolean isActive;
     private Boolean isEnded;
     private Boolean isNewlyPosted;

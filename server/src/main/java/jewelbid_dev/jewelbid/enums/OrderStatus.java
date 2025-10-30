@@ -1,8 +1,5 @@
 package jewelbid_dev.jewelbid.enums;
 
-/**
- * Enum định nghĩa trạng thái đơn hàng sau đấu giá
- */
 public enum OrderStatus {
     PENDING_PAYMENT("Pending Payment"),
     PAID("Paid"),

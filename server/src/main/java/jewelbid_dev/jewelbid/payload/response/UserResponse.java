@@ -10,9 +10,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * DTO cho response thông tin người dùng
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,7 +25,6 @@ public class UserResponse {
     private UserStatus status;
     private Boolean emailVerified;
     
-    // Rating information
     private Integer positiveRatings;
     private Integer negativeRatings;
     private Integer totalRatings;

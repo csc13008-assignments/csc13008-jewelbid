@@ -11,9 +11,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-/**
- * Entity đại diện cho yêu cầu nâng cấp tài khoản từ Bidder lên Seller
- */
 @Entity
 @Table(name = "upgrade_requests")
 @Data
@@ -43,13 +40,11 @@ public class UpgradeRequest {
     @Column(name = "admin_comment", columnDefinition = "TEXT")
     private String adminComment;
     
-    // User requesting upgrade
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @NotNull(message = "Người dùng không được để trống")
+    @NotNull(message = "User is required")
     private User user;
     
-    // Admin who processed the request
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "processed_by_admin_id")
     private User processedByAdmin;
@@ -62,27 +57,14 @@ public class UpgradeRequest {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    /**
-     * Kiểm tra xem yêu cầu đã được xử lý chưa
-     * @return true nếu đã được xử lý
-     */
     public boolean isProcessed() {
         return processed;
     }
     
-    /**
-     * Kiểm tra xem yêu cầu có đang chờ xử lý không
-     * @return true nếu đang chờ xử lý
-     */
     public boolean isPending() {
         return !processed;
     }
     
-    /**
-     * Duyệt yêu cầu nâng cấp
-     * @param admin admin xử lý
-     * @param comment nhận xét của admin
-     */
     public void approve(User admin, String comment) {
         this.approved = true;
         this.processed = true;
@@ -91,11 +73,6 @@ public class UpgradeRequest {
         this.adminComment = comment;
     }
     
-    /**
-     * Từ chối yêu cầu nâng cấp
-     * @param admin admin xử lý
-     * @param comment lý do từ chối
-     */
     public void reject(User admin, String comment) {
         this.approved = false;
         this.processed = true;

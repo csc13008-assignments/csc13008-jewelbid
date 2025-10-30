@@ -13,9 +13,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-/**
- * Entity đại diện cho đánh giá người dùng
- */
 @Entity
 @Table(name = "ratings")
 @Data
@@ -30,26 +27,23 @@ public class Rating {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "rating_type", nullable = false)
-    @NotNull(message = "Loại đánh giá không được để trống")
+    @NotNull(message = "Rating type is required")
     private RatingType ratingType;
     
     @Column(columnDefinition = "TEXT")
-    @Size(max = 500, message = "Nhận xét không được vượt quá 500 ký tự")
+    @Size(max = 500, message = "Comment must not exceed 500 characters")
     private String comment;
     
-    // Người được đánh giá
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rated_user_id", nullable = false)
-    @NotNull(message = "Người được đánh giá không được để trống")
+    @NotNull(message = "Rated user is required")
     private User ratedUser;
     
-    // Người đánh giá
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rating_user_id", nullable = false)
-    @NotNull(message = "Người đánh giá không được để trống")
+    @NotNull(message = "Rating user is required")
     private User ratingUser;
     
-    // Sản phẩm liên quan (nếu có)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
@@ -62,18 +56,10 @@ public class Rating {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    /**
-     * Kiểm tra xem có phải là đánh giá tích cực không
-     * @return true nếu là đánh giá tích cực
-     */
     public boolean isPositive() {
         return ratingType == RatingType.POSITIVE;
     }
     
-    /**
-     * Kiểm tra xem có phải là đánh giá tiêu cực không
-     * @return true nếu là đánh giá tiêu cực
-     */
     public boolean isNegative() {
         return ratingType == RatingType.NEGATIVE;
     }

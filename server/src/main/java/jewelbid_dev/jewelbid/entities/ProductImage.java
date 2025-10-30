@@ -11,9 +11,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-/**
- * Entity đại diện cho ảnh sản phẩm
- */
 @Entity
 @Table(name = "product_images")
 @Data
@@ -27,7 +24,7 @@ public class ProductImage {
     private Long id;
     
     @Column(name = "image_url", nullable = false)
-    @NotBlank(message = "URL ảnh không được để trống")
+    @NotBlank(message = "Image URL is required")
     private String imageUrl;
     
     @Column(name = "alt_text")
@@ -41,10 +38,9 @@ public class ProductImage {
     @Builder.Default
     private Boolean isMain = false;
     
-    // Product relationship
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    @NotNull(message = "Sản phẩm không được để trống")
+    @NotNull(message = "Product is required")
     private Product product;
     
     @CreationTimestamp

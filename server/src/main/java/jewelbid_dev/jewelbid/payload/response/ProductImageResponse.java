@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * DTO cho response thông tin ảnh sản phẩm
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

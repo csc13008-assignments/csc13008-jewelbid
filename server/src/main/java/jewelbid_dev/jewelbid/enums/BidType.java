@@ -1,8 +1,5 @@
 package jewelbid_dev.jewelbid.enums;
 
-/**
- * Enum định nghĩa loại đấu giá
- */
 public enum BidType {
     MANUAL("Manual Bidding"),
     AUTOMATIC("Automatic Bidding");

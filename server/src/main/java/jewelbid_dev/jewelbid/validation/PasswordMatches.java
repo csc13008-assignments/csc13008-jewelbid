@@ -5,16 +5,13 @@ import jakarta.validation.Payload;
 
 import java.lang.annotation.*;
 
-/**
- * Custom validation annotation để kiểm tra password và confirmPassword có khớp nhau không
- */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = PasswordMatchesValidator.class)
 @Documented
 public @interface PasswordMatches {
     
-    String message() default "Mật khẩu và xác nhận mật khẩu không khớp";
+    String message() default "Password and password confirmation do not match";
     
     Class<?>[] groups() default {};
     

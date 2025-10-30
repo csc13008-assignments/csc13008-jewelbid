@@ -1,8 +1,5 @@
 package jewelbid_dev.jewelbid.enums;
 
-/**
- * Enum định nghĩa trạng thái của người dùng
- */
 public enum UserStatus {
     ACTIVE("Active"),
     INACTIVE("Inactive"),

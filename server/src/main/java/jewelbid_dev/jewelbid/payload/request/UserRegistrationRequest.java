@@ -11,9 +11,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * DTO cho yêu cầu đăng ký người dùng
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,24 +18,24 @@ import java.time.LocalDate;
 @PasswordMatches
 public class UserRegistrationRequest {
     
-    @Email(message = "Email không hợp lệ")
-    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email is required")
     private String email;
     
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
     
-    @NotBlank(message = "Xác nhận mật khẩu không được để trống")
+    @NotBlank(message = "Password confirmation is required")
     private String confirmPassword;
     
-    @NotBlank(message = "Họ tên không được để trống")
+    @NotBlank(message = "Full name is required")
     private String fullName;
     
     private String address;
     
     private LocalDate dateOfBirth;
     
-    @NotBlank(message = "reCAPTCHA không được để trống")
+    @NotBlank(message = "reCAPTCHA is required")
     private String recaptchaToken;
 }

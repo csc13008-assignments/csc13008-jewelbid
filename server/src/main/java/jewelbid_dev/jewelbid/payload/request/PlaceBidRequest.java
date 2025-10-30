@@ -11,9 +11,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * DTO cho yêu cầu đặt giá
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,14 +18,13 @@ import java.math.BigDecimal;
 @ValidBidAmount
 public class PlaceBidRequest {
     
-    @NotNull(message = "Số tiền đấu giá không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Số tiền đấu giá phải lớn hơn 0")
+    @NotNull(message = "Bid amount is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Bid amount must be greater than 0")
     private BigDecimal bidAmount;
     
-    // Cho automatic bidding
-    @DecimalMin(value = "0.0", inclusive = false, message = "Số tiền tối đa phải lớn hơn 0")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Maximum bid amount must be greater than 0")
     private BigDecimal maxBidAmount;
     
-    @NotNull(message = "Loại đấu giá không được để trống")
+    @NotNull(message = "Bid type is required")
     private BidType bidType;
 }

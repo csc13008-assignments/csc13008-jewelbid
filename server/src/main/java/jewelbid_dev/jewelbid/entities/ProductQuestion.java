@@ -12,9 +12,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-/**
- * Entity đại diện cho câu hỏi về sản phẩm
- */
 @Entity
 @Table(name = "product_questions")
 @Data
@@ -28,7 +25,7 @@ public class ProductQuestion {
     private Long id;
     
     @Column(columnDefinition = "TEXT", nullable = false)
-    @NotBlank(message = "Nội dung câu hỏi không được để trống")
+    @NotBlank(message = "Question content is required")
     private String question;
     
     @Column(columnDefinition = "TEXT")
@@ -37,16 +34,14 @@ public class ProductQuestion {
     @Column(name = "answered_at")
     private LocalDateTime answeredAt;
     
-    // Questioner (bidder)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "questioner_id", nullable = false)
-    @NotNull(message = "Người hỏi không được để trống")
+    @NotNull(message = "Questioner is required")
     private User questioner;
     
-    // Product
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    @NotNull(message = "Sản phẩm không được để trống")
+    @NotNull(message = "Product is required")
     private Product product;
     
     @CreationTimestamp
@@ -57,18 +52,10 @@ public class ProductQuestion {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    /**
-     * Kiểm tra xem câu hỏi đã được trả lời chưa
-     * @return true nếu đã được trả lời
-     */
     public boolean isAnswered() {
         return answer != null && !answer.trim().isEmpty();
     }
     
-    /**
-     * Trả lời câu hỏi
-     * @param answerText nội dung trả lời
-     */
     public void answerQuestion(String answerText) {
         this.answer = answerText;
         this.answeredAt = LocalDateTime.now();

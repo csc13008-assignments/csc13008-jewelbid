@@ -13,9 +13,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Entity đại diện cho lượt đấu giá
- */
 @Entity
 @Table(name = "bids")
 @Data
@@ -29,12 +26,12 @@ public class Bid {
     private Long id;
     
     @Column(name = "bid_amount", nullable = false, precision = 15, scale = 2)
-    @NotNull(message = "Số tiền đấu giá không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Số tiền đấu giá phải lớn hơn 0")
+    @NotNull(message = "Bid amount is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Bid amount must be greater than 0")
     private BigDecimal bidAmount;
     
     @Column(name = "max_bid_amount", precision = 15, scale = 2)
-    private BigDecimal maxBidAmount; // Cho automatic bidding
+    private BigDecimal maxBidAmount;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "bid_type", nullable = false)
@@ -55,50 +52,32 @@ public class Bid {
     @Column(name = "rejected_at")
     private LocalDateTime rejectedAt;
     
-    // Bidder information
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bidder_id", nullable = false)
-    @NotNull(message = "Người đấu giá không được để trống")
+    @NotNull(message = "Bidder is required")
     private User bidder;
     
-    // Product information
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    @NotNull(message = "Sản phẩm không được để trống")
+    @NotNull(message = "Product is required")
     private Product product;
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
-    /**
-     * Kiểm tra xem có phải là đấu giá tự động không
-     * @return true nếu là đấu giá tự động
-     */
     public boolean isAutomaticBid() {
         return bidType == BidType.AUTOMATIC;
     }
     
-    /**
-     * Kiểm tra xem có phải là đấu giá thủ công không
-     * @return true nếu là đấu giá thủ công
-     */
     public boolean isManualBid() {
         return bidType == BidType.MANUAL;
     }
     
-    /**
-     * Kiểm tra xem bid có hợp lệ không
-     * @return true nếu bid hợp lệ (chưa bị từ chối)
-     */
     public boolean isValid() {
         return !isRejected;
     }
     
-    /**
-     * Từ chối bid
-     * @param reason lý do từ chối
-     */
     public void reject(String reason) {
         this.isRejected = true;
         this.rejectionReason = reason;
@@ -106,27 +85,16 @@ public class Bid {
         this.isWinning = false;
     }
     
-    /**
-     * Đánh dấu bid là winning bid
-     */
     public void markAsWinning() {
         if (!isRejected) {
             this.isWinning = true;
         }
     }
     
-    /**
-     * Bỏ đánh dấu winning bid
-     */
     public void unmarkAsWinning() {
         this.isWinning = false;
     }
     
-    /**
-     * Kiểm tra xem bid có thể tự động tăng giá không
-     * @param competingBidAmount giá của bid cạnh tranh
-     * @return true nếu có thể tự động tăng giá
-     */
     public boolean canAutoBid(BigDecimal competingBidAmount) {
         if (!isAutomaticBid() || isRejected) {
             return false;
@@ -136,16 +104,10 @@ public class Bid {
             return false;
         }
         
-        // Kiểm tra xem maxBidAmount có đủ để đấu giá cao hơn không
         BigDecimal nextBidAmount = competingBidAmount.add(product.getBidIncrement());
         return maxBidAmount.compareTo(nextBidAmount) >= 0;
     }
     
-    /**
-     * Tính toán bid amount tiếp theo cho automatic bidding
-     * @param competingBidAmount giá của bid cạnh tranh
-     * @return bid amount tiếp theo
-     */
     public BigDecimal calculateNextAutoBidAmount(BigDecimal competingBidAmount) {
         if (!canAutoBid(competingBidAmount)) {
             return null;
@@ -153,7 +115,6 @@ public class Bid {
         
         BigDecimal nextBidAmount = competingBidAmount.add(product.getBidIncrement());
         
-        // Không vượt quá maxBidAmount
         if (nextBidAmount.compareTo(maxBidAmount) > 0) {
             return maxBidAmount;
         }
@@ -161,10 +122,6 @@ public class Bid {
         return nextBidAmount;
     }
     
-    /**
-     * Cập nhật bid amount cho automatic bidding
-     * @param newAmount bid amount mới
-     */
     public void updateBidAmount(BigDecimal newAmount) {
         if (isAutomaticBid() && !isRejected) {
             this.bidAmount = newAmount;

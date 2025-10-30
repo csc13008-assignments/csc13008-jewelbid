@@ -12,36 +12,33 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * DTO cho yêu cầu tạo sản phẩm đấu giá
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CreateProductRequest {
     
-    @NotBlank(message = "Tên sản phẩm không được để trống")
+    @NotBlank(message = "Product name is required")
     private String name;
     
-    @NotBlank(message = "Mô tả sản phẩm không được để trống")
+    @NotBlank(message = "Product description is required")
     private String description;
     
-    @NotNull(message = "Giá khởi điểm không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Giá khởi điểm phải lớn hơn 0")
+    @NotNull(message = "Starting price is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Starting price must be greater than 0")
     private BigDecimal startingPrice;
     
-    @NotNull(message = "Bước giá không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Bước giá phải lớn hơn 0")
+    @NotNull(message = "Bid increment is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Bid increment must be greater than 0")
     private BigDecimal bidIncrement;
     
-    @DecimalMin(value = "0.0", inclusive = false, message = "Giá mua ngay phải lớn hơn 0")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Buy now price must be greater than 0")
     private BigDecimal buyNowPrice;
     
-    @NotNull(message = "Thời gian kết thúc không được để trống")
+    @NotNull(message = "End time is required")
     private LocalDateTime endTime;
     
-    @NotNull(message = "Danh mục không được để trống")
+    @NotNull(message = "Category is required")
     private Long categoryId;
     
     private Boolean autoExtend = false;

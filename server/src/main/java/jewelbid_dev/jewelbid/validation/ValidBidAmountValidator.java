@@ -7,14 +7,10 @@ import jewelbid_dev.jewelbid.payload.request.PlaceBidRequest;
 
 import java.math.BigDecimal;
 
-/**
- * Validator implementation cho ValidBidAmount annotation
- */
 public class ValidBidAmountValidator implements ConstraintValidator<ValidBidAmount, PlaceBidRequest> {
     
     @Override
     public void initialize(ValidBidAmount constraintAnnotation) {
-        // Initialization logic if needed
     }
     
     @Override
@@ -31,18 +27,17 @@ public class ValidBidAmountValidator implements ConstraintValidator<ValidBidAmou
             return false;
         }
         
-        // Nếu là automatic bidding, maxBidAmount phải được cung cấp và >= bidAmount
         if (bidType == BidType.AUTOMATIC) {
             if (maxBidAmount == null) {
                 context.disableDefaultConstraintViolation();
-                context.buildConstraintViolationWithTemplate("Số tiền tối đa không được để trống cho đấu giá tự động")
+                context.buildConstraintViolationWithTemplate("Maximum bid amount is required for automatic bidding")
                        .addConstraintViolation();
                 return false;
             }
             
             if (maxBidAmount.compareTo(bidAmount) < 0) {
                 context.disableDefaultConstraintViolation();
-                context.buildConstraintViolationWithTemplate("Số tiền tối đa phải lớn hơn hoặc bằng số tiền đấu giá")
+                context.buildConstraintViolationWithTemplate("Maximum bid amount must be greater than or equal to bid amount")
                        .addConstraintViolation();
                 return false;
             }

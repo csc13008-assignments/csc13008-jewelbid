@@ -17,9 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Entity đại diện cho người dùng trong hệ thống đấu giá
- */
 @Entity
 @Table(name = "users")
 @Data
@@ -33,17 +30,17 @@ public class User {
     private Long id;
     
     @Column(nullable = false, unique = true)
-    @Email(message = "Email không hợp lệ")
-    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email is required")
     private String email;
     
     @Column(nullable = false)
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
     
     @Column(name = "full_name", nullable = false)
-    @NotBlank(message = "Họ tên không được để trống")
+    @NotBlank(message = "Full name is required")
     private String fullName;
     
     @Column(columnDefinition = "TEXT")
@@ -120,10 +117,6 @@ public class User {
     @OneToMany(mappedBy = "questioner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProductQuestion> questions;
     
-    /**
-     * Tính toán tỷ lệ đánh giá tích cực
-     * @return tỷ lệ đánh giá tích cực (0.0 - 1.0)
-     */
     public double getPositiveRatingPercentage() {
         if (totalRatings == 0) {
             return 0.0;
@@ -131,21 +124,13 @@ public class User {
         return (double) positiveRatings / totalRatings;
     }
     
-    /**
-     * Kiểm tra xem người dùng có đủ điều kiện đấu giá không
-     * @return true nếu tỷ lệ đánh giá tích cực >= 80% hoặc chưa có đánh giá nào
-     */
     public boolean isEligibleForBidding() {
         if (totalRatings == 0) {
-            return true; // Người dùng mới được phép đấu giá
+            return true;
         }
         return getPositiveRatingPercentage() >= 0.8;
     }
     
-    /**
-     * Kiểm tra xem có thể nâng cấp lên seller không
-     * @return true nếu có thể nâng cấp
-     */
     public boolean canUpgradeToSeller() {
         return role == UserRole.BIDDER && 
                status == UserStatus.ACTIVE && 
