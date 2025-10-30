@@ -53,7 +53,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/change-password")
+    @PatchMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Change password", description = "Change user password (requires authentication)")
     public ResponseEntity<MessageResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
@@ -69,14 +69,14 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/reset-password")
+    @PutMapping("/reset-password")
     @Operation(summary = "Reset password", description = "Reset password using OTP")
     public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         MessageResponse response = authService.resetPassword(request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/logout")
+    @DeleteMapping("/logout")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "User logout", description = "Logout user and invalidate tokens")
     public ResponseEntity<MessageResponse> logout(HttpServletRequest request) {

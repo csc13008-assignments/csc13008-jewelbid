@@ -36,6 +36,8 @@ spring:
       port: ${REDIS_PORT}
       username: ${REDIS_USERNAME}
       password: ${REDIS_PASSWORD}
+      ssl:
+        enabled: true
       timeout: 2000ms
       lettuce:
         pool:
@@ -78,7 +80,7 @@ jewelbid:
       duration-minutes: 10
     new-product-highlight-minutes: 60
   email:
-    enabled: false
+    enabled: true
     from: noreply@jewelbid.com
   file:
     upload:

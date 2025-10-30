@@ -35,7 +35,4 @@ public class UserRegistrationRequest {
     private String address;
     
     private LocalDate dateOfBirth;
-    
-    @NotBlank(message = "reCAPTCHA is required")
-    private String recaptchaToken;
 }
