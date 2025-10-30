@@ -28,6 +28,7 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+        <swagger.version>2.6.0</swagger.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -73,6 +74,22 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+    		<groupId>me.paulschwarz</groupId>
+    		<artifactId>spring-dotenv</artifactId>
+    		<version>4.0.0</version>
+		</dependency>
+		<dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+
 	</dependencies>
 
 	<build>

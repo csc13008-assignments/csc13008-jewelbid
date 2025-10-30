@@ -1,0 +1,21 @@
+services:
+    postgres:
+        image: postgres:15-alpine
+        container_name: jewelbid-db-dev
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - '${DB_PORT}:5432'
+        volumes:
+            - jewelbid-db-data:/var/lib/postgresql/data
+        networks:
+            - jewelbid-network
+networks:
+    jewelbid-network:
+        driver: bridge
+volumes:
+    jewelbid-db-data:
+        driver: local
