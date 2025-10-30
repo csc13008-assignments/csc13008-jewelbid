@@ -41,6 +41,7 @@ public class CreateProductRequest {
     @NotNull(message = "Category is required")
     private Long categoryId;
     
+    @Builder.Default
     private Boolean autoExtend = false;
     
     private List<String> imageUrls;
