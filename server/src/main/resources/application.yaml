@@ -29,12 +29,32 @@ spring:
         order_inserts: true
         order_updates: true
         
-  # Security Configuration
-  security:
-    user:
-      name: ${SECURITY_USER:admin}
-      password: ${SECURITY_PASSWORD:password}
-      roles: ADMIN
+  # Redis Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          
+  # Email Configuration
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 # Swagger Configuration
 springdoc:
@@ -64,3 +84,13 @@ jewelbid:
     upload:
       max-size: 10MB
       allowed-types: jpg,jpeg,png,gif,webp
+  jwt:
+    access-token:
+      secret: ${JWT_ACCESS_SECRET}
+      expiration: 3600000
+    refresh-token:
+      secret: ${JWT_REFRESH_SECRET}
+      expiration: 604800000
+  otp:
+    expiration-minutes: 10
+    length: 6

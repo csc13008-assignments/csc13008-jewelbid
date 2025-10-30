@@ -69,6 +69,19 @@ public class User {
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
     
+    @Column(name = "refresh_token", columnDefinition = "TEXT")
+    private String refreshToken;
+    
+    @Column(name = "refresh_token_expiry")
+    private LocalDateTime refreshTokenExpiry;
+    
+    @Column(name = "failed_login_attempts")
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+    
+    @Column(name = "account_locked_until")
+    private LocalDateTime accountLockedUntil;
+    
     // Rating system fields
     @Column(name = "positive_ratings")
     @Builder.Default
@@ -135,5 +148,59 @@ public class User {
         return role == UserRole.BIDDER && 
                status == UserStatus.ACTIVE && 
                !upgradeRequested;
+    }
+    
+    public boolean isAccountLocked() {
+        return accountLockedUntil != null && LocalDateTime.now().isBefore(accountLockedUntil);
+    }
+    
+    public void lockAccount(int lockDurationMinutes) {
+        this.accountLockedUntil = LocalDateTime.now().plusMinutes(lockDurationMinutes);
+    }
+    
+    public void unlockAccount() {
+        this.accountLockedUntil = null;
+        this.failedLoginAttempts = 0;
+    }
+    
+    public void incrementFailedLoginAttempts() {
+        this.failedLoginAttempts++;
+    }
+    
+    public void resetFailedLoginAttempts() {
+        this.failedLoginAttempts = 0;
+    }
+    
+    public boolean isRefreshTokenValid() {
+        return refreshToken != null && 
+               refreshTokenExpiry != null && 
+               LocalDateTime.now().isBefore(refreshTokenExpiry);
+    }
+    
+    public void setRefreshToken(String refreshToken, LocalDateTime expiry) {
+        this.refreshToken = refreshToken;
+        this.refreshTokenExpiry = expiry;
+    }
+    
+    public void clearRefreshToken() {
+        this.refreshToken = null;
+        this.refreshTokenExpiry = null;
+    }
+    
+    public void setOtp(String otp, LocalDateTime expiry) {
+        this.otpCode = otp;
+        this.otpExpiry = expiry;
+    }
+    
+    public void clearOtp() {
+        this.otpCode = null;
+        this.otpExpiry = null;
+    }
+    
+    public boolean isOtpValid(String otp) {
+        return otpCode != null && 
+               otpExpiry != null && 
+               LocalDateTime.now().isBefore(otpExpiry) && 
+               otpCode.equals(otp);
     }
 }
