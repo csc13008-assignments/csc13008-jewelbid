@@ -16,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Slf4j
 @RestController
 @RequestMapping("/auth")
@@ -57,7 +59,7 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Change password", description = "Change user password (requires authentication)")
     public ResponseEntity<MessageResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        UUID userId = SecurityUtils.getCurrentUserId();
         MessageResponse response = authService.changePassword(userId, request);
         return ResponseEntity.ok(response);
     }
@@ -81,7 +83,7 @@ public class AuthController {
     @Operation(summary = "User logout", description = "Logout user and invalidate tokens")
     public ResponseEntity<MessageResponse> logout(HttpServletRequest request) {
         String accessToken = getJwtFromRequest(request);
-        Long userId = SecurityUtils.getCurrentUserId();
+        UUID userId = SecurityUtils.getCurrentUserId();
         MessageResponse response = authService.logout(accessToken, userId);
         return ResponseEntity.ok(response);
     }

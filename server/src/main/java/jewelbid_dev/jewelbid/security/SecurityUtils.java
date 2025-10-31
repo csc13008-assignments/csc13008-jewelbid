@@ -4,6 +4,8 @@ import jewelbid_dev.jewelbid.enums.UserRole;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.UUID;
+
 public class SecurityUtils {
 
     public static UserPrincipal getCurrentUser() {
@@ -14,7 +16,7 @@ public class SecurityUtils {
         return null;
     }
 
-    public static Long getCurrentUserId() {
+    public static UUID getCurrentUserId() {
         UserPrincipal user = getCurrentUser();
         return user != null ? user.getId() : null;
     }

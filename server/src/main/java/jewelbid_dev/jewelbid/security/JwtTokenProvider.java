@@ -11,6 +11,7 @@ import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -65,22 +66,22 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public Long getUserIdFromAccessToken(String token) {
+    public UUID getUserIdFromAccessToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getAccessTokenKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return Long.parseLong(claims.getSubject());
+        return UUID.fromString(claims.getSubject());
     }
 
-    public Long getUserIdFromRefreshToken(String token) {
+    public UUID getUserIdFromRefreshToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getRefreshTokenKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return Long.parseLong(claims.getSubject());
+        return UUID.fromString(claims.getSubject());
     }
 
     public String getEmailFromAccessToken(String token) {

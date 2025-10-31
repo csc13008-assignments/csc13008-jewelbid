@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 
 @Slf4j
 @Service
@@ -126,7 +128,7 @@ public class AuthService {
     }
 
     @Transactional
-    public MessageResponse changePassword(Long userId, ChangePasswordRequest request) {
+    public MessageResponse changePassword(UUID userId, ChangePasswordRequest request) {
         User user = userService.getUserById(userId);
 
         if (!userService.validatePassword(user, request.getCurrentPassword())) {
@@ -175,7 +177,7 @@ public class AuthService {
     }
 
     @Transactional
-    public MessageResponse logout(String accessToken, Long userId) {
+    public MessageResponse logout(String accessToken, UUID userId) {
         redisTokenService.blacklistToken(accessToken);
         
         User user = userService.getUserById(userId);

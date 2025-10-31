@@ -9,9 +9,10 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
     
     Optional<User> findByEmail(String email);
     
@@ -24,17 +25,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     @Modifying
     @Query("UPDATE User u SET u.failedLoginAttempts = u.failedLoginAttempts + 1 WHERE u.id = :userId")
-    void incrementFailedLoginAttempts(@Param("userId") Long userId);
+    void incrementFailedLoginAttempts(@Param("userId") UUID userId);
     
     @Modifying
     @Query("UPDATE User u SET u.failedLoginAttempts = 0 WHERE u.id = :userId")
-    void resetFailedLoginAttempts(@Param("userId") Long userId);
+    void resetFailedLoginAttempts(@Param("userId") UUID userId);
     
     @Modifying
     @Query("UPDATE User u SET u.accountLockedUntil = :lockUntil WHERE u.id = :userId")
-    void lockAccount(@Param("userId") Long userId, @Param("lockUntil") LocalDateTime lockUntil);
+    void lockAccount(@Param("userId") UUID userId, @Param("lockUntil") LocalDateTime lockUntil);
     
     @Modifying
     @Query("UPDATE User u SET u.accountLockedUntil = null, u.failedLoginAttempts = 0 WHERE u.id = :userId")
-    void unlockAccount(@Param("userId") Long userId);
+    void unlockAccount(@Param("userId") UUID userId);
 }

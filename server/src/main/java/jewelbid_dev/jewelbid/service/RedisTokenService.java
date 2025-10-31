@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -25,7 +26,7 @@ public class RedisTokenService {
     private static final String BLACKLIST_TOKEN_PREFIX = "blacklist_token:";
     private static final String OTP_PREFIX = "otp:";
 
-    public void whitelistToken(String token, Long userId) {
+    public void whitelistToken(String token, UUID userId) {
         try {
             String key = ACCESS_TOKEN_PREFIX + token;
             redisTemplate.opsForValue().set(key, userId.toString(), 
@@ -120,7 +121,7 @@ public class RedisTokenService {
         }
     }
 
-    public void removeAllUserTokens(Long userId) {
+    public void removeAllUserTokens(UUID userId) {
         try {
             String pattern = ACCESS_TOKEN_PREFIX + "*";
             redisTemplate.keys(pattern).forEach(key -> {
