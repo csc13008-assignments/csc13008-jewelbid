@@ -106,21 +106,6 @@ public class UserService {
         return userRepository.findByValidRefreshToken(refreshToken, LocalDateTime.now());
     }
 
-    @Transactional
-    public void setOtp(User user, String otp, LocalDateTime expiry) {
-        user.setOtp(otp, expiry);
-        userRepository.save(user);
-    }
-
-    @Transactional
-    public void clearOtp(User user) {
-        user.clearOtp();
-        userRepository.save(user);
-    }
-
-    public Optional<User> findByEmailAndValidOtp(String email, String otp) {
-        return userRepository.findByEmailAndValidOtp(email, otp, LocalDateTime.now());
-    }
 
     @Transactional
     public void handleFailedLogin(User user) {
@@ -152,7 +137,6 @@ public class UserService {
     public void verifyEmail(User user) {
         user.setEmailVerified(true);
         user.setStatus(UserStatus.ACTIVE);
-        user.clearOtp();
         userRepository.save(user);
     }
 

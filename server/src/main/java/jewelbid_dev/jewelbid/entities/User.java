@@ -63,11 +63,6 @@ public class User {
     @Builder.Default
     private Boolean emailVerified = false;
     
-    @Column(name = "otp_code")
-    private String otpCode;
-    
-    @Column(name = "otp_expiry")
-    private LocalDateTime otpExpiry;
     
     @Column(name = "refresh_token", columnDefinition = "TEXT")
     private String refreshToken;
@@ -187,20 +182,4 @@ public class User {
         this.refreshTokenExpiry = null;
     }
     
-    public void setOtp(String otp, LocalDateTime expiry) {
-        this.otpCode = otp;
-        this.otpExpiry = expiry;
-    }
-    
-    public void clearOtp() {
-        this.otpCode = null;
-        this.otpExpiry = null;
-    }
-    
-    public boolean isOtpValid(String otp) {
-        return otpCode != null && 
-               otpExpiry != null && 
-               LocalDateTime.now().isBefore(otpExpiry) && 
-               otpCode.equals(otp);
-    }
 }

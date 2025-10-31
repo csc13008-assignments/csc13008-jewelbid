@@ -91,7 +91,7 @@ jewelbid:
       secret: ${JWT_REFRESH_SECRET}
       expiration: 604800000
   otp:
-    expiration-minutes: 10
+    expiration-minutes: 3
     length: 6
 
 logging:

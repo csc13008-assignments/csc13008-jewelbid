@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -75,9 +74,6 @@ public class AuthService {
         User user = userService.createUser(request);
         
         String otp = emailService.generateOtp();
-        LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
-        
-        userService.setOtp(user, otp, otpExpiry);
         redisTokenService.storeOtp(user.getEmail(), otp);
         
         try {
@@ -97,9 +93,7 @@ public class AuthService {
             throw new BadRequestException("Invalid or expired OTP");
         }
 
-        User user = userService.findByEmailAndValidOtp(request.getEmail(), request.getOtp())
-                .orElseThrow(() -> new BadRequestException("Invalid or expired OTP"));
-
+        User user = userService.getUserByEmail(request.getEmail());
         userService.verifyEmail(user);
         redisTokenService.removeOtp(request.getEmail());
 
@@ -152,9 +146,6 @@ public class AuthService {
                 .orElseThrow(() -> new BadRequestException("No account found with this email"));
 
         String otp = emailService.generateOtp();
-        LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
-
-        userService.setOtp(user, otp, otpExpiry);
         redisTokenService.storeOtp(user.getEmail(), otp);
 
         try {
@@ -174,11 +165,8 @@ public class AuthService {
             throw new BadRequestException("Invalid or expired OTP");
         }
 
-        User user = userService.findByEmailAndValidOtp(request.getEmail(), request.getOtp())
-                .orElseThrow(() -> new BadRequestException("Invalid or expired OTP"));
-
+        User user = userService.getUserByEmail(request.getEmail());
         userService.changePassword(user, request.getPassword());
-        userService.clearOtp(user);
         redisTokenService.removeOtp(request.getEmail());
         redisTokenService.removeAllUserTokens(user.getId());
 

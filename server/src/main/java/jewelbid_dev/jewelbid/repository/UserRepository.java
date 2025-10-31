@@ -17,10 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     boolean existsByEmail(String email);
     
-    @Query("SELECT u FROM User u WHERE u.email = :email AND u.otpCode = :otp AND u.otpExpiry > :now")
-    Optional<User> findByEmailAndValidOtp(@Param("email") String email, 
-                                         @Param("otp") String otp, 
-                                         @Param("now") LocalDateTime now);
     
     @Query("SELECT u FROM User u WHERE u.refreshToken = :refreshToken AND u.refreshTokenExpiry > :now")
     Optional<User> findByValidRefreshToken(@Param("refreshToken") String refreshToken, 
