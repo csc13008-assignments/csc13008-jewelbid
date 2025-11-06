@@ -1,0 +1,84 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: bkb-auth-service-dev
+        restart: unless-stopped
+        ports:
+            - '${PORT}:${PORT}'
+            - '${DEBUG_PORT}:${DEBUG_PORT}'
+        environment:
+            - NODE_ENV=${NODE_ENV}
+            - NODE_OPTIONS=${NODE_OPTIONS}
+            - PORT=${PORT}
+            - DB_HOST=${DB_HOST}
+            - DB_PORT=${DB_PORT}
+            - DB_USERNAME=${DB_USERNAME}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_DATABASE=${DB_DATABASE}
+            - REDIS_HOST=${REDIS_HOST}
+            - REDIS_PORT=${REDIS_PORT}
+            - REDIS_USERNAME=${REDIS_USERNAME}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_DB=${REDIS_DB}
+            - REDIS_TLS=${REDIS_TLS}
+        volumes:
+            - .:/app
+            - /app/node_modules
+            - ./logs:/app/logs
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - bkb-auth-network
+        command: npm run start:debug
+
+    postgres:
+        image: postgres:15-alpine
+        container_name: bkb-auth-db-dev
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - '${DB_PORT}:5432'
+        volumes:
+            - postgres_auth_dev_data:/var/lib/postgresql/data
+        networks:
+            - bkb-auth-network
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U postgres -d bkb_users']
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+    redis:
+        image: redis:7-alpine
+        container_name: bkb-auth-redis-dev
+        ports:
+            - '${REDIS_PORT}:6379'
+        volumes:
+            - redis_auth_dev_data:/data
+        networks:
+            - bkb-auth-network
+        restart: unless-stopped
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+
+networks:
+    bkb-auth-network:
+        driver: bridge
+
+volumes:
+    postgres_auth_dev_data:
+        driver: local
+    redis_auth_dev_data:
+        driver: local

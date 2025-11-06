@@ -1,0 +1,12 @@
+{
+    "rules": {
+        "eol-last": "off",
+        "prettier/prettier": [
+            "error",
+            {
+                "endOfLine": "auto",
+                "insertFinalNewline": false
+            }
+        ]
+    }
+}

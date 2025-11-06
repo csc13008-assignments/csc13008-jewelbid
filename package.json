@@ -1,0 +1,49 @@
+{
+    "name": "csc13008-auction-platform",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "private": true,
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "prepare": "husky install",
+        "lint-staged": "lint-staged"
+    },
+    "lint-staged": {
+        "*.{css,scss}": [
+            "prettier --ignore-path .eslintignore --single-quote --tab-width 4 --write"
+        ],
+        "*.{js,jsx,ts,tsx}": [
+            "prettier --ignore-path .eslintignore --single-quote --tab-width 4 --trailing-comma all --write",
+            "eslint --fix"
+        ],
+        "*.json": [
+            "prettier --ignore-path .eslintignore --write"
+        ],
+        "*.{html,md}": [
+            "prettier --ignore-path .eslintignore --single-quote --write"
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/csc13008-assignments/csc13008-jewelbid.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/csc13008-assignments/csc13008-jewelbid/issues"
+    },
+    "homepage": "https://github.com/csc13008-assignments/csc13008-jewelbid#readme",
+    "devDependencies": {
+        "eslint": "^9.39.1",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.2.6"
+    },
+    "dependencies": {
+        "@commitlint/config-conventional": "^20.0.0",
+        "commitlint": "^20.1.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "typescript-eslint": "^8.46.3"
+    }
+}
