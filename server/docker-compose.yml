@@ -3,14 +3,13 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-        container_name: bkb-auth-service-dev
+        container_name: jewelbid-server-dev
         restart: unless-stopped
         ports:
             - '${PORT}:${PORT}'
             - '${DEBUG_PORT}:${DEBUG_PORT}'
         environment:
             - NODE_ENV=${NODE_ENV}
-            - NODE_OPTIONS=${NODE_OPTIONS}
             - PORT=${PORT}
             - DB_HOST=${DB_HOST}
             - DB_PORT=${DB_PORT}
@@ -44,14 +43,14 @@ services:
             POSTGRES_DB: ${DB_DATABASE}
             POSTGRES_USER: ${DB_USERNAME}
             POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_HOST_AUTH_METHOD: trust
         ports:
             - '${DB_PORT}:5432'
         volumes:
             - jewelbid-db-data:/var/lib/postgresql/data
         networks:
-            - bkb-auth-network
+            - jewelbid-network
         healthcheck:
-            test: [ 'CMD-SHELL', 'pg_isready -U postgres -d bkb_users' ]
             interval: 30s
             timeout: 10s
             retries: 3
@@ -64,7 +63,7 @@ services:
         volumes:
             - jewelbid-redis-data:/data
         networks:
-            - bkb-auth-network
+            - jewelbid-network
         restart: unless-stopped
         healthcheck:
             test: [ 'CMD', 'redis-cli', 'ping' ]

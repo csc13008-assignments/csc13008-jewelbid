@@ -1,35 +1,43 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { HttpModule } from '@nestjs/axios';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { User } from './entities/user.entity';
-import { AuthController } from './controllers/auth.controller';
-import { AuthService } from './services/auth.service';
-import { FirebaseAuthService } from './services/firebase-auth.service';
-import { JwtTokenService } from './services/jwt-token.service';
-import { RedisTokenService } from './services/redis-token.service';
-import { RedisAuthService } from './services/redis-auth.service';
-import { RedisConfigService } from './services/redis-config.service';
-import { UserRepository } from './repositories/user.repository';
-import { FirebaseAuthGuard } from './guards/firebase-auth.guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { ZaloAuthService } from './services/zalo-auth.service';
-
+import { UsersModule } from '../users/users.module';
+import { LocalStrategy } from './strategies/local.strategy';
+import { PassportModule } from '@nestjs/passport';
+import { AccessTokenStrategy } from './strategies/at.strategy';
+import { RefreshTokenStrategy } from './strategies/rt.strategy';
+import { AccessControlService } from '../ac/ac.service';
+import { MailerModule } from '@nestjs-modules/mailer';
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User]),
-        HttpModule.register({
-            timeout: 10000,
-            maxRedirects: 5,
+        UsersModule,
+        PassportModule,
+        MailerModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: (configService: ConfigService) => ({
+                transport: {
+                    host: configService.get('MAIL_HOST'),
+                    port: configService.get('MAIL_PORT'),
+                    secure: false,
+                    auth: {
+                        user: configService.get('MAIL_USER'),
+                        pass: configService.get('MAIL_PASSWORD'),
+                    },
+                },
+                defaults: {
+                    from: configService.get('MAIL_FROM'),
+                },
+            }),
+            inject: [ConfigService],
         }),
-        ConfigModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
-                secret: configService.get<string>('JWT_SECRET'),
+            useFactory: (configService: ConfigService) => ({
+                secret: configService.get('AT_SECRET'),
                 signOptions: {
-                    expiresIn: configService.get<string>('JWT_EXPIRES_IN'),
+                    expiresIn: configService.get('JWT_EXPIRATION_TIME'),
                 },
             }),
             inject: [ConfigService],
@@ -38,27 +46,10 @@ import { ZaloAuthService } from './services/zalo-auth.service';
     controllers: [AuthController],
     providers: [
         AuthService,
-        FirebaseAuthService,
-        JwtTokenService,
-        RedisTokenService,
-        RedisAuthService,
-        RedisConfigService,
-        UserRepository,
-        FirebaseAuthGuard,
-        JwtAuthGuard,
-        ZaloAuthService,
-    ],
-    exports: [
-        AuthService,
-        FirebaseAuthService,
-        JwtTokenService,
-        RedisTokenService,
-        RedisAuthService,
-        RedisConfigService,
-        UserRepository,
-        FirebaseAuthGuard,
-        JwtAuthGuard,
-        ZaloAuthService,
+        LocalStrategy,
+        AccessTokenStrategy,
+        RefreshTokenStrategy,
+        AccessControlService,
     ],
 })
 export class AuthModule {}

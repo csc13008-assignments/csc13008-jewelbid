@@ -17,8 +17,8 @@ async function bootstrap() {
 
     // Swagger configuration
     const config = new DocumentBuilder()
-        .setTitle('BKB Auth Service')
-        .setDescription('Auth service API for BKB application')
+        .setTitle('Jewelbid Server')
+        .setDescription('Server API for Jewelbid application')
         .setVersion('1.0')
         .addBearerAuth()
         .build();
