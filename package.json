@@ -35,9 +35,12 @@
     },
     "homepage": "https://github.com/csc13008-assignments/csc13008-jewelbid#readme",
     "devDependencies": {
+        "@eslint/js": "^9.39.1",
         "eslint": "^9.39.1",
+        "globals": "^16.5.0",
         "husky": "^9.1.7",
-        "lint-staged": "^16.2.6"
+        "lint-staged": "^16.2.6",
+        "prettier": "^3.6.2"
     },
     "dependencies": {
         "@commitlint/config-conventional": "^20.0.0",
