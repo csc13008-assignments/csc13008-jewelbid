@@ -33,12 +33,12 @@ services:
             redis:
                 condition: service_healthy
         networks:
-            - bkb-auth-network
+            - jewelbid-network
         command: npm run start:debug
 
     postgres:
         image: postgres:15-alpine
-        container_name: bkb-auth-db-dev
+        container_name: jewelbid-db-dev
         restart: unless-stopped
         environment:
             POSTGRES_DB: ${DB_DATABASE}
@@ -47,38 +47,38 @@ services:
         ports:
             - '${DB_PORT}:5432'
         volumes:
-            - postgres_auth_dev_data:/var/lib/postgresql/data
+            - jewelbid-db-data:/var/lib/postgresql/data
         networks:
             - bkb-auth-network
         healthcheck:
-            test: ['CMD-SHELL', 'pg_isready -U postgres -d bkb_users']
+            test: [ 'CMD-SHELL', 'pg_isready -U postgres -d bkb_users' ]
             interval: 30s
             timeout: 10s
             retries: 3
 
     redis:
         image: redis:7-alpine
-        container_name: bkb-auth-redis-dev
+        container_name: jewelbid-redis-dev
         ports:
             - '${REDIS_PORT}:6379'
         volumes:
-            - redis_auth_dev_data:/data
+            - jewelbid-redis-data:/data
         networks:
             - bkb-auth-network
         restart: unless-stopped
         healthcheck:
-            test: ['CMD', 'redis-cli', 'ping']
+            test: [ 'CMD', 'redis-cli', 'ping' ]
             interval: 10s
             timeout: 5s
             retries: 5
             start_period: 30s
 
 networks:
-    bkb-auth-network:
+    jewelbid-network:
         driver: bridge
 
 volumes:
-    postgres_auth_dev_data:
+    jewelbid-db-data:
         driver: local
-    redis_auth_dev_data:
+    jewelbid-redis-data:
         driver: local
