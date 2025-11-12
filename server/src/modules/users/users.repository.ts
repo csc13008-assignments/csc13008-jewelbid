@@ -64,7 +64,7 @@ export class UsersRepository {
 
     async createEmployee(CreateDto: CreateEmployeeDto): Promise<User> {
         const {
-            username,
+            fullname,
             email,
             phone,
             address,
@@ -86,7 +86,7 @@ export class UsersRepository {
         const hashedPassword = await this.hashPassword(password);
 
         const user = this.userRepository.create({
-            username: username,
+            fullname: fullname,
             email: email,
             phone: phone,
             address: address,
@@ -95,6 +95,7 @@ export class UsersRepository {
             password: hashedPassword,
             otp: null,
             otpExpiry: null,
+            isEmailVerified: true,
             role: Role.EMPLOYEE,
             workStart: workStart,
             workEnd: workEnd,
@@ -111,18 +112,20 @@ export class UsersRepository {
     }
 
     async createCustomer(CreateDto: UserSignUpDto): Promise<User> {
-        const { username, email, password, phone } = CreateDto;
+        const { fullname, email, password, phone, address, birthdate } =
+            CreateDto;
         const hashedPassword = await this.hashPassword(password);
 
         const user = this.userRepository.create({
-            username: username,
+            fullname: fullname,
             email: email,
             phone: phone,
-            address: 'null',
-            birthdate: new Date('1990-01-01'),
+            address: address,
+            birthdate: new Date(birthdate),
             password: hashedPassword,
             otp: null,
             otpExpiry: null,
+            isEmailVerified: false,
             loyaltyPoints: 0,
             role: Role.GUEST,
         });
@@ -159,10 +162,10 @@ export class UsersRepository {
         }
     }
 
-    async findOneByUsername(username: string): Promise<User> {
+    async findOneByFullname(fullname: string): Promise<User> {
         try {
             const user = await this.userRepository.findOne({
-                where: { username },
+                where: { fullname },
             });
 
             return user;
@@ -337,5 +340,16 @@ export class UsersRepository {
             where: { role },
         });
         return count;
+    }
+
+    async verifyEmail(email: string): Promise<void> {
+        try {
+            await this.userRepository.update(
+                { email },
+                { isEmailVerified: true, otp: null, otpExpiry: null },
+            );
+        } catch (error: any) {
+            throw new InternalServerErrorException((error as Error).message);
+        }
     }
 }

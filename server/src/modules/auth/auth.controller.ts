@@ -21,14 +21,14 @@ import {
     ApiBearerAuth,
 } from '@nestjs/swagger';
 import { TokensDto } from './dtos/tokens.dto';
-import { CredDto } from './dtos/cred.dto';
 import { AuthLoginDto } from './dtos/user-signin.dto';
 import { UserSignUpDto } from './dtos/user-signup.dto';
+import { VerifyEmailDto } from './dtos/verify-email.dto';
+import { ResendVerificationDto } from './dtos/resend-verification.dto';
 import {
     ChangePasswordDto,
     ForgotPasswordDto,
     ResetPasswordDto,
-    VerifyOtpDto,
 } from './dtos/auth-psw-recovery.dto';
 import { UserLoginDto } from './dtos/user-signin.dto';
 
@@ -37,7 +37,7 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     @ApiOperation({
-        summary: 'Login using credentials. Provide email in username field',
+        summary: 'Login using email and password',
     })
     @ApiBody({ type: AuthLoginDto })
     @ApiResponse({
@@ -60,12 +60,11 @@ export class AuthController {
         });
     }
 
-    @ApiOperation({ summary: 'Sign-up to login' })
+    @ApiOperation({ summary: 'Sign-up to register account' })
     @ApiBody({ type: UserSignUpDto })
     @ApiResponse({
         status: 200,
-        description: 'Sign-up successful',
-        type: CredDto,
+        description: 'Sign-up successful, verification email sent',
     })
     @Post('sign-up')
     @HttpCode(200)
@@ -73,11 +72,8 @@ export class AuthController {
         @Body() req: UserSignUpDto,
         @Res() res: Response,
     ): Promise<void> {
-        const newUser = await this.authService.signUp(req);
-        res.send({
-            newUser,
-            message: 'User has been created successfully',
-        });
+        const result = await this.authService.signUp(req);
+        res.send(result);
     }
 
     @ApiBearerAuth('access-token')
@@ -126,23 +122,6 @@ export class AuthController {
         res.send({
             accessToken,
             message: 'Access token has been refreshed successfully',
-        });
-    }
-
-    @ApiOperation({ summary: 'Verify OTP' })
-    @Post('verify-otp')
-    @ApiBody({ type: VerifyOtpDto })
-    @ApiResponse({
-        status: 200,
-        description: 'OTP verified successfully',
-    })
-    @HttpCode(200)
-    async verifyOtp(@Request() req: any, @Res() res: Response): Promise<void> {
-        const email = req.body.email;
-        const otp = req.body.otp;
-        await this.authService.verifyOtp(email, otp);
-        res.send({
-            message: 'OTP has been verified successfully',
         });
     }
 
@@ -214,5 +193,37 @@ export class AuthController {
         res.send({
             message: 'Password has been reset successfully',
         });
+    }
+
+    @ApiOperation({ summary: 'Verify email with OTP' })
+    @Post('verify-email')
+    @ApiBody({ type: VerifyEmailDto })
+    @ApiResponse({
+        status: 200,
+        description: 'Email verified successfully',
+    })
+    @HttpCode(200)
+    async verifyEmail(
+        @Body() verifyEmailDto: VerifyEmailDto,
+        @Res() res: Response,
+    ): Promise<void> {
+        const result = await this.authService.verifyEmail(verifyEmailDto);
+        res.send(result);
+    }
+
+    @ApiOperation({ summary: 'Resend email verification OTP' })
+    @Post('resend-verification')
+    @ApiBody({ type: ResendVerificationDto })
+    @ApiResponse({
+        status: 200,
+        description: 'Verification OTP resent successfully',
+    })
+    @HttpCode(200)
+    async resendVerificationOtp(
+        @Body() body: ResendVerificationDto,
+        @Res() res: Response,
+    ): Promise<void> {
+        const result = await this.authService.resendVerificationOtp(body.email);
+        res.send(result);
     }
 }

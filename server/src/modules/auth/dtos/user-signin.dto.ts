@@ -13,7 +13,7 @@ export class UserLoginDto {
 
     @ApiProperty()
     @IsString()
-    username: string;
+    fullname: string;
 
     @ApiProperty()
     @IsString()
@@ -27,8 +27,8 @@ export class UserLoginDto {
 
 export class AuthLoginDto {
     @ApiProperty()
-    @IsString()
-    username: string;
+    @IsEmail()
+    email: string;
 
     @ApiProperty()
     @IsString()

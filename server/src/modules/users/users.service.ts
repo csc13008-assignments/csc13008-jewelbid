@@ -61,7 +61,7 @@ export class UsersService {
 
             return users.map((user) => ({
                 email: user.email,
-                username: user.username,
+                username: user.fullname,
                 id: user.id,
                 role: user.role,
                 phone: user.phone,
@@ -101,7 +101,7 @@ export class UsersService {
 
             const newUser = {
                 email: user.email,
-                username: user.username,
+                username: user.fullname,
                 id: user.id,
                 role: user.role,
                 phone: user.phone,

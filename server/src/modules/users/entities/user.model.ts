@@ -7,14 +7,14 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 export class User extends BaseEntity {
     // Basic info
     @ApiProperty({
-        description: 'Username of the user',
-        example: 'john_doe',
+        description: 'Full name of the user',
+        example: 'John Doe',
     })
     @Column({
         type: 'varchar',
         nullable: false,
     })
-    username: string;
+    fullname: string;
 
     @ApiProperty({
         description: 'Email address of the user',
@@ -89,6 +89,18 @@ export class User extends BaseEntity {
         nullable: true,
     })
     otpExpiry?: Date;
+
+    @ApiProperty({
+        description: 'Email verification status',
+        example: false,
+        default: false,
+    })
+    @Column({
+        type: 'boolean',
+        nullable: false,
+        default: false,
+    })
+    isEmailVerified: boolean;
 
     @ApiProperty({
         description: 'User role in the system',

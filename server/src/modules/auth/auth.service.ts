@@ -12,8 +12,10 @@ import {
 } from '@nestjs/common';
 import { User } from '../users/entities/user.model';
 import { UserSignUpDto } from './dtos/user-signup.dto';
+import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { Role } from './enums/roles.enum';
 import { MailerService } from '@nestjs-modules/mailer';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +35,12 @@ export class AuthService {
             return null;
         }
 
+        if (!user.isEmailVerified) {
+            throw new UnauthorizedException(
+                'Please verify your email before signing in',
+            );
+        }
+
         const isValidPassword: boolean =
             await this.usersRepository.validatePassword(password, user);
 
@@ -48,7 +56,7 @@ export class AuthService {
             const payloadAccessToken = {
                 id: user.id,
                 email: user.email,
-                username: user.username,
+                fullname: user.fullname,
                 role: user.role,
             };
 
@@ -86,32 +94,42 @@ export class AuthService {
         }
     }
 
-    public async signUp(user: UserSignUpDto): Promise<Partial<User>> {
+    public async signUp(
+        user: UserSignUpDto,
+    ): Promise<{ message: string; email: string }> {
         const foundUser = await this.usersRepository.findOneByEmail(user.email);
         if (foundUser) {
             throw new BadRequestException('User already exists');
         }
 
+        if (user.recaptchaToken) {
+            const isValidRecaptcha = await this.verifyRecaptcha(
+                user.recaptchaToken,
+            );
+            if (!isValidRecaptcha) {
+                throw new BadRequestException('Invalid reCAPTCHA');
+            }
+        }
+
         try {
             const newUser = await this.usersRepository.createCustomer(user);
-            const formattedUser: {
-                id: string;
-                profileImage: string;
-                username: string;
-                email: string;
-                phone: string;
-                role: Role;
-                loyaltyPoints: number;
-            } = {
-                id: newUser.id,
-                profileImage: newUser.profileImage,
-                username: newUser.username,
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+            await this.usersRepository.updateOtp(newUser.email, otp, otpExpiry);
+
+            await this.mailerService.sendMail({
+                to: newUser.email,
+                subject: '[Auction Platform] Email Verification',
+                text: `Welcome to our auction platform! Please verify your email with this OTP: ${otp}. This OTP will expire in 15 minutes.`,
+            });
+
+            return {
+                message:
+                    'Registration successful. Please check your email for verification code.',
                 email: newUser.email,
-                phone: newUser.phone,
-                role: newUser.role,
-                loyaltyPoints: newUser.loyaltyPoints,
             };
-            return formattedUser;
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
         }
@@ -158,7 +176,7 @@ export class AuthService {
 
             const payloadAccessToken = {
                 id: payload.id,
-                username: user.username,
+                fullname: user.fullname,
                 role: payload.role,
             };
 
@@ -192,24 +210,6 @@ export class AuthService {
                 subject: '[Kafi - POS System] Reset Password OTP',
                 text: `Please do not reply this message. \n Your OTP is: ${otp}`,
             });
-
-            return;
-        } catch (error) {
-            throw new InternalServerErrorException((error as Error).message);
-        }
-    }
-
-    async verifyOtp(email: string, otp: string): Promise<void> {
-        try {
-            const user = await this.usersRepository.findOneByOtp(email, otp);
-
-            if (!user) throw new BadRequestException('Invalid OTP');
-
-            const currentTime = new Date();
-
-            if (currentTime > user.otpExpiry) {
-                throw new BadRequestException('OTP expired');
-            }
 
             return;
         } catch (error) {
@@ -276,6 +276,87 @@ export class AuthService {
             return;
         } catch (error) {
             throw new InternalServerErrorException((error as Error).message);
+        }
+    }
+
+    async verifyEmail(
+        verifyEmailDto: VerifyEmailDto,
+    ): Promise<{ message: string }> {
+        try {
+            const { email, otp } = verifyEmailDto;
+            const user = await this.usersRepository.findOneByOtp(email, otp);
+
+            if (!user) {
+                throw new BadRequestException('Invalid OTP or email');
+            }
+
+            const currentTime = new Date();
+            if (currentTime > user.otpExpiry) {
+                throw new BadRequestException('OTP expired');
+            }
+
+            if (user.isEmailVerified) {
+                throw new BadRequestException('Email already verified');
+            }
+
+            await this.usersRepository.verifyEmail(email);
+
+            return { message: 'Email verified successfully' };
+        } catch (error) {
+            throw new InternalServerErrorException((error as Error).message);
+        }
+    }
+
+    async resendVerificationOtp(email: string): Promise<{ message: string }> {
+        try {
+            const user = await this.usersRepository.findOneByEmail(email);
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+
+            if (user.isEmailVerified) {
+                throw new BadRequestException('Email already verified');
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+            await this.usersRepository.updateOtp(email, otp, otpExpiry);
+
+            await this.mailerService.sendMail({
+                to: email,
+                subject: '[Auction Platform] Email Verification - Resend',
+                text: `Your new verification OTP is: ${otp}. This OTP will expire in 15 minutes.`,
+            });
+
+            return { message: 'Verification OTP resent successfully' };
+        } catch (error) {
+            throw new InternalServerErrorException((error as Error).message);
+        }
+    }
+
+    private async verifyRecaptcha(token: string): Promise<boolean> {
+        try {
+            const secretKey = this.configService.get('RECAPTCHA_SECRET_KEY');
+            if (!secretKey) {
+                return true;
+            }
+
+            const response = await axios.post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                null,
+                {
+                    params: {
+                        secret: secretKey,
+                        response: token,
+                    },
+                },
+            );
+
+            return response.data.success;
+        } catch (error) {
+            console.error(error);
+            return false;
         }
     }
 }

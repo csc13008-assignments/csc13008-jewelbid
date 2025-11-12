@@ -1,11 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsPhoneNumber, IsString } from 'class-validator';
+import {
+    IsEmail,
+    IsNotEmpty,
+    IsPhoneNumber,
+    IsString,
+    IsDateString,
+    IsOptional,
+} from 'class-validator';
 
 export class UserSignUpDto {
     @ApiProperty()
-    @IsNotEmpty({ message: 'Username cannot be empty' })
+    @IsNotEmpty({ message: 'Full name cannot be empty' })
     @IsString()
-    username: string;
+    fullname: string;
 
     @ApiProperty()
     @IsNotEmpty({ message: 'Email cannot be empty' })
@@ -21,4 +28,19 @@ export class UserSignUpDto {
     @IsNotEmpty({ message: 'Phone cannot be empty' })
     @IsPhoneNumber('VN', { message: 'Invalid phone number' })
     phone: string;
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'Address cannot be empty' })
+    @IsString()
+    address: string;
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'Birth date cannot be empty' })
+    @IsDateString({}, { message: 'Invalid birth date format' })
+    birthdate: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    recaptchaToken?: string;
 }
