@@ -50,10 +50,7 @@ export class UsersService {
             phone: string;
             address: string;
             birthdate: string;
-            salary: number;
             image: string;
-            workStart: string;
-            workEnd: string;
         }[]
     > {
         try {
@@ -67,10 +64,7 @@ export class UsersService {
                 phone: user.phone,
                 address: user.address,
                 birthdate: user.birthdate.toISOString(),
-                salary: user.salary,
                 image: user.profileImage,
-                workStart: user.workStart,
-                workEnd: user.workEnd,
             }));
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
@@ -85,11 +79,7 @@ export class UsersService {
         phone: string;
         address: string;
         image: string;
-        salary: number;
         birthdate: string;
-        workStart: string;
-        workEnd: string;
-        loyaltyPoints: number;
     }> {
         try {
             const { id } = profileUser;
@@ -107,11 +97,7 @@ export class UsersService {
                 phone: user.phone,
                 address: user.address,
                 image: user.profileImage,
-                salary: user.salary,
                 birthdate: user.birthdate.toISOString(),
-                workStart: user.workStart,
-                workEnd: user.workEnd,
-                loyaltyPoints: user.loyaltyPoints,
             };
             return newUser;
         } catch (error) {
@@ -129,7 +115,7 @@ export class UsersService {
             const adminEmail = this.configService.get('MAIL_FROM');
             await this.mailerService.sendMail({
                 to: adminEmail,
-                subject: `[Customer Feedback] From customer ${name}`,
+                subject: `[Jewelbid] Customer Feedback From ${name}`,
                 text: `
 New feedback received from customer:
 
@@ -140,14 +126,14 @@ Phone: ${phone}
 Message:
 ${message}
 
-This is an automated message from the Kafi POS System.
+This is an automated message from the Jewelbid.
                 `,
             });
 
             // Send confirmation to the customer
             await this.mailerService.sendMail({
                 to: email,
-                subject: 'Thank you for your feedback - Kafi',
+                subject: 'Thank you for your feedback - Jewelbid',
                 text: `
 Dear ${name},
 
@@ -156,7 +142,7 @@ Thank you for taking the time to provide us with your feedback. We greatly appre
 Your feedback has been received and will be reviewed by our team. If necessary, we will contact you for further information.
 
 Best regards,
-The Kafi Team
+The Jewelbid Team
                 `,
             });
 

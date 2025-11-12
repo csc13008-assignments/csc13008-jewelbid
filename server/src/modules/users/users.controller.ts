@@ -50,7 +50,7 @@ export class UsersController {
     })
     @UseGuards(ATAuthGuard, RolesGuard)
     @ApiBearerAuth('access-token')
-    @Roles(Role.MANAGER)
+    @Roles(Role.ADMIN)
     @HttpCode(200)
     async getProfiles(@Query('role') role: Role, @Res() res: Response) {
         if (role && !Object.values(Role).includes(role)) {
@@ -83,11 +83,7 @@ export class UsersController {
             phone: string;
             address: string;
             image: string;
-            salary: number;
             birthdate: string;
-            workStart: string;
-            workEnd: string;
-            loyaltyPoints: number;
         } = await this.usersService.getMyProfile(req.user);
         res.send(foundUser);
     }
@@ -116,7 +112,7 @@ export class UsersController {
         @Request() req: any,
         @Body() updateProfileDto: UpdateProfileDto,
     ) {
-        if (req.user.role === Role.GUEST || req.user.role === Role.MANAGER) {
+        if (req.user.role === Role.BIDDER || req.user.role === Role.SELLER) {
             return this.usersService.updateProfile(
                 req.user.id,
                 updateProfileDto,
@@ -135,7 +131,7 @@ export class UsersController {
         type: ProfileDto,
     })
     @UseGuards(ATAuthGuard, RolesGuard)
-    @Roles(Role.MANAGER)
+    @Roles(Role.ADMIN)
     async createEmployee(@Body() createEmployeeDto: CreateEmployeeDto) {
         return this.usersService.createEmployee(createEmployeeDto);
     }
@@ -149,7 +145,7 @@ export class UsersController {
         type: ProfileDto,
     })
     @UseGuards(ATAuthGuard, RolesGuard)
-    @Roles(Role.MANAGER)
+    @Roles(Role.ADMIN)
     async updateEmployee(
         @Param('id') id: string,
         @Body() updateEmployeeDto: UpdateEmployeeDto,
@@ -165,7 +161,7 @@ export class UsersController {
         description: 'Delete employee successfully',
     })
     @UseGuards(ATAuthGuard, RolesGuard)
-    @Roles(Role.MANAGER)
+    @Roles(Role.ADMIN)
     async deleteEmployee(@Param('id') id: string) {
         return this.usersService.deleteEmployee(id);
     }

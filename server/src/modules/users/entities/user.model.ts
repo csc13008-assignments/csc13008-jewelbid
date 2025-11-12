@@ -105,62 +105,14 @@ export class User extends BaseEntity {
     @ApiProperty({
         description: 'User role in the system',
         enum: Role,
-        example: Role.GUEST,
+        example: Role.BIDDER,
     })
     @Column({
         type: 'enum',
         enum: Role,
-        default: Role.GUEST,
+        default: Role.BIDDER,
     })
     role: Role;
-
-    // For employee
-    @ApiProperty({
-        description: 'Employee salary (for employee role)',
-        example: 50000,
-        default: 0,
-    })
-    @Column({
-        type: 'int',
-        nullable: false,
-        default: 0,
-    })
-    salary: number;
-
-    @ApiProperty({
-        description: 'Work start time (for employee role)',
-        example: '09:00:00',
-        required: false,
-    })
-    @Column({
-        type: 'time',
-        nullable: true,
-    })
-    workStart?: string;
-
-    @ApiProperty({
-        description: 'Work end time (for employee role)',
-        example: '17:00:00',
-        required: false,
-    })
-    @Column({
-        type: 'time',
-        nullable: true,
-    })
-    workEnd?: string;
-
-    // For customer
-    @ApiProperty({
-        description: 'Customer loyalty points',
-        example: 1500,
-        default: 0,
-    })
-    @Column({
-        type: 'int',
-        nullable: false,
-        default: 0,
-    })
-    loyaltyPoints: number;
 
     @ApiProperty({
         description: 'Profile image URL',
