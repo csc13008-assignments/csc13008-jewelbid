@@ -1,7 +1,7 @@
 name: lint
 on: [push, pull_request]
 jobs:
-    lint-prettier-server:
+    build:
         runs-on: ubuntu-22.04
         steps:
             - name: Checkout repository
@@ -13,7 +13,24 @@ jobs:
                   node-version: '22'
 
             - name: Install dependencies
-              run: cd server && npm install
+              run: npm install
 
-            - name: Run ESLint server
-              run: cd server && npm run lint
+            - name: Run build
+              run: npm run build
+
+    lint:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v2
+              with:
+                  node-version: '22'
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Run ESLint
+              run: npm run lint
