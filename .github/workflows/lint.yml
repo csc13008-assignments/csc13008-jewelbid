@@ -18,7 +18,7 @@ jobs:
             - name: Run build
               run: cd server && npm run build
 
-    lint:
+    lint-server:
         runs-on: ubuntu-22.04
         steps:
             - name: Checkout repository
@@ -30,7 +30,7 @@ jobs:
                   node-version: '22'
 
             - name: Install dependencies
-              run: npm install
+              run: cd server && npm install
 
             - name: Run ESLint
-              run: npm run lint
+              run: cd server && npm run lint
