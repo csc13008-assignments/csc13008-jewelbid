@@ -95,8 +95,6 @@ export class UsersRepository {
             birthdate: birthdate,
             salary: salary,
             password: hashedPassword,
-            otp: null,
-            otpExpiry: null,
             isEmailVerified: true,
             role: Role.EMPLOYEE,
             workStart: workStart,
@@ -125,8 +123,6 @@ export class UsersRepository {
             address: address,
             birthdate: new Date(birthdate),
             password: hashedPassword,
-            otp: null,
-            otpExpiry: null,
             isEmailVerified: false,
             loyaltyPoints: 0,
             role: Role.GUEST,
@@ -264,22 +260,7 @@ export class UsersRepository {
         try {
             await this.userRepository.update(
                 { email: email },
-                { password: password, otp: null, otpExpiry: null },
-            );
-        } catch (error: any) {
-            throw new InternalServerErrorException((error as Error).message);
-        }
-    }
-
-    async updateOtp(
-        email: string,
-        otp: string,
-        otpExpiry: Date,
-    ): Promise<void> {
-        try {
-            await this.userRepository.update(
-                { email: email },
-                { otp: otp, otpExpiry: otpExpiry },
+                { password: password },
             );
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
@@ -296,29 +277,6 @@ export class UsersRepository {
 
     async deleteByRefreshToken(refreshToken: string): Promise<void> {
         await this.redisClient.del(`refreshToken:${refreshToken}`);
-    }
-
-    async findOneByOtp(email: string, otp: string): Promise<User> {
-        try {
-            const user = await this.userRepository.findOne({
-                where: { email, otp },
-            });
-            return user;
-        } catch (error) {
-            throw new InternalServerErrorException((error as Error).message);
-        }
-    }
-
-    async findByOtpOnly(email: string, otp: string): Promise<User> {
-        const user = await this.userRepository.findOne({
-            where: { email, otp },
-        });
-        if (!user) {
-            throw new InternalServerErrorException(
-                `User ${email} with the OTP not found`,
-            );
-        }
-        return user;
     }
 
     async updateProfileImage(id: string, imageUrl: string): Promise<void> {
@@ -348,7 +306,7 @@ export class UsersRepository {
         try {
             await this.userRepository.update(
                 { email },
-                { isEmailVerified: true, otp: null, otpExpiry: null },
+                { isEmailVerified: true },
             );
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);

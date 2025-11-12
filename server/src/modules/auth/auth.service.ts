@@ -15,6 +15,7 @@ import { UserSignUpDto } from './dtos/user-signup.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { Role } from './enums/roles.enum';
 import { MailerService } from '@nestjs-modules/mailer';
+import { RedisTokenService } from './services/redis-token.service';
 import axios from 'axios';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly mailerService: MailerService,
+        private readonly redisTokenService: RedisTokenService,
     ) {}
 
     public async validateUser(
@@ -86,7 +88,9 @@ export class AuthService {
                 user.id,
                 refreshToken,
             );
-            await this.usersRepository.updateOtp(user.id, null, null);
+
+            // Store access token in Redis
+            await this.redisTokenService.storeAccessToken(user.id, accessToken);
 
             return { accessToken, refreshToken };
         } catch (error: any) {
@@ -115,9 +119,9 @@ export class AuthService {
             const newUser = await this.usersRepository.createCustomer(user);
 
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
-            await this.usersRepository.updateOtp(newUser.email, otp, otpExpiry);
+            // Store OTP in Redis with 15 minutes expiration
+            await this.redisTokenService.storeOtp(newUser.email, otp, 15);
 
             await this.mailerService.sendMail({
                 to: newUser.email,
@@ -138,6 +142,8 @@ export class AuthService {
     public async signOut(user: UserLoginDto): Promise<void> {
         try {
             await this.usersRepository.updateRefreshToken(user.id, 'null');
+            // Remove access token from Redis
+            await this.redisTokenService.removeAccessToken(user.id);
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
         }
@@ -185,6 +191,9 @@ export class AuthService {
                 secret: this.configService.get('AT_SECRET'),
             });
 
+            // Store new access token in Redis
+            await this.redisTokenService.storeAccessToken(payload.id, newAT);
+
             return { accessToken: newAT, refreshToken: refreshToken };
         } catch (error: any) {
             await this.usersRepository.deleteByRefreshToken(refreshToken);
@@ -201,13 +210,13 @@ export class AuthService {
             if (!user) throw new NotFoundException('User not found');
 
             const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
-            await this.usersRepository.updateOtp(email, otp, otpExpiry);
+            // Store OTP in Redis with 15 minutes expiration
+            await this.redisTokenService.storeOtp(email, otp, 15);
 
             await this.mailerService.sendMail({
                 to: email,
-                subject: '[Kafi - POS System] Reset Password OTP',
+                subject: '[Auction Platform] Reset Password OTP',
                 text: `Please do not reply this message. \n Your OTP is: ${otp}`,
             });
 
@@ -257,17 +266,22 @@ export class AuthService {
         confirmPassword: string,
     ): Promise<void> {
         try {
-            const user = await this.usersRepository.findByOtpOnly(email, otp);
+            // Verify OTP from Redis
+            const isValidOtp = await this.redisTokenService.verifyOtp(
+                email,
+                otp,
+            );
+            if (!isValidOtp) {
+                throw new BadRequestException('Invalid or expired OTP');
+            }
 
-            if (!user) throw new BadRequestException('Invalid OTP');
+            const user = await this.usersRepository.findOneByEmail(email);
+            if (!user) {
+                throw new BadRequestException('User not found');
+            }
 
             if (newPassword !== confirmPassword) {
                 throw new BadRequestException('Passwords do not match');
-            }
-
-            const currentTime = new Date();
-            if (currentTime > user.otpExpiry) {
-                throw new BadRequestException('OTP expired');
             }
 
             const hashedPassword =
@@ -284,15 +298,19 @@ export class AuthService {
     ): Promise<{ message: string }> {
         try {
             const { email, otp } = verifyEmailDto;
-            const user = await this.usersRepository.findOneByOtp(email, otp);
 
-            if (!user) {
-                throw new BadRequestException('Invalid OTP or email');
+            // Verify OTP from Redis
+            const isValidOtp = await this.redisTokenService.verifyOtp(
+                email,
+                otp,
+            );
+            if (!isValidOtp) {
+                throw new BadRequestException('Invalid or expired OTP');
             }
 
-            const currentTime = new Date();
-            if (currentTime > user.otpExpiry) {
-                throw new BadRequestException('OTP expired');
+            const user = await this.usersRepository.findOneByEmail(email);
+            if (!user) {
+                throw new BadRequestException('User not found');
             }
 
             if (user.isEmailVerified) {
@@ -319,9 +337,9 @@ export class AuthService {
             }
 
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
-            await this.usersRepository.updateOtp(email, otp, otpExpiry);
+            // Store new OTP in Redis with 15 minutes expiration
+            await this.redisTokenService.storeOtp(email, otp, 15);
 
             await this.mailerService.sendMail({
                 to: email,

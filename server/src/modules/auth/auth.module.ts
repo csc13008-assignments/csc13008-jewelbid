@@ -10,6 +10,7 @@ import { AccessTokenStrategy } from './strategies/at.strategy';
 import { RefreshTokenStrategy } from './strategies/rt.strategy';
 import { AccessControlService } from '../ac/ac.service';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { RedisTokenService } from './services/redis-token.service';
 @Module({
     imports: [
         UsersModule,
@@ -50,6 +51,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         AccessTokenStrategy,
         RefreshTokenStrategy,
         AccessControlService,
+        RedisTokenService,
     ],
 })
 export class AuthModule {}

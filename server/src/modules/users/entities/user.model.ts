@@ -69,28 +69,6 @@ export class User extends BaseEntity {
     birthdate: Date;
 
     @ApiProperty({
-        description: 'One-time password for authentication',
-        example: '123456',
-        required: false,
-    })
-    @Column({
-        type: 'varchar',
-        nullable: true,
-    })
-    otp?: string;
-
-    @ApiProperty({
-        description: 'OTP expiry timestamp',
-        example: '2024-01-01T00:05:00.000Z',
-        required: false,
-    })
-    @Column({
-        type: 'timestamp',
-        nullable: true,
-    })
-    otpExpiry?: Date;
-
-    @ApiProperty({
         description: 'Email verification status',
         example: false,
         default: false,
