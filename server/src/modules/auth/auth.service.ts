@@ -12,8 +12,11 @@ import {
 } from '@nestjs/common';
 import { User } from '../users/entities/user.model';
 import { UserSignUpDto } from './dtos/user-signup.dto';
+import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { Role } from './enums/roles.enum';
 import { MailerService } from '@nestjs-modules/mailer';
+import { RedisTokenService } from './services/redis-token.service';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +25,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly mailerService: MailerService,
+        private readonly redisTokenService: RedisTokenService,
     ) {}
 
     public async validateUser(
@@ -31,6 +35,12 @@ export class AuthService {
         const user = await this.usersRepository.findOneByEmail(username);
         if (!user) {
             return null;
+        }
+
+        if (!user.isEmailVerified) {
+            throw new UnauthorizedException(
+                'Please verify your email before signing in',
+            );
         }
 
         const isValidPassword: boolean =
@@ -48,7 +58,7 @@ export class AuthService {
             const payloadAccessToken = {
                 id: user.id,
                 email: user.email,
-                username: user.username,
+                fullname: user.fullname,
                 role: user.role,
             };
 
@@ -78,7 +88,9 @@ export class AuthService {
                 user.id,
                 refreshToken,
             );
-            await this.usersRepository.updateOtp(user.id, null, null);
+
+            // Store access token in Redis
+            await this.redisTokenService.storeAccessToken(user.id, accessToken);
 
             return { accessToken, refreshToken };
         } catch (error: any) {
@@ -86,32 +98,42 @@ export class AuthService {
         }
     }
 
-    public async signUp(user: UserSignUpDto): Promise<Partial<User>> {
+    public async signUp(
+        user: UserSignUpDto,
+    ): Promise<{ message: string; email: string }> {
         const foundUser = await this.usersRepository.findOneByEmail(user.email);
         if (foundUser) {
             throw new BadRequestException('User already exists');
         }
 
+        if (user.recaptchaToken) {
+            const isValidRecaptcha = await this.verifyRecaptcha(
+                user.recaptchaToken,
+            );
+            if (!isValidRecaptcha) {
+                throw new BadRequestException('Invalid reCAPTCHA');
+            }
+        }
+
         try {
-            const newUser = await this.usersRepository.createCustomer(user);
-            const formattedUser: {
-                id: string;
-                profileImage: string;
-                username: string;
-                email: string;
-                phone: string;
-                role: Role;
-                loyaltyPoints: number;
-            } = {
-                id: newUser.id,
-                profileImage: newUser.profileImage,
-                username: newUser.username,
+            const newUser = await this.usersRepository.createUser(user);
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Store OTP in Redis with 15 minutes expiration
+            await this.redisTokenService.storeOtp(newUser.email, otp, 15);
+
+            await this.mailerService.sendMail({
+                to: newUser.email,
+                subject: '[Auction Platform] Email Verification',
+                text: `Welcome to our auction platform! Please verify your email with this OTP: ${otp}. This OTP will expire in 15 minutes.`,
+            });
+
+            return {
+                message:
+                    'Registration successful. Please check your email for verification code.',
                 email: newUser.email,
-                phone: newUser.phone,
-                role: newUser.role,
-                loyaltyPoints: newUser.loyaltyPoints,
             };
-            return formattedUser;
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
         }
@@ -120,6 +142,8 @@ export class AuthService {
     public async signOut(user: UserLoginDto): Promise<void> {
         try {
             await this.usersRepository.updateRefreshToken(user.id, 'null');
+            // Remove access token from Redis
+            await this.redisTokenService.removeAccessToken(user.id);
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
         }
@@ -158,7 +182,7 @@ export class AuthService {
 
             const payloadAccessToken = {
                 id: payload.id,
-                username: user.username,
+                fullname: user.fullname,
                 role: payload.role,
             };
 
@@ -166,6 +190,9 @@ export class AuthService {
                 expiresIn: '1h',
                 secret: this.configService.get('AT_SECRET'),
             });
+
+            // Store new access token in Redis
+            await this.redisTokenService.storeAccessToken(payload.id, newAT);
 
             return { accessToken: newAT, refreshToken: refreshToken };
         } catch (error: any) {
@@ -183,33 +210,15 @@ export class AuthService {
             if (!user) throw new NotFoundException('User not found');
 
             const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
-            await this.usersRepository.updateOtp(email, otp, otpExpiry);
+            // Store OTP in Redis with 15 minutes expiration
+            await this.redisTokenService.storeOtp(email, otp, 15);
 
             await this.mailerService.sendMail({
                 to: email,
-                subject: '[Kafi - POS System] Reset Password OTP',
+                subject: '[Auction Platform] Reset Password OTP',
                 text: `Please do not reply this message. \n Your OTP is: ${otp}`,
             });
-
-            return;
-        } catch (error) {
-            throw new InternalServerErrorException((error as Error).message);
-        }
-    }
-
-    async verifyOtp(email: string, otp: string): Promise<void> {
-        try {
-            const user = await this.usersRepository.findOneByOtp(email, otp);
-
-            if (!user) throw new BadRequestException('Invalid OTP');
-
-            const currentTime = new Date();
-
-            if (currentTime > user.otpExpiry) {
-                throw new BadRequestException('OTP expired');
-            }
 
             return;
         } catch (error) {
@@ -257,17 +266,22 @@ export class AuthService {
         confirmPassword: string,
     ): Promise<void> {
         try {
-            const user = await this.usersRepository.findByOtpOnly(email, otp);
+            // Verify OTP from Redis
+            const isValidOtp = await this.redisTokenService.verifyOtp(
+                email,
+                otp,
+            );
+            if (!isValidOtp) {
+                throw new BadRequestException('Invalid or expired OTP');
+            }
 
-            if (!user) throw new BadRequestException('Invalid OTP');
+            const user = await this.usersRepository.findOneByEmail(email);
+            if (!user) {
+                throw new BadRequestException('User not found');
+            }
 
             if (newPassword !== confirmPassword) {
                 throw new BadRequestException('Passwords do not match');
-            }
-
-            const currentTime = new Date();
-            if (currentTime > user.otpExpiry) {
-                throw new BadRequestException('OTP expired');
             }
 
             const hashedPassword =
@@ -276,6 +290,90 @@ export class AuthService {
             return;
         } catch (error) {
             throw new InternalServerErrorException((error as Error).message);
+        }
+    }
+
+    async verifyEmail(
+        verifyEmailDto: VerifyEmailDto,
+    ): Promise<{ message: string }> {
+        try {
+            const { email, otp } = verifyEmailDto;
+
+            // Verify OTP from Redis
+            const isValidOtp = await this.redisTokenService.verifyOtp(
+                email,
+                otp,
+            );
+            if (!isValidOtp) {
+                throw new BadRequestException('Invalid or expired OTP');
+            }
+
+            const user = await this.usersRepository.findOneByEmail(email);
+            if (!user) {
+                throw new BadRequestException('User not found');
+            }
+
+            if (user.isEmailVerified) {
+                throw new BadRequestException('Email already verified');
+            }
+
+            await this.usersRepository.verifyEmail(email);
+
+            return { message: 'Email verified successfully' };
+        } catch (error) {
+            throw new InternalServerErrorException((error as Error).message);
+        }
+    }
+
+    async resendVerificationOtp(email: string): Promise<{ message: string }> {
+        try {
+            const user = await this.usersRepository.findOneByEmail(email);
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+
+            if (user.isEmailVerified) {
+                throw new BadRequestException('Email already verified');
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Store new OTP in Redis with 15 minutes expiration
+            await this.redisTokenService.storeOtp(email, otp, 15);
+
+            await this.mailerService.sendMail({
+                to: email,
+                subject: '[Jewelbid] Email Verification - Resend',
+                text: `Your new verification OTP is: ${otp}. This OTP will expire in 15 minutes.`,
+            });
+
+            return { message: 'Verification OTP resent successfully' };
+        } catch (error) {
+            throw new InternalServerErrorException((error as Error).message);
+        }
+    }
+
+    private async verifyRecaptcha(token: string): Promise<boolean> {
+        try {
+            const secretKey = this.configService.get('RECAPTCHA_SECRET_KEY');
+            if (!secretKey) {
+                return true;
+            }
+            const response = await axios.post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                null,
+                {
+                    params: {
+                        secret: secretKey,
+                        response: token,
+                    },
+                },
+            );
+
+            return response.data.success;
+        } catch (error) {
+            console.error(error);
+            return false;
         }
     }
 }

@@ -12,7 +12,7 @@ export class AccessControlService {
     private priority: number = 1;
 
     constructor() {
-        this.buildRoles([Role.GUEST, Role.EMPLOYEE, Role.MANAGER]);
+        this.buildRoles([Role.BIDDER, Role.SELLER, Role.ADMIN]);
     }
 
     private buildRoles(roles: Role[]) {

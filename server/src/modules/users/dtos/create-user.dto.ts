@@ -9,7 +9,7 @@ import {
 export class CreateEmployeeDto {
     @ApiProperty()
     @IsString()
-    username: string;
+    fullname: string;
 
     @ApiProperty()
     @IsString()

@@ -1,20 +1,20 @@
 import { Entity, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '../../auth/enums/roles.enum';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { BaseEntity } from '../../../common/entities/base.model';
 
 @Entity('accounts')
 export class User extends BaseEntity {
     // Basic info
     @ApiProperty({
-        description: 'Username of the user',
-        example: 'john_doe',
+        description: 'Full name of the user',
+        example: 'John Doe',
     })
     @Column({
         type: 'varchar',
         nullable: false,
     })
-    username: string;
+    fullname: string;
 
     @ApiProperty({
         description: 'Email address of the user',
@@ -69,86 +69,28 @@ export class User extends BaseEntity {
     birthdate: Date;
 
     @ApiProperty({
-        description: 'One-time password for authentication',
-        example: '123456',
-        required: false,
+        description: 'Email verification status',
+        example: false,
+        default: false,
     })
     @Column({
-        type: 'varchar',
-        nullable: true,
+        type: 'boolean',
+        nullable: false,
+        default: false,
     })
-    otp?: string;
-
-    @ApiProperty({
-        description: 'OTP expiry timestamp',
-        example: '2024-01-01T00:05:00.000Z',
-        required: false,
-    })
-    @Column({
-        type: 'timestamp',
-        nullable: true,
-    })
-    otpExpiry?: Date;
+    isEmailVerified: boolean;
 
     @ApiProperty({
         description: 'User role in the system',
         enum: Role,
-        example: Role.GUEST,
+        example: Role.BIDDER,
     })
     @Column({
         type: 'enum',
         enum: Role,
-        default: Role.GUEST,
+        default: Role.BIDDER,
     })
     role: Role;
-
-    // For employee
-    @ApiProperty({
-        description: 'Employee salary (for employee role)',
-        example: 50000,
-        default: 0,
-    })
-    @Column({
-        type: 'int',
-        nullable: false,
-        default: 0,
-    })
-    salary: number;
-
-    @ApiProperty({
-        description: 'Work start time (for employee role)',
-        example: '09:00:00',
-        required: false,
-    })
-    @Column({
-        type: 'time',
-        nullable: true,
-    })
-    workStart?: string;
-
-    @ApiProperty({
-        description: 'Work end time (for employee role)',
-        example: '17:00:00',
-        required: false,
-    })
-    @Column({
-        type: 'time',
-        nullable: true,
-    })
-    workEnd?: string;
-
-    // For customer
-    @ApiProperty({
-        description: 'Customer loyalty points',
-        example: 1500,
-        default: 0,
-    })
-    @Column({
-        type: 'int',
-        nullable: false,
-        default: 0,
-    })
-    loyaltyPoints: number;
 
     @ApiProperty({
         description: 'Profile image URL',

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.model';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
 import { UserSignUpDto } from '../auth/dtos/user-signup.dto';
@@ -33,10 +33,12 @@ export class UsersRepository {
 
     async hashPassword(password: string): Promise<string> {
         try {
-            const salt: string = await bcrypt.genSalt(
-                parseInt(this.configService.get('SALT'), 10),
-            );
-
+            const configSalt = this.configService.get('SALT');
+            if (!configSalt) {
+                throw new InternalServerErrorException('Salt not found');
+            }
+            const saltRounds = parseInt(configSalt);
+            const salt: string = await bcrypt.genSalt(saltRounds);
             const hashedPassword: string = await bcrypt.hash(password, salt);
 
             return hashedPassword;
@@ -52,79 +54,20 @@ export class UsersRepository {
         return user;
     }
 
-    async updateLoyaltyPoints(
-        phoneNumber: string,
-        points: number,
-    ): Promise<void> {
-        await this.userRepository.update(
-            { phone: phoneNumber },
-            { loyaltyPoints: points },
-        );
-    }
-
-    async createEmployee(CreateDto: CreateEmployeeDto): Promise<User> {
-        const {
-            username,
-            email,
-            phone,
-            address,
-            birthdate,
-            salary,
-            workStart,
-            workEnd,
-        } = CreateDto;
-
-        const password =
-            this.configService.get('DEFAULT_EMPLOYEE_PASSWORD') ||
-            this.generateRandomPassword();
-
-        await this.mailerService.sendMail({
-            to: email,
-            subject: '[Kafi - POS System] Welcome you to Kafi',
-            text: `Welcome you to onboard. As your account is created, your password is: ${password} \n After logging in our Kafi POS System, please change your password to a more secure one. \n Please do not reply this message.`,
-        });
+    async createUser(CreateDto: UserSignUpDto): Promise<User> {
+        const { fullname, email, password, phone, address, birthdate } =
+            CreateDto;
         const hashedPassword = await this.hashPassword(password);
 
         const user = this.userRepository.create({
-            username: username,
+            fullname: fullname,
             email: email,
             phone: phone,
             address: address,
-            birthdate: birthdate,
-            salary: salary,
+            birthdate: new Date(birthdate),
             password: hashedPassword,
-            otp: null,
-            otpExpiry: null,
-            role: Role.EMPLOYEE,
-            workStart: workStart,
-            workEnd: workEnd,
-        });
-
-        const savedUser = await this.userRepository.save(user);
-
-        if (!savedUser) {
-            throw new InternalServerErrorException(
-                'Error occurs when creating employee',
-            );
-        }
-        return savedUser;
-    }
-
-    async createCustomer(CreateDto: UserSignUpDto): Promise<User> {
-        const { username, email, password, phone } = CreateDto;
-        const hashedPassword = await this.hashPassword(password);
-
-        const user = this.userRepository.create({
-            username: username,
-            email: email,
-            phone: phone,
-            address: 'null',
-            birthdate: new Date('1990-01-01'),
-            password: hashedPassword,
-            otp: null,
-            otpExpiry: null,
-            loyaltyPoints: 0,
-            role: Role.GUEST,
+            isEmailVerified: false,
+            role: Role.BIDDER,
         });
 
         const savedUser = await this.userRepository.save(user);
@@ -159,10 +102,10 @@ export class UsersRepository {
         }
     }
 
-    async findOneByUsername(username: string): Promise<User> {
+    async findOneByFullname(fullname: string): Promise<User> {
         try {
             const user = await this.userRepository.findOne({
-                where: { username },
+                where: { fullname },
             });
 
             return user;
@@ -259,22 +202,7 @@ export class UsersRepository {
         try {
             await this.userRepository.update(
                 { email: email },
-                { password: password, otp: null, otpExpiry: null },
-            );
-        } catch (error: any) {
-            throw new InternalServerErrorException((error as Error).message);
-        }
-    }
-
-    async updateOtp(
-        email: string,
-        otp: string,
-        otpExpiry: Date,
-    ): Promise<void> {
-        try {
-            await this.userRepository.update(
-                { email: email },
-                { otp: otp, otpExpiry: otpExpiry },
+                { password: password },
             );
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
@@ -291,29 +219,6 @@ export class UsersRepository {
 
     async deleteByRefreshToken(refreshToken: string): Promise<void> {
         await this.redisClient.del(`refreshToken:${refreshToken}`);
-    }
-
-    async findOneByOtp(email: string, otp: string): Promise<User> {
-        try {
-            const user = await this.userRepository.findOne({
-                where: { email, otp },
-            });
-            return user;
-        } catch (error) {
-            throw new InternalServerErrorException((error as Error).message);
-        }
-    }
-
-    async findByOtpOnly(email: string, otp: string): Promise<User> {
-        const user = await this.userRepository.findOne({
-            where: { email, otp },
-        });
-        if (!user) {
-            throw new InternalServerErrorException(
-                `User ${email} with the OTP not found`,
-            );
-        }
-        return user;
     }
 
     async updateProfileImage(id: string, imageUrl: string): Promise<void> {
@@ -337,5 +242,16 @@ export class UsersRepository {
             where: { role },
         });
         return count;
+    }
+
+    async verifyEmail(email: string): Promise<void> {
+        try {
+            await this.userRepository.update(
+                { email },
+                { isEmailVerified: true },
+            );
+        } catch (error: any) {
+            throw new InternalServerErrorException((error as Error).message);
+        }
     }
 }

@@ -11,7 +11,7 @@ import { CreateEmployeeDto } from './create-user.dto';
 export class UpdateProfileDto {
     @ApiProperty({ required: false })
     @IsString()
-    username?: string;
+    fullname?: string;
 
     @ApiProperty({ required: false })
     @IsString()
@@ -55,7 +55,7 @@ export class UpdateEmployeeDto extends PartialType(CreateEmployeeDto) {
     @ApiProperty({ required: false })
     @IsOptional()
     @IsString()
-    username?: string;
+    fullname?: string;
 
     @ApiProperty({ required: false })
     @IsOptional()

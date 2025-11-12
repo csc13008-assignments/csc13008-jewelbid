@@ -4,7 +4,7 @@ import { IsDateString, IsNumber, IsString } from 'class-validator';
 export class CredDto {
     @ApiProperty()
     @IsString()
-    username: string;
+    fullname: string;
 
     @ApiProperty()
     @IsString()
@@ -18,7 +18,7 @@ export class ProfileDto {
 
     @ApiProperty()
     @IsString()
-    username: string;
+    fullname: string;
 
     @ApiProperty()
     @IsString()
