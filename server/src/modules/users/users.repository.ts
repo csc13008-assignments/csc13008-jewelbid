@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.model';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
 import { UserSignUpDto } from '../auth/dtos/user-signup.dto';
@@ -33,10 +33,12 @@ export class UsersRepository {
 
     async hashPassword(password: string): Promise<string> {
         try {
-            const salt: string = await bcrypt.genSalt(
-                parseInt(this.configService.get('SALT'), 10),
-            );
-
+            const configSalt = this.configService.get('SALT');
+            if (!configSalt) {
+                throw new InternalServerErrorException('Salt not found');
+            }
+            const saltRounds = parseInt(configSalt);
+            const salt: string = await bcrypt.genSalt(saltRounds);
             const hashedPassword: string = await bcrypt.hash(password, salt);
 
             return hashedPassword;

@@ -325,7 +325,7 @@ export class AuthService {
 
             await this.mailerService.sendMail({
                 to: email,
-                subject: '[Auction Platform] Email Verification - Resend',
+                subject: '[Jewelbid] Email Verification - Resend',
                 text: `Your new verification OTP is: ${otp}. This OTP will expire in 15 minutes.`,
             });
 
@@ -341,7 +341,6 @@ export class AuthService {
             if (!secretKey) {
                 return true;
             }
-
             const response = await axios.post(
                 'https://www.google.com/recaptcha/api/siteverify',
                 null,
