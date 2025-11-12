@@ -1,7 +1,7 @@
 name: lint
 on: [push, pull_request]
 jobs:
-    build:
+    build-server:
         runs-on: ubuntu-22.04
         steps:
             - name: Checkout repository
@@ -13,10 +13,10 @@ jobs:
                   node-version: '22'
 
             - name: Install dependencies
-              run: npm install
+              run: cd server && npm install
 
             - name: Run build
-              run: npm run build
+              run: cd server && npm run build
 
     lint:
         runs-on: ubuntu-22.04
