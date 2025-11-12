@@ -116,7 +116,7 @@ export class AuthService {
         }
 
         try {
-            const newUser = await this.usersRepository.createCustomer(user);
+            const newUser = await this.usersRepository.createUser(user);
 
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
 

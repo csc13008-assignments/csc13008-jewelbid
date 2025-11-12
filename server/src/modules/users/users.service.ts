@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { User } from './entities/user.model';
-import { CreateEmployeeDto } from './dtos/create-user.dto';
 import { Role } from '../auth/enums/roles.enum';
 import { UpdateEmployeeDto, UpdateProfileDto } from './dtos/update-user.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
@@ -18,10 +17,6 @@ export class UsersService {
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
     ) {}
-
-    async createEmployee(createEmployeeDto: CreateEmployeeDto): Promise<User> {
-        return this.usersRepository.createEmployee(createEmployeeDto);
-    }
 
     async updateProfile(
         id: string,

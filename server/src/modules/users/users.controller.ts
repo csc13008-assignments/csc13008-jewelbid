@@ -27,7 +27,6 @@ import { Role } from '../auth/enums/roles.enum';
 import { ATAuthGuard } from '../auth/guards/at-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ProfileDto } from '../auth/dtos/cred.dto';
-import { CreateEmployeeDto } from './dtos/create-user.dto';
 import { UpdateEmployeeDto, UpdateProfileDto } from './dtos/update-user.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
 @Controller('users')
@@ -120,20 +119,6 @@ export class UsersController {
         }
 
         return this.usersService.updateEmployee(req.user.id, updateProfileDto);
-    }
-
-    @ApiOperation({ summary: 'Create employee [MANAGER]' })
-    @ApiBearerAuth('access-token')
-    @Post('employee')
-    @ApiResponse({
-        status: 200,
-        description: 'Create employee successfully',
-        type: ProfileDto,
-    })
-    @UseGuards(ATAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
-    async createEmployee(@Body() createEmployeeDto: CreateEmployeeDto) {
-        return this.usersService.createEmployee(createEmployeeDto);
     }
 
     @ApiOperation({ summary: 'Update employee [MANAGER]' })

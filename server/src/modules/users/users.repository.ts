@@ -54,64 +54,7 @@ export class UsersRepository {
         return user;
     }
 
-    async updateLoyaltyPoints(
-        phoneNumber: string,
-        points: number,
-    ): Promise<void> {
-        await this.userRepository.update(
-            { phone: phoneNumber },
-            { loyaltyPoints: points },
-        );
-    }
-
-    async createEmployee(CreateDto: CreateEmployeeDto): Promise<User> {
-        const {
-            fullname,
-            email,
-            phone,
-            address,
-            birthdate,
-            salary,
-            workStart,
-            workEnd,
-        } = CreateDto;
-
-        const password =
-            this.configService.get('DEFAULT_EMPLOYEE_PASSWORD') ||
-            this.generateRandomPassword();
-
-        await this.mailerService.sendMail({
-            to: email,
-            subject: '[Kafi - POS System] Welcome you to Kafi',
-            text: `Welcome you to onboard. As your account is created, your password is: ${password} \n After logging in our Kafi POS System, please change your password to a more secure one. \n Please do not reply this message.`,
-        });
-        const hashedPassword = await this.hashPassword(password);
-
-        const user = this.userRepository.create({
-            fullname: fullname,
-            email: email,
-            phone: phone,
-            address: address,
-            birthdate: birthdate,
-            salary: salary,
-            password: hashedPassword,
-            isEmailVerified: true,
-            role: Role.EMPLOYEE,
-            workStart: workStart,
-            workEnd: workEnd,
-        });
-
-        const savedUser = await this.userRepository.save(user);
-
-        if (!savedUser) {
-            throw new InternalServerErrorException(
-                'Error occurs when creating employee',
-            );
-        }
-        return savedUser;
-    }
-
-    async createCustomer(CreateDto: UserSignUpDto): Promise<User> {
+    async createUser(CreateDto: UserSignUpDto): Promise<User> {
         const { fullname, email, password, phone, address, birthdate } =
             CreateDto;
         const hashedPassword = await this.hashPassword(password);
@@ -124,8 +67,7 @@ export class UsersRepository {
             birthdate: new Date(birthdate),
             password: hashedPassword,
             isEmailVerified: false,
-            loyaltyPoints: 0,
-            role: Role.GUEST,
+            role: Role.BIDDER,
         });
 
         const savedUser = await this.userRepository.save(user);
