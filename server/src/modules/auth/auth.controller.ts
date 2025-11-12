@@ -6,7 +6,6 @@ import {
     UseGuards,
     Request,
     Res,
-    Get,
     Delete,
     Put,
 } from '@nestjs/common';
@@ -103,7 +102,7 @@ export class AuthController {
         summary:
             'Refresh tokens with credentials. Provide refresh token, not access token to the field',
     })
-    @Get('refresh-token')
+    @Put('refresh-token')
     @UseGuards(RTAuthGuard)
     @ApiResponse({
         status: 200,
