@@ -4,16 +4,20 @@ import {
     InternalServerErrorException,
 } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
+import { UsersRatingRepository } from './users-rating.repository';
 import { User } from './entities/user.model';
+import { Rating } from './entities/rating.model';
 import { Role } from '../auth/enums/roles.enum';
 import { UpdateProfileDto } from './dtos/update-user.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
+import { CreateRatingDto, UpdateRatingDto } from './dtos/rating.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class UsersService {
     constructor(
         private readonly usersRepository: UsersRepository,
+        private readonly usersRatingRepository: UsersRatingRepository,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
     ) {}
@@ -138,5 +142,133 @@ The Jewelbid Team
                 error.message,
             );
         }
+    }
+
+    async createRating(
+        createRatingDto: CreateRatingDto,
+        fromUserId: string,
+    ): Promise<Rating> {
+        return await this.usersRatingRepository.createRating(
+            createRatingDto,
+            fromUserId,
+        );
+    }
+
+    async updateRating(
+        ratingId: string,
+        fromUserId: string,
+        updateRatingDto: UpdateRatingDto,
+    ): Promise<Rating> {
+        return await this.usersRatingRepository.updateRating(
+            ratingId,
+            fromUserId,
+            updateRatingDto.ratingType,
+            updateRatingDto.comment,
+        );
+    }
+
+    async deleteRating(
+        ratingId: string,
+        fromUserId: string,
+    ): Promise<{ message: string }> {
+        await this.usersRatingRepository.deleteRating(ratingId, fromUserId);
+        return { message: 'Rating deleted successfully' };
+    }
+
+    async getRatingsForUser(userId: string): Promise<Rating[]> {
+        return await this.usersRatingRepository.getRatingsForUser(userId);
+    }
+
+    async getRatingsByUser(userId: string): Promise<Rating[]> {
+        return await this.usersRatingRepository.getRatingsByUser(userId);
+    }
+
+    async getUserRatingStats(
+        userId: string,
+    ): Promise<{ positive: number; negative: number; percentage: number }> {
+        return await this.usersRatingRepository.getUserRatingStats(userId);
+    }
+
+    async requestUpgrade(userId: string): Promise<{ message: string }> {
+        const user = await this.usersRepository.findOneById(userId);
+
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        if (user.role !== Role.BIDDER) {
+            throw new BadRequestException('Only bidders can request upgrade');
+        }
+
+        if (user.upgradeRequested) {
+            throw new BadRequestException('Upgrade request already submitted');
+        }
+
+        await this.usersRepository.updateProfile(userId, {
+            upgradeRequested: true,
+            upgradeRequestedAt: new Date().toISOString(),
+        });
+
+        return { message: 'Upgrade request submitted successfully' };
+    }
+
+    async getUpgradeRequests(): Promise<User[]> {
+        const users = await this.usersRepository.findAllByRole(Role.BIDDER);
+        return users.filter((user) => user.upgradeRequested);
+    }
+
+    async approveUpgradeRequest(userId: string): Promise<{ message: string }> {
+        const user = await this.usersRepository.findOneById(userId);
+
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        if (!user.upgradeRequested) {
+            throw new BadRequestException(
+                'No upgrade request found for this user',
+            );
+        }
+
+        await this.usersRepository.updateProfile(userId, {
+            role: Role.SELLER,
+            upgradeRequested: false,
+            upgradeRequestedAt: null,
+        });
+
+        await this.mailerService.sendMail({
+            to: user.email,
+            subject: 'Upgrade Request Approved - Jewelbid',
+            text: `Dear ${user.fullname},\n\nYour request to upgrade to Seller has been approved! You can now start listing products for auction.\n\nBest regards,\nThe Jewelbid Team`,
+        });
+
+        return { message: 'Upgrade request approved successfully' };
+    }
+
+    async rejectUpgradeRequest(userId: string): Promise<{ message: string }> {
+        const user = await this.usersRepository.findOneById(userId);
+
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        if (!user.upgradeRequested) {
+            throw new BadRequestException(
+                'No upgrade request found for this user',
+            );
+        }
+
+        await this.usersRepository.updateProfile(userId, {
+            upgradeRequested: false,
+            upgradeRequestedAt: null,
+        });
+
+        await this.mailerService.sendMail({
+            to: user.email,
+            subject: 'Upgrade Request Status - Jewelbid',
+            text: `Dear ${user.fullname},\n\nThank you for your interest in becoming a Seller. Unfortunately, your upgrade request has not been approved at this time. You may reapply after 7 days.\n\nBest regards,\nThe Jewelbid Team`,
+        });
+
+        return { message: 'Upgrade request rejected' };
     }
 }

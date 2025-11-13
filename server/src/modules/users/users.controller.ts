@@ -2,8 +2,10 @@ import {
     BadRequestException,
     Body,
     Controller,
+    Delete,
     Get,
     HttpCode,
+    Param,
     Patch,
     Post,
     Query,
@@ -27,6 +29,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { ProfileDto } from '../auth/dtos/cred.dto';
 import { UpdateProfileDto } from './dtos/update-user.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
+import { CreateRatingDto, UpdateRatingDto } from './dtos/rating.dto';
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
@@ -110,5 +113,148 @@ export class UsersController {
         @Body() updateProfileDto: UpdateProfileDto,
     ) {
         return this.usersService.updateProfile(req.user.id, updateProfileDto);
+    }
+
+    @ApiOperation({
+        summary: 'Create rating for another user [BIDDER, SELLER]',
+    })
+    @ApiBearerAuth('access-token')
+    @Post('ratings')
+    @ApiBody({ type: CreateRatingDto })
+    @ApiResponse({
+        status: 201,
+        description: 'Rating created successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.BIDDER, Role.SELLER)
+    async createRating(
+        @Request() req: any,
+        @Body() createRatingDto: CreateRatingDto,
+    ) {
+        return await this.usersService.createRating(
+            createRatingDto,
+            req.user.id,
+        );
+    }
+
+    @ApiOperation({ summary: 'Update existing rating [BIDDER, SELLER]' })
+    @ApiBearerAuth('access-token')
+    @Patch('ratings/:id')
+    @ApiBody({ type: UpdateRatingDto })
+    @ApiResponse({
+        status: 200,
+        description: 'Rating updated successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.BIDDER, Role.SELLER)
+    async updateRating(
+        @Request() req: any,
+        @Param('id') id: string,
+        @Body() updateRatingDto: UpdateRatingDto,
+    ) {
+        return await this.usersService.updateRating(
+            id,
+            req.user.id,
+            updateRatingDto,
+        );
+    }
+
+    @ApiOperation({ summary: 'Delete rating [BIDDER, SELLER]' })
+    @ApiBearerAuth('access-token')
+    @Delete('ratings/:id')
+    @ApiResponse({
+        status: 200,
+        description: 'Rating deleted successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.BIDDER, Role.SELLER)
+    async deleteRating(@Request() req: any, @Param('id') id: string) {
+        return await this.usersService.deleteRating(id, req.user.id);
+    }
+
+    @ApiOperation({ summary: 'Get ratings for a user' })
+    @Get(':id/ratings')
+    @ApiResponse({
+        status: 200,
+        description: 'Ratings fetched successfully',
+    })
+    async getRatingsForUser(@Param('id') id: string) {
+        return await this.usersService.getRatingsForUser(id);
+    }
+
+    @ApiOperation({ summary: 'Get rating statistics for a user' })
+    @Get(':id/rating-stats')
+    @ApiResponse({
+        status: 200,
+        description: 'Rating stats fetched successfully',
+    })
+    async getUserRatingStats(@Param('id') id: string) {
+        return await this.usersService.getUserRatingStats(id);
+    }
+
+    @ApiOperation({
+        summary: 'Get my ratings given to others [BIDDER, SELLER]',
+    })
+    @ApiBearerAuth('access-token')
+    @Get('user/my-ratings')
+    @ApiResponse({
+        status: 200,
+        description: 'My ratings fetched successfully',
+    })
+    @UseGuards(ATAuthGuard)
+    async getMyRatings(@Request() req: any) {
+        return await this.usersService.getRatingsByUser(req.user.id);
+    }
+
+    @ApiOperation({ summary: 'Request upgrade to seller [BIDDER]' })
+    @ApiBearerAuth('access-token')
+    @Post('upgrade-request')
+    @ApiResponse({
+        status: 200,
+        description: 'Upgrade request submitted successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.BIDDER)
+    async requestUpgrade(@Request() req: any) {
+        return await this.usersService.requestUpgrade(req.user.id);
+    }
+
+    @ApiOperation({ summary: 'Get all upgrade requests [ADMIN]' })
+    @ApiBearerAuth('access-token')
+    @Get('upgrade-requests')
+    @ApiResponse({
+        status: 200,
+        description: 'Upgrade requests fetched successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async getUpgradeRequests() {
+        return await this.usersService.getUpgradeRequests();
+    }
+
+    @ApiOperation({ summary: 'Approve upgrade request [ADMIN]' })
+    @ApiBearerAuth('access-token')
+    @Post('upgrade-requests/:id/approve')
+    @ApiResponse({
+        status: 200,
+        description: 'Upgrade request approved successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async approveUpgradeRequest(@Param('id') id: string) {
+        return await this.usersService.approveUpgradeRequest(id);
+    }
+
+    @ApiOperation({ summary: 'Reject upgrade request [ADMIN]' })
+    @ApiBearerAuth('access-token')
+    @Post('upgrade-requests/:id/reject')
+    @ApiResponse({
+        status: 200,
+        description: 'Upgrade request rejected successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async rejectUpgradeRequest(@Param('id') id: string) {
+        return await this.usersService.rejectUpgradeRequest(id);
     }
 }

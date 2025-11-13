@@ -103,4 +103,47 @@ export class User extends BaseEntity {
         default: process.env.DEFAULT_PROFILE_IMAGE || null,
     })
     profileImage?: string;
+
+    @ApiProperty({
+        description: 'Number of positive ratings received',
+        example: 8,
+        default: 0,
+    })
+    @Column({
+        type: 'int',
+        default: 0,
+    })
+    positiveRatings: number;
+
+    @ApiProperty({
+        description: 'Number of negative ratings received',
+        example: 2,
+        default: 0,
+    })
+    @Column({
+        type: 'int',
+        default: 0,
+    })
+    negativeRatings: number;
+
+    @ApiProperty({
+        description: 'Whether user has requested upgrade to seller',
+        example: false,
+        default: false,
+    })
+    @Column({
+        type: 'boolean',
+        default: false,
+    })
+    upgradeRequested: boolean;
+
+    @ApiProperty({
+        description: 'Timestamp when upgrade was requested',
+        required: false,
+    })
+    @Column({
+        type: 'timestamp',
+        nullable: true,
+    })
+    upgradeRequestedAt?: Date;
 }
