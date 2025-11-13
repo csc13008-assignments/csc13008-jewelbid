@@ -206,7 +206,7 @@ The Jewelbid Team
 
         await this.usersRepository.updateProfile(userId, {
             upgradeRequested: true,
-            upgradeRequestedAt: new Date().toISOString(),
+            upgradeRequestedAt: new Date(),
         });
 
         return { message: 'Upgrade request submitted successfully' };

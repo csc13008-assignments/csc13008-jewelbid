@@ -126,7 +126,7 @@ export class UsersRepository {
 
     async updateProfile(
         id: string,
-        updateProfileDto: Partial<UpdateProfileDto>,
+        updateProfileDto: Partial<UpdateProfileDto> | Partial<User>,
     ): Promise<User> {
         try {
             const updateResult = await this.userRepository.update(
