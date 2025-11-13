@@ -15,7 +15,7 @@ import { UserSignUpDto } from './dtos/user-signup.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { Role } from './enums/roles.enum';
 import { MailerService } from '@nestjs-modules/mailer';
-import { RedisTokenService } from './services/redis-token.service';
+import { RedisTokenService } from './redis-token.service';
 import axios from 'axios';
 
 @Injectable()

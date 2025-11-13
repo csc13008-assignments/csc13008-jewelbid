@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { ProductsModule } from './modules/products/products.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { MailerModule } from '@nestjs-modules/mailer';
 
@@ -10,7 +11,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            // envFilePath: '.env',
         }),
 
         TypeOrmModule.forRootAsync({
@@ -56,6 +56,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         }),
         AuthModule,
         UsersModule,
+        ProductsModule,
     ],
 })
 export class AppModule {}

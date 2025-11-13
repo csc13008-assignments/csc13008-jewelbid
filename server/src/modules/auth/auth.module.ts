@@ -10,7 +10,7 @@ import { AccessTokenStrategy } from './strategies/at.strategy';
 import { RefreshTokenStrategy } from './strategies/rt.strategy';
 import { AccessControlService } from '../ac/ac.service';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { RedisTokenService } from './services/redis-token.service';
+import { RedisTokenService } from './redis-token.service';
 @Module({
     imports: [
         UsersModule,
