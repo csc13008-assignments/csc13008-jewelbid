@@ -7,7 +7,6 @@ import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
 import { UserSignUpDto } from '../auth/dtos/user-signup.dto';
 import { Role } from '../auth/enums/roles.enum';
-import { CreateEmployeeDto } from './dtos/create-user.dto';
 import { UpdateProfileDto } from './dtos/update-user.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Redis } from 'ioredis';
@@ -148,41 +147,6 @@ export class UsersRepository {
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
         }
-    }
-
-    async updateEmployee(
-        id: string,
-        updateEmployeeDto: Partial<CreateEmployeeDto>,
-    ): Promise<User> {
-        try {
-            const updateResult = await this.userRepository.update(
-                { id },
-                updateEmployeeDto,
-            );
-
-            if (updateResult.affected === 0) {
-                throw new NotFoundException(`Employee with id ${id} not found`);
-            }
-
-            const updatedUser = await this.userRepository.findOne({
-                where: { id },
-            });
-            return updatedUser;
-        } catch (error: any) {
-            throw new InternalServerErrorException((error as Error).message);
-        }
-    }
-
-    async deleteEmployee(id: string): Promise<{ message: string }> {
-        const employee = await this.userRepository.findOne({
-            where: { id },
-        });
-        if (!employee) {
-            throw new NotFoundException(`Employee with ID ${id} not found`);
-        }
-
-        await this.userRepository.softDelete(id);
-        return { message: 'Employee deleted successfully' };
     }
 
     async updateRefreshToken(id: string, refreshToken: string): Promise<void> {

@@ -6,7 +6,7 @@ import {
 import { UsersRepository } from './users.repository';
 import { User } from './entities/user.model';
 import { Role } from '../auth/enums/roles.enum';
-import { UpdateEmployeeDto, UpdateProfileDto } from './dtos/update-user.dto';
+import { UpdateProfileDto } from './dtos/update-user.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
@@ -23,17 +23,6 @@ export class UsersService {
         updateProfileDto: Partial<UpdateProfileDto>,
     ): Promise<User> {
         return this.usersRepository.updateProfile(id, updateProfileDto);
-    }
-
-    async updateEmployee(
-        id: string,
-        updateEmployeeDto: Partial<UpdateEmployeeDto>,
-    ): Promise<User> {
-        return this.usersRepository.updateEmployee(id, updateEmployeeDto);
-    }
-
-    async deleteEmployee(id: string): Promise<{ message: string }> {
-        return this.usersRepository.deleteEmployee(id);
     }
 
     async getProfiles(role?: Role): Promise<

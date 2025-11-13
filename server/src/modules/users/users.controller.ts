@@ -2,10 +2,8 @@ import {
     BadRequestException,
     Body,
     Controller,
-    Delete,
     Get,
     HttpCode,
-    Param,
     Patch,
     Post,
     Query,
@@ -27,13 +25,13 @@ import { Role } from '../auth/enums/roles.enum';
 import { ATAuthGuard } from '../auth/guards/at-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ProfileDto } from '../auth/dtos/cred.dto';
-import { UpdateEmployeeDto, UpdateProfileDto } from './dtos/update-user.dto';
+import { UpdateProfileDto } from './dtos/update-user.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
-    @ApiOperation({ summary: 'Get profiles by role [MANAGER]' })
+    @ApiOperation({ summary: 'Get profiles by role [ADMIN]' })
     @ApiBearerAuth('access-token')
     @Get()
     @ApiQuery({
@@ -63,7 +61,7 @@ export class UsersController {
     }
 
     @ApiOperation({
-        summary: 'Get profile with credentials [GUEST, EMPLOYEE, MANAGER]',
+        summary: 'Get profile with credentials [BIDDER, SELLER, ADMIN]',
     })
     @ApiBearerAuth('access-token')
     @Get('user')
@@ -98,7 +96,7 @@ export class UsersController {
         return await this.usersService.sendFeedback(feedbackDto);
     }
 
-    @ApiOperation({ summary: 'Update profile [GUEST, EMPLOYEE, MANAGER]' })
+    @ApiOperation({ summary: 'Update profile [BIDDER, SELLER, ADMIN]' })
     @ApiBearerAuth('access-token')
     @Patch('user')
     @ApiResponse({
@@ -111,43 +109,6 @@ export class UsersController {
         @Request() req: any,
         @Body() updateProfileDto: UpdateProfileDto,
     ) {
-        if (req.user.role === Role.BIDDER || req.user.role === Role.SELLER) {
-            return this.usersService.updateProfile(
-                req.user.id,
-                updateProfileDto,
-            );
-        }
-
-        return this.usersService.updateEmployee(req.user.id, updateProfileDto);
-    }
-
-    @ApiOperation({ summary: 'Update employee [MANAGER]' })
-    @ApiBearerAuth('access-token')
-    @Patch('employee/:id')
-    @ApiResponse({
-        status: 200,
-        description: 'Update employee successfully',
-        type: ProfileDto,
-    })
-    @UseGuards(ATAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
-    async updateEmployee(
-        @Param('id') id: string,
-        @Body() updateEmployeeDto: UpdateEmployeeDto,
-    ) {
-        return this.usersService.updateEmployee(id, updateEmployeeDto);
-    }
-
-    @ApiOperation({ summary: 'Delete employee [MANAGER]' })
-    @ApiBearerAuth('access-token')
-    @Delete('employee/:id')
-    @ApiResponse({
-        status: 200,
-        description: 'Delete employee successfully',
-    })
-    @UseGuards(ATAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
-    async deleteEmployee(@Param('id') id: string) {
-        return this.usersService.deleteEmployee(id);
+        return this.usersService.updateProfile(req.user.id, updateProfileDto);
     }
 }
