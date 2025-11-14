@@ -56,4 +56,4 @@ EXPOSE ${PORT} ${DEBUG_PORT}
 
 RUN npm run build
 
-CMD ["node", "dist/src/main.js"]
+CMD ["npm", "run", "start:prod"]
