@@ -1,26 +1,85 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Della+Respira&family=Karla:ital,wght@0,200..800;1,200..800&display=swap');
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --color-white: #ffffff;
+    --color-black: #000000;
+    --color-secondary: #faf8f6;
+    --color-primary: #e2dcd5;
+    --color-dark-primary: #b9b0a5;
+
+    --font-heading: 'Della Respira', serif;
+    --font-body: 'Karla', sans-serif;
+
+    --background: var(--color-white);
+    --foreground: var(--color-black);
+    --text-primary: var(--color-primary);
+    --text-secondary: var(--color-secondary);
+    --text-dark-primary: var(--color-dark-primary);
+    --text-black: var(--color-black);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-primary: var(--color-primary);
+    --color-secondary: var(--color-secondary);
+    --color-dark-primary: var(--text-dark-primary);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    --font-sans: var(--font-body);
+    --font-serif: var(--font-heading);
+    --font-heading: var(--font-heading);
+
+    --color-neutral-50: #fafafa;
+    --color-neutral-100: #f5f5f5;
+    --color-neutral-200: #e5e5e5;
+    --color-neutral-300: #d4d4d4;
+    --color-neutral-400: #a8a8a8;
+    --color-neutral-500: #737373;
+    --color-neutral-600: #666666;
+    --color-neutral-700: #404040;
+    --color-neutral-800: #262626;
+    --color-neutral-900: #171717;
+    --color-neutral-950: #0a0a0a;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+* {
+    font-family: var(--font-body);
+}
+
+.font-heading,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading) !important;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text-black);
+}
+
+.font-body {
+    font-family: var(--font-body) !important;
+}
+
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-dark-primary {
+    color: var(--text-dark-primary);
 }
