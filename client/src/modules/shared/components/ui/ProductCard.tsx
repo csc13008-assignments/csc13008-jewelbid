@@ -34,10 +34,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
     className,
 }) => {
     const [isLiked, setIsLiked] = useState(auction.isLiked || false);
+    const [likeCount, setLikeCount] = useState(auction.likeCount);
     const timeRemaining = getTimeRemaining(auction.endDate);
 
     const handleLike = () => {
-        setIsLiked(!isLiked);
+        const newLikedState = !isLiked;
+        console.log('Like clicked! Current:', isLiked, 'New:', newLikedState);
+        setIsLiked(newLikedState);
+
+        // Update like count: +1 if liking, -1 if unliking
+        setLikeCount((prev) => {
+            const newCount = newLikedState ? prev + 1 : prev - 1;
+            console.log('Like count changed from', prev, 'to', newCount);
+            return newCount;
+        });
+
         onLike?.(auction.id);
     };
 
@@ -69,22 +80,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     </div>
 
                     {/* Like Button with Count */}
-                    <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm z-10">
                         <button
-                            onClick={handleLike}
-                            className="hover:scale-110 transition-transform duration-200"
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleLike();
+                            }}
+                            className="hover:scale-110 transition-transform duration-200 cursor-pointer"
+                            aria-label={isLiked ? 'Unlike' : 'Like'}
                         >
                             <Heart
                                 className={cn(
-                                    'w-4 h-4 transition-colors',
+                                    'w-4 h-4 transition-colors duration-200',
                                     isLiked
                                         ? 'fill-red-500 text-red-500'
-                                        : 'text-gray-600',
+                                        : 'text-gray-600 hover:text-red-400',
                                 )}
                             />
                         </button>
                         <span className="text-sm font-body font-medium text-black">
-                            {auction.likeCount}
+                            {likeCount}
                         </span>
                     </div>
                 </div>

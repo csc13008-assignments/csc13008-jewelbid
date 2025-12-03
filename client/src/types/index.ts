@@ -90,10 +90,90 @@ export interface CategoryItem {
     image: string;
 }
 
+export interface FilterOption {
+    label: string;
+    value: string;
+    count?: number;
+}
+
+export interface SearchFilters {
+    category?: string;
+    brand?: string;
+    material?: string;
+    targetAudience?: string;
+    auctionStatus?: string;
+    sortBy?: string;
+}
+
+export interface BreadcrumbItem {
+    label: string;
+    href?: string;
+}
+
 export interface AuctionListResponse {
     auctions: Auction[];
     total: number;
     page: number;
     limit: number;
     hasMore: boolean;
+}
+
+export interface User {
+    id: string;
+    email: string;
+    password: string;
+    name: string;
+    username: string;
+    avatar?: string;
+    address?: string;
+    phone?: string;
+    role: 'user' | 'admin' | 'bidder' | 'seller';
+    createdAt: Date;
+}
+
+export interface BidItem {
+    id: number;
+    product: string;
+    currentBid: string;
+    yourBid: string;
+    timeLeft: string;
+    status: string;
+}
+
+export interface WonAuctionItem {
+    id: number;
+    product: string;
+    finalPrice: string;
+    sellerName: string;
+    sellerAvatar: string;
+    dateWon: string;
+    action: string;
+}
+
+export interface RatingItem {
+    id: number;
+    sellerName: string;
+    comment: string;
+    avatar: string;
+    rating: number;
+    totalReviews: number;
+    date: string;
+}
+
+export interface AuctionItem {
+    id: string;
+    title: string;
+    image: string;
+    currentPrice: number;
+    endTime: string;
+    totalBids: number;
+    status: 'active' | 'completed';
+}
+
+export interface CompletedAuctionItem extends AuctionItem {
+    finalPrice: number;
+    sellerName: string;
+    sellerAvatar: string;
+    sellerRating: number;
+    dateWon: string;
 }

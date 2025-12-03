@@ -3,13 +3,18 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Input, Button } from '@/modules/shared/components/ui';
+import { authenticateUser } from '@/lib/mockData';
 
 export default function SignInPage() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleInputChange =
         (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,11 +22,37 @@ export default function SignInPage() {
                 ...prev,
                 [field]: e.target.value,
             }));
+            if (error) setError('');
         };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Sign in form data:', formData);
+        setError('');
+        setIsLoading(true);
+
+        (async () => {
+            try {
+                const user = authenticateUser(
+                    formData.email,
+                    formData.password,
+                );
+
+                if (user) {
+                    localStorage.setItem('user', JSON.stringify(user));
+
+                    router.push('/');
+
+                    window.location.href = '/';
+                } else {
+                    setError('Invalid email or password. Please try again.');
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                setError('An error occurred. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        })();
     };
 
     return (
@@ -65,6 +96,12 @@ export default function SignInPage() {
                     </h1>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                                <p className="text-sm">{error}</p>
+                            </div>
+                        )}
+
                         <Input
                             label="Email"
                             type="email"
@@ -99,8 +136,9 @@ export default function SignInPage() {
                                 variant="muted"
                                 size="lg"
                                 className="w-full"
+                                disabled={isLoading}
                             >
-                                Log In
+                                {isLoading ? 'Logging in...' : 'Log In'}
                             </Button>
                         </div>
                     </form>

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import Button from '@/modules/shared/components/ui/Button';
 
@@ -36,22 +37,26 @@ const HeroSection = () => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-6">
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                className="px-8 py-4 text-base flex items-center gap-2"
-                            >
-                                Explore All Bids
-                                <ArrowUpRight className="w-5 h-5" />
-                            </Button>
+                            <Link href="/search-result">
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    className="px-8 py-4 text-base flex items-center gap-2"
+                                >
+                                    Explore All Bids
+                                    <ArrowUpRight className="w-5 h-5" />
+                                </Button>
+                            </Link>
 
-                            <Button
-                                variant="outline"
-                                size="lg"
-                                className="px-8 py-4 text-base"
-                            >
-                                Sign In
-                            </Button>
+                            <Link href="/signin">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="px-8 py-4 text-base"
+                                >
+                                    Sign In
+                                </Button>
+                            </Link>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="relative h-40  overflow-hidden shadow-md">

@@ -1,15 +1,26 @@
 'use client';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import CategoryCard from '@/modules/shared/components/ui/CategoryCard';
 import Button from '@/modules/shared/components/ui/Button';
 import { getCategoriesData } from '@/lib/mockData';
 
 const RecommondedSection = () => {
+    const router = useRouter();
     const categories = getCategoriesData();
 
     const handleCategoryClick = (categoryId: string) => {
-        console.log('Category clicked:', categoryId);
+        // Navigate to search results with category filter
+        const categoryName = categories
+            .find((cat) => cat.id === categoryId)
+            ?.name.toLowerCase();
+        if (categoryName) {
+            router.push(
+                `/search-result?category=${encodeURIComponent(categoryName)}`,
+            );
+        }
     };
 
     return (
@@ -23,13 +34,15 @@ const RecommondedSection = () => {
                         Handpicked jewelry categories to help you find your next
                         winning bid.
                     </p>
-                    <Button
-                        variant="primary"
-                        size="lg"
-                        icon={<ArrowRight className="w-4 h-4" />}
-                    >
-                        Explore All Bids
-                    </Button>
+                    <Link href="/search-result">
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            icon={<ArrowRight className="w-4 h-4" />}
+                        >
+                            Explore All Bids
+                        </Button>
+                    </Link>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 max-w-2xl mt-8">

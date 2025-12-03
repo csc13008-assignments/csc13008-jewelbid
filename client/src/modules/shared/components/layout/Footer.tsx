@@ -1,11 +1,12 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import Input from '@/modules/shared/components/ui/Input';
 
 const Footer = () => {
     return (
-        <footer className="bg-primary pt-16 mt-20">
+        <footer className="bg-primary pt-16">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="grid grid-cols-3 gap-20 justify-between items-start">
                     <div className="flex-1 max-w-md">
@@ -37,30 +38,30 @@ const Footer = () => {
                     </div>
 
                     <nav className="space-y-4">
-                        <a
-                            href="#"
+                        <Link
+                            href="/"
                             className="block font-body text-lg text-black hover:text-neutral-600 transition-colors"
                         >
                             Home
-                        </a>
-                        <a
-                            href="#"
+                        </Link>
+                        <Link
+                            href="/search-result"
                             className="block font-body text-lg text-black hover:text-neutral-600 transition-colors"
                         >
                             All Items
-                        </a>
-                        <a
-                            href="#"
+                        </Link>
+                        <Link
+                            href="/search-result?sortBy=ending-soon"
                             className="block font-body text-lg text-black hover:text-neutral-600 transition-colors"
                         >
                             Ongoing Auction
-                        </a>
-                        <a
-                            href="#"
+                        </Link>
+                        <Link
+                            href="/contact"
                             className="block font-body text-lg text-black hover:text-neutral-600 transition-colors"
                         >
                             Contact Us
-                        </a>
+                        </Link>
                     </nav>
                 </div>
             </div>

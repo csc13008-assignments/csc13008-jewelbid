@@ -1,28 +1,68 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+    Search,
+    ChevronDown,
+    Heart,
+    User,
+    Settings,
+    Star,
+    Trophy,
+    Grid3X3,
+    LogOut,
+} from 'lucide-react';
 import Button from '../ui/Button';
+import { buildSearchUrl } from '@/lib/searchUtils';
+import type { User as UserType } from '@/types';
 
 const Header = () => {
+    const router = useRouter();
     const [activeItem, setActiveItem] = useState('Home');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const initializeUser = async () => {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    setCurrentUser(user);
+                }
+            } catch (error) {
+                console.error('Error parsing user from localStorage:', error);
+            } finally {
+                setMounted(true);
+            }
+        };
+
+        initializeUser();
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        setCurrentUser(null);
+        void router.push('/');
+    };
 
     const dropdownData = {
         'Jewelry Type': [
-            'Ring ',
+            'Ring',
             'Necklace',
-            'Watches',
-            'Earrings',
+            'Watch',
+            'Earring',
             'Anklet',
             'Pendant',
             'Charm',
         ],
         Brand: [
             'Cartier',
-            'Tiffany & Co.',
+            'Tiffany & Co',
             'Pandora',
             'Gucci',
             'Dior',
@@ -73,7 +113,49 @@ const Header = () => {
         } else {
             setActiveItem(item);
             setOpenDropdown(null);
+
+            if (item === 'Home') {
+                router.push('/');
+            } else if (item === 'All Items') {
+                router.push('/search-result');
+            } else if (item === 'Contact Us') {
+                router.push('/contact');
+            }
         }
+    };
+
+    const handleDropdownItemClick = (parentItem: string, subItem: string) => {
+        const value = subItem.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+        const filters: {
+            category?: string;
+            brand?: string;
+            material?: string;
+            targetAudience?: string;
+            auctionStatus?: string;
+        } = {};
+
+        switch (parentItem) {
+            case 'Jewelry Type':
+                filters.category = value;
+                break;
+            case 'Brand':
+                filters.brand = value;
+                break;
+            case 'Material':
+                filters.material = value;
+                break;
+            case 'Target Audience':
+                filters.targetAudience = value;
+                break;
+            case 'Ongoing Auction':
+                filters.auctionStatus = value;
+                break;
+        }
+
+        const url = buildSearchUrl(filters);
+        router.push(url);
+        setOpenDropdown(null);
     };
 
     return (
@@ -111,16 +193,158 @@ const Header = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 flex justify-end">
-                        <Link href="/signin">
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                className="px-8"
-                            >
-                                Log In
-                            </Button>
-                        </Link>
+                    <div className="flex-1 flex justify-end items-center gap-4">
+                        {mounted && currentUser ? (
+                            <>
+                                {currentUser.role === 'seller' ? (
+                                    <Link href="/create-auction">
+                                        <Button
+                                            variant="primary"
+                                            size="lg"
+                                            className="px-6"
+                                        >
+                                            Sell Your Jewelry
+                                        </Button>
+                                    </Link>
+                                ) : currentUser.role === 'bidder' ? (
+                                    <Link href="/upgrade-to-seller">
+                                        <Button
+                                            variant="primary"
+                                            size="lg"
+                                            className="px-6"
+                                        >
+                                            Upgrade to Seller
+                                        </Button>
+                                    </Link>
+                                ) : null}
+
+                                <Link href="/favorites">
+                                    <button className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+                                        <Heart className="w-6 h-6 text-black" />
+                                    </button>
+                                </Link>
+
+                                <div className="relative">
+                                    <button
+                                        onClick={() =>
+                                            setOpenDropdown(
+                                                openDropdown === 'user'
+                                                    ? null
+                                                    : 'user',
+                                            )
+                                        }
+                                        className="flex items-center gap-2 p-2 hover:bg-neutral-100 rounded-full transition-colors"
+                                    >
+                                        <User className="w-6 h-6 text-black" />
+                                        <span className="font-body font-medium text-black">
+                                            {currentUser.username ||
+                                                currentUser.name}
+                                        </span>
+                                        <ChevronDown className="w-4 h-4" />
+                                    </button>
+
+                                    {openDropdown === 'user' && (
+                                        <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-neutral-200 shadow-lg rounded z-50">
+                                            <div className="py-2">
+                                                <button
+                                                    onClick={() => {
+                                                        router.push(
+                                                            '/profile-settings',
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-black hover:bg-neutral-50 transition-colors"
+                                                >
+                                                    <Settings className="w-4 h-4" />
+                                                    Profile Settings
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        router.push(
+                                                            '/my-ratings',
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-black hover:bg-neutral-50 transition-colors"
+                                                >
+                                                    <Star className="w-4 h-4" />
+                                                    My Ratings
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        router.push(
+                                                            '/favorites',
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-black hover:bg-neutral-50 transition-colors"
+                                                >
+                                                    <Heart className="w-4 h-4" />
+                                                    Favorite Items
+                                                </button>{' '}
+                                                <button
+                                                    onClick={() => {
+                                                        router.push('/my-bids');
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-black hover:bg-neutral-50 transition-colors"
+                                                >
+                                                    <User className="w-4 h-4" />
+                                                    My Bids
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        router.push(
+                                                            '/won-auctions',
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-black hover:bg-neutral-50 transition-colors"
+                                                >
+                                                    <Trophy className="w-4 h-4" />
+                                                    Won Auctions
+                                                </button>
+                                                {currentUser.role ===
+                                                    'seller' && (
+                                                    <button
+                                                        onClick={() => {
+                                                            router.push(
+                                                                '/seller-dashboard',
+                                                            );
+                                                            setOpenDropdown(
+                                                                null,
+                                                            );
+                                                        }}
+                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-black hover:bg-neutral-50 transition-colors"
+                                                    >
+                                                        <Grid3X3 className="w-4 h-4" />
+                                                        Seller Dashboard
+                                                    </button>
+                                                )}
+                                                <hr className="my-2 border-neutral-200" />
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                                >
+                                                    <LogOut className="w-4 h-4" />
+                                                    Log out
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <Link href="/signin">
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    className="px-8"
+                                >
+                                    Log In
+                                </Button>
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -163,17 +387,18 @@ const Header = () => {
                                             {dropdownData[
                                                 item as keyof typeof dropdownData
                                             ].map((subItem, subIndex) => (
-                                                <a
+                                                <button
                                                     key={subIndex}
-                                                    href="#"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="block px-4 py-2 text-sm text-black hover:bg-neutral-50 transition-colors"
+                                                    onClick={() =>
+                                                        handleDropdownItemClick(
+                                                            item,
+                                                            subItem,
+                                                        )
+                                                    }
+                                                    className="w-full text-left block px-4 py-2 text-sm text-black hover:bg-neutral-50 transition-colors"
                                                 >
                                                     {subItem}
-                                                </a>
+                                                </button>
                                             ))}
                                         </div>
                                     </div>

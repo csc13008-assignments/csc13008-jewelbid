@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { TopDealsTabsProps, TopDealsTab } from '@/types';
 import { cn } from '@/lib/utils';
@@ -126,9 +127,11 @@ const TopDealsSection: React.FC<TopDealsTabsProps> = ({ auctions }) => {
                 </div>
 
                 <div className="text-center mt-12">
-                    <Button variant="primary" size="lg" className="px-8">
-                        View All Auctions
-                    </Button>
+                    <Link href="/search-result">
+                        <Button variant="primary" size="lg" className="px-8">
+                            View All Auctions
+                        </Button>
+                    </Link>
                 </div>
             </div>
         </section>
