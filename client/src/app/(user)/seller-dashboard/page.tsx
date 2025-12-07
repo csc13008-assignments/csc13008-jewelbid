@@ -63,7 +63,7 @@ export default function SellerDashboard() {
                                         onClick={() => setActiveTab('active')}
                                         className={`py-2 px-1 border-b-2 font-medium text-base ${
                                             activeTab === 'active'
-                                                ? 'border-blue-500 text-blue-600'
+                                                ? 'border-[#5F87C1] text-[#5F87C1]'
                                                 : 'border-transparent text-dark-primary hover:text-gray-700 hover:border-primary'
                                         }`}
                                     >
@@ -75,7 +75,7 @@ export default function SellerDashboard() {
                                         }
                                         className={`py-2 px-1 border-b-2 font-medium text-base ${
                                             activeTab === 'completed'
-                                                ? 'border-blue-500 text-blue-600'
+                                                ? 'border-[#5F87C1] text-[#5F87C1]'
                                                 : 'border-transparent text-dark-primary hover:text-gray-700 hover:border-primary'
                                         }`}
                                     >

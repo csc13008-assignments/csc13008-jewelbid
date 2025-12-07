@@ -6,6 +6,17 @@ export interface Product {
     brand?: string;
     material?: string;
     description: string;
+    specifications?: {
+        year?: string;
+        totalCaratWeightMainStone?: string;
+        fineness?: string;
+        totalCaratWeightSurroundingStones?: string;
+        size?: string;
+        totalWeight?: string;
+        clarity?: string;
+        origin?: string;
+        condition?: string;
+    };
 }
 
 export interface Bid {
@@ -15,6 +26,8 @@ export interface Bid {
         id: string;
         username: string;
         avatar?: string;
+        rating?: number;
+        reviewCount?: number;
     };
     timestamp: Date;
 }
@@ -22,9 +35,10 @@ export interface Bid {
 export interface Auction {
     id: string;
     product: Product;
+    startBid: number;
     currentBid: number;
+    bidIncrement: number;
     buyNowPrice?: number;
-    highestBid: number;
     bidCount: number;
     likeCount: number;
     isLiked?: boolean;
@@ -35,8 +49,13 @@ export interface Auction {
         id: string;
         username: string;
         avatar?: string;
+        tags?: string;
+        objectsSold?: number;
+        rating?: number;
+        reviewCount?: number;
     };
     bids: Bid[];
+    qaComments?: QAComment[];
 }
 
 export interface ProductCardProps {
@@ -45,6 +64,7 @@ export interface ProductCardProps {
     onLike?: (auctionId: string) => void;
     onBid?: (auctionId: string) => void;
     className?: string;
+    variant?: 'vertical' | 'horizontal';
 }
 
 export interface TopDealsTabsProps {
@@ -176,4 +196,16 @@ export interface CompletedAuctionItem extends AuctionItem {
     sellerAvatar: string;
     sellerRating: number;
     dateWon: string;
+}
+
+export interface QAComment {
+    id: string;
+    author: {
+        id: string;
+        username: string;
+        avatar: string;
+        role: 'bidder' | 'seller' | 'admin';
+    };
+    content: string;
+    timestamp: Date;
 }

@@ -32,7 +32,7 @@ export default function MyRatingsPage() {
                                         REPUTATION SCORE:
                                     </span>
                                 </div>
-                                <div className="text-2xl font-normal text-blue-600">
+                                <div className="text-2xl font-normal text-[#5F87C1]">
                                     {ratingData.reputationScore}% Positive (
                                     {ratingData.positiveCount}+/
                                     {ratingData.totalRatings} -)

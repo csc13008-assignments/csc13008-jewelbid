@@ -9,6 +9,9 @@ interface RatingBadgeProps {
     className?: string;
     showAvatar?: boolean;
     size?: 'sm' | 'md' | 'lg';
+    variant?: 'vertical' | 'horizontal';
+    sellerTags?: string;
+    objectsSold?: number;
 }
 
 export const RatingBadge: React.FC<RatingBadgeProps> = ({
@@ -19,6 +22,9 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
     className = '',
     showAvatar = true,
     size = 'md',
+    variant = 'vertical',
+    sellerTags,
+    objectsSold,
 }) => {
     const sizeClasses = {
         sm: {
@@ -43,14 +49,54 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
 
     const classes = sizeClasses[size];
 
-    return (
-        <div className={`flex flex-col items-center gap-2 ${className}`}>
-            {sellerName && (
-                <div className={`font-medium text-gray-700 ${classes.name}`}>
-                    {sellerName}
-                </div>
-            )}
+    if (variant === 'vertical') {
+        return (
+            <div className={`flex flex-col items-center gap-2 ${className}`}>
+                {sellerName && (
+                    <div
+                        className={`font-medium text-gray-700 ${classes.name}`}
+                    >
+                        {sellerName}
+                    </div>
+                )}
 
+                <div className="relative inline-block">
+                    {showAvatar && (
+                        <div
+                            className={`${classes.avatar} bg-gray-200 rounded-full flex items-center justify-center overflow-hidden`}
+                        >
+                            {avatar ? (
+                                <Image
+                                    src={avatar}
+                                    alt="User avatar"
+                                    width={64}
+                                    height={64}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <span className="text-white font-medium text-sm">
+                                    👤
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    <div
+                        className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-[#5F87C1] text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
+                    >
+                        {Math.round((rating / 5) * 100)}% Positive
+                    </div>
+                </div>
+
+                <div className={`mt-4 text-gray-600 ${classes.text}`}>
+                    ({totalReviews} reviews)
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className={`flex items-center space-x-4 ${className}`}>
             <div className="relative inline-block">
                 {showAvatar && (
                     <div
@@ -71,16 +117,35 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
                         )}
                     </div>
                 )}
-
                 <div
-                    className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
+                    className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-[#5F87C1] text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
                 >
                     {Math.round((rating / 5) * 100)}% Positive
                 </div>
+
+                <div
+                    className={`absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-gray-600 ${classes.text} text-center whitespace-nowrap`}
+                >
+                    ({totalReviews} reviews)
+                </div>
             </div>
 
-            <div className={`mt-4 text-gray-600 ${classes.text}`}>
-                ({totalReviews} reviews)
+            <div className="flex-1 ml-4">
+                {sellerName && (
+                    <div className={`font-medium text-xl text-gray-900 mb-1`}>
+                        {sellerName}
+                    </div>
+                )}
+                {sellerTags && (
+                    <div className="text-md text-gray-600 italic mb-1">
+                        {sellerTags}
+                    </div>
+                )}
+                {objectsSold !== undefined && (
+                    <div className="text-md text-gray-600">
+                        {objectsSold} Object{objectsSold !== 1 ? 's' : ''} sold
+                    </div>
+                )}
             </div>
         </div>
     );

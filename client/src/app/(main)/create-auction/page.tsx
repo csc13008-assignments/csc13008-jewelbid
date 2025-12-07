@@ -452,7 +452,7 @@ export default function CreateAuctionPage() {
                                     className="cursor-pointer flex flex-col items-center"
                                 >
                                     <ImageIcon className="w-12 h-12 text-gray-400 mb-4" />
-                                    <span className="text-blue-600 hover:text-blue-500 font-medium">
+                                    <span className="text-[#5F87C1] hover:text-blue-500 font-medium">
                                         Click to upload or drag and drop
                                     </span>
                                     <span className="text-sm text-gray-500 mt-1">

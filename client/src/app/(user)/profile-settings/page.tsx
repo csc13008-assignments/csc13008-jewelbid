@@ -111,7 +111,7 @@ export default function ProfileSettingsPage() {
                                             {isEditingProfile && (
                                                 <label
                                                     htmlFor="avatar-upload"
-                                                    className="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-600 rounded-full cursor-pointer flex items-center justify-center hover:bg-blue-700 transition-colors"
+                                                    className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#5F87C1] rounded-full cursor-pointer flex items-center justify-center hover:bg-blue-700 transition-colors"
                                                 >
                                                     <Camera className="w-4 h-4 text-white" />
                                                 </label>
