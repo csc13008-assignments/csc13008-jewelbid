@@ -180,13 +180,6 @@ export class ProductsService {
         userId: string,
         placeBidDto: PlaceBidDto,
     ): Promise<Product> {
-        // Validation: Either bidAmount (manual) or maxBid (auto) must be provided
-        if (!placeBidDto.bidAmount && !placeBidDto.maxBid) {
-            throw new BadRequestException(
-                'Either bidAmount (manual bidding) or maxBid (auto-bidding) is required',
-            );
-        }
-
         const product = await this.productsRepository.findById(productId);
 
         if (product.status !== ProductStatus.ACTIVE) {
@@ -226,52 +219,13 @@ export class ProductsService {
             Number(product.currentPrice) + Number(product.stepPrice);
 
         // AUTO-BIDDING LOGIC
-        if (placeBidDto.maxBid) {
-            return await this.handleAutoBid(
-                product,
-                userId,
-                user.fullname,
-                placeBidDto.maxBid,
-                minBidAmount,
-            );
-        }
-
-        // MANUAL BIDDING (BACKWARD COMPATIBILITY)
-        if (placeBidDto.bidAmount < minBidAmount) {
-            throw new BadRequestException(
-                `Minimum bid amount is ${minBidAmount}`,
-            );
-        }
-
-        if (
-            product.buyNowPrice &&
-            placeBidDto.bidAmount >= Number(product.buyNowPrice)
-        ) {
-            throw new BadRequestException('Use buy now feature for this price');
-        }
-
-        await this.productsRepository.placeBid(
-            productId,
+        return await this.handleAutoBid(
+            product,
             userId,
-            placeBidDto.bidAmount,
-            placeBidDto.bidAmount, // For manual bidding, maxBid = bidAmount
-        );
-        const updatedProduct =
-            await this.productsRepository.updateProductAfterBid(
-                productId,
-                userId,
-                placeBidDto.bidAmount,
-            );
-
-        await this.sendBidNotifications(
-            updatedProduct,
             user.fullname,
-            product.currentBidderId,
+            placeBidDto.maxBid,
+            minBidAmount,
         );
-
-        await this.handleAutoRenewal(updatedProduct, productId);
-
-        return updatedProduct;
     }
 
     private async handleAutoBid(
