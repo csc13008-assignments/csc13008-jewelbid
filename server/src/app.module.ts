@@ -4,6 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { MailerModule } from '@nestjs-modules/mailer';
 
@@ -24,6 +27,9 @@ import { MailerModule } from '@nestjs-modules/mailer';
                 database: configService.get('DB_DATABASE'),
                 autoLoadEntities: true,
                 synchronize: configService.get('NODE_ENV') === 'development',
+                ssl: {
+                    rejectUnauthorized: false,
+                },
                 logging: ['query', 'error', 'schema', 'warn', 'info', 'log'],
             }),
             inject: [ConfigService],
@@ -32,7 +38,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({
                 type: 'single',
-                url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`,
+                url: `redis://${configService.get('REDIS_USERNAME')}:${configService.get('REDIS_PASSWORD')}@${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`,
             }),
             inject: [ConfigService],
         }),
@@ -57,6 +63,9 @@ import { MailerModule } from '@nestjs-modules/mailer';
         AuthModule,
         UsersModule,
         ProductsModule,
+        CategoriesModule,
+        OrdersModule,
+        ChatModule,
     ],
 })
 export class AppModule {}
