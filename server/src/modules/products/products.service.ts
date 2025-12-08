@@ -180,6 +180,13 @@ export class ProductsService {
         userId: string,
         placeBidDto: PlaceBidDto,
     ): Promise<Product> {
+        // Validation: Either bidAmount (manual) or maxBid (auto) must be provided
+        if (!placeBidDto.bidAmount && !placeBidDto.maxBid) {
+            throw new BadRequestException(
+                'Either bidAmount (manual bidding) or maxBid (auto-bidding) is required',
+            );
+        }
+
         const product = await this.productsRepository.findById(productId);
 
         if (product.status !== ProductStatus.ACTIVE) {
@@ -217,6 +224,19 @@ export class ProductsService {
 
         const minBidAmount =
             Number(product.currentPrice) + Number(product.stepPrice);
+
+        // AUTO-BIDDING LOGIC
+        if (placeBidDto.maxBid) {
+            return await this.handleAutoBid(
+                product,
+                userId,
+                user.fullname,
+                placeBidDto.maxBid,
+                minBidAmount,
+            );
+        }
+
+        // MANUAL BIDDING (BACKWARD COMPATIBILITY)
         if (placeBidDto.bidAmount < minBidAmount) {
             throw new BadRequestException(
                 `Minimum bid amount is ${minBidAmount}`,
@@ -234,6 +254,7 @@ export class ProductsService {
             productId,
             userId,
             placeBidDto.bidAmount,
+            placeBidDto.bidAmount, // For manual bidding, maxBid = bidAmount
         );
         const updatedProduct =
             await this.productsRepository.updateProductAfterBid(
@@ -248,22 +269,190 @@ export class ProductsService {
             product.currentBidderId,
         );
 
-        const timeUntilEnd =
-            updatedProduct.endDate.getTime() - new Date().getTime();
-        const fiveMinutes = 5 * 60 * 1000;
-        if (updatedProduct.autoRenewal && timeUntilEnd < fiveMinutes) {
-            const newEndDate = new Date(
-                updatedProduct.endDate.getTime() + 10 * 60 * 1000,
-            );
-            updatedProduct.endDate = newEndDate;
-            await this.productsRepository.updateProductAfterBid(
-                productId,
-                userId,
-                placeBidDto.bidAmount,
+        await this.handleAutoRenewal(
+            updatedProduct,
+            productId,
+            userId,
+            placeBidDto.bidAmount,
+        );
+
+        return updatedProduct;
+    }
+
+    private async handleAutoBid(
+        product: Product,
+        userId: string,
+        userFullname: string,
+        maxBid: number,
+        minBidAmount: number,
+    ): Promise<Product> {
+        // Validate maxBid >= minimum
+        if (maxBid < minBidAmount) {
+            throw new BadRequestException(
+                `Your maximum bid (${maxBid}) must be at least ${minBidAmount}`,
             );
         }
 
+        if (product.buyNowPrice && maxBid >= Number(product.buyNowPrice)) {
+            throw new BadRequestException('Use buy now feature for this price');
+        }
+
+        // Get current winning bid (if any)
+        const currentWinningBid =
+            await this.productsRepository.getCurrentWinningBid(product.id);
+
+        // Case 1: No existing bids - start at starting price
+        if (!currentWinningBid) {
+            const bidAmount = Number(product.startingPrice);
+            await this.productsRepository.placeBid(
+                product.id,
+                userId,
+                bidAmount,
+                maxBid,
+            );
+            const updatedProduct =
+                await this.productsRepository.updateProductAfterBid(
+                    product.id,
+                    userId,
+                    bidAmount,
+                );
+
+            await this.sendBidNotifications(updatedProduct, userFullname, null);
+            await this.handleAutoRenewal(
+                updatedProduct,
+                product.id,
+                userId,
+                bidAmount,
+            );
+
+            return updatedProduct;
+        }
+
+        // Case 2: Same user trying to increase their maxBid
+        if (currentWinningBid.bidderId === userId) {
+            if (
+                maxBid <=
+                (currentWinningBid.maxBid || currentWinningBid.bidAmount)
+            ) {
+                throw new BadRequestException(
+                    'Your new max bid must be higher than your current max bid',
+                );
+            }
+
+            // Just update the maxBid, keep same bidAmount
+            await this.productsRepository.placeBid(
+                product.id,
+                userId,
+                currentWinningBid.bidAmount,
+                maxBid,
+            );
+
+            return product; // No change in winning price
+        }
+
+        // Case 3: Tie-breaking - same maxBid as current winner
+        if (
+            maxBid === (currentWinningBid.maxBid || currentWinningBid.bidAmount)
+        ) {
+            throw new BadRequestException(
+                'Another bidder has the same maximum bid and bid earlier. You need to bid higher.',
+            );
+        }
+
+        // Case 4: New bidder maxBid < current winner's maxBid
+        if (
+            maxBid < (currentWinningBid.maxBid || currentWinningBid.bidAmount)
+        ) {
+            // Current winner still wins, but price goes up to new bidder's maxBid
+            const newPrice = maxBid;
+
+            // Record new bidder's bid
+            await this.productsRepository.placeBid(
+                product.id,
+                userId,
+                maxBid,
+                maxBid,
+            );
+
+            // Update current winner's displayed bid amount
+            await this.productsRepository.updateBidAmount(
+                currentWinningBid.id,
+                newPrice,
+            );
+
+            const updatedProduct =
+                await this.productsRepository.updateProductAfterBid(
+                    product.id,
+                    currentWinningBid.bidderId,
+                    newPrice,
+                );
+
+            await this.sendBidNotifications(
+                updatedProduct,
+                userFullname,
+                currentWinningBid.bidderId,
+            );
+            await this.handleAutoRenewal(
+                updatedProduct,
+                product.id,
+                currentWinningBid.bidderId,
+                newPrice,
+            );
+
+            return updatedProduct;
+        }
+
+        // Case 5: New bidder maxBid > current winner's maxBid (new bidder wins!)
+        const newPrice = Math.min(
+            (currentWinningBid.maxBid || currentWinningBid.bidAmount) +
+                Number(product.stepPrice),
+            maxBid,
+        );
+
+        await this.productsRepository.placeBid(
+            product.id,
+            userId,
+            newPrice,
+            maxBid,
+        );
+
+        const updatedProduct =
+            await this.productsRepository.updateProductAfterBid(
+                product.id,
+                userId,
+                newPrice,
+            );
+
+        await this.sendBidNotifications(
+            updatedProduct,
+            userFullname,
+            currentWinningBid.bidderId,
+        );
+        await this.handleAutoRenewal(updatedProduct, product.id);
+
         return updatedProduct;
+    }
+
+    private async handleAutoRenewal(
+        product: Product,
+        productId: string,
+    ): Promise<void> {
+        if (!product.autoRenewal) return;
+
+        // Get configurable settings from admin (will be implemented via SettingsService)
+        // For now, use hardcoded values: 5 minutes trigger, 10 minutes extension
+        const triggerMinutes = 5;
+        const extensionMinutes = 10;
+
+        const timeUntilEnd = product.endDate.getTime() - new Date().getTime();
+        const triggerThreshold = triggerMinutes * 60 * 1000;
+
+        if (timeUntilEnd < triggerThreshold) {
+            const newEndDate = new Date(
+                product.endDate.getTime() + extensionMinutes * 60 * 1000,
+            );
+            await this.productsRepository.updateEndDate(productId, newEndDate);
+        }
     }
 
     private async sendBidNotifications(

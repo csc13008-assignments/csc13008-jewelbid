@@ -262,18 +262,52 @@ export class ProductsRepository {
         productId: string,
         bidderId: string,
         bidAmount: number,
+        maxBid?: number,
     ): Promise<Bid> {
         try {
             const bid = this.bidRepository.create({
                 productId,
                 bidderId,
                 bidAmount,
+                maxBid: maxBid || bidAmount,
             });
 
             return await this.bidRepository.save(bid);
         } catch (error) {
             throw new InternalServerErrorException(
                 'Failed to place bid:' + error,
+            );
+        }
+    }
+
+    async getCurrentWinningBid(productId: string): Promise<Bid | null> {
+        try {
+            const bids = await this.bidRepository.find({
+                where: { productId, isRejected: false },
+                order: { created_at: 'DESC' },
+            });
+
+            if (bids.length === 0) return null;
+
+            // Find the bid with highest maxBid (or bidAmount if maxBid is null)
+            return bids.reduce((highest, current) => {
+                const highestMax = highest.maxBid || highest.bidAmount;
+                const currentMax = current.maxBid || current.bidAmount;
+                return currentMax > highestMax ? current : highest;
+            });
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to get current winning bid:' + error,
+            );
+        }
+    }
+
+    async updateBidAmount(bidId: string, newAmount: number): Promise<void> {
+        try {
+            await this.bidRepository.update(bidId, { bidAmount: newAmount });
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to update bid amount:' + error,
             );
         }
     }
@@ -580,6 +614,18 @@ export class ProductsRepository {
         } catch (error) {
             throw new InternalServerErrorException(
                 'Failed to delete product:' + error,
+            );
+        }
+    }
+
+    async updateEndDate(productId: string, newEndDate: Date): Promise<void> {
+        try {
+            await this.productRepository.update(productId, {
+                endDate: newEndDate,
+            });
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to update end date:' + error,
             );
         }
     }

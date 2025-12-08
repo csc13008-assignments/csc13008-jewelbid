@@ -47,6 +47,19 @@ export class Bid extends BaseEntity {
     bidAmount: number;
 
     @ApiProperty({
+        description: 'Maximum bid amount (for auto-bidding)',
+        example: 7000000,
+        required: false,
+    })
+    @Column({
+        type: 'decimal',
+        precision: 15,
+        scale: 2,
+        nullable: true,
+    })
+    maxBid?: number;
+
+    @ApiProperty({
         description: 'Is this bid rejected by seller',
         example: false,
     })
