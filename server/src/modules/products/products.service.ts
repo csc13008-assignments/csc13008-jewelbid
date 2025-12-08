@@ -269,12 +269,7 @@ export class ProductsService {
             product.currentBidderId,
         );
 
-        await this.handleAutoRenewal(
-            updatedProduct,
-            productId,
-            userId,
-            placeBidDto.bidAmount,
-        );
+        await this.handleAutoRenewal(updatedProduct, productId);
 
         return updatedProduct;
     }
@@ -318,12 +313,7 @@ export class ProductsService {
                 );
 
             await this.sendBidNotifications(updatedProduct, userFullname, null);
-            await this.handleAutoRenewal(
-                updatedProduct,
-                product.id,
-                userId,
-                bidAmount,
-            );
+            await this.handleAutoRenewal(updatedProduct, product.id);
 
             return updatedProduct;
         }
@@ -392,12 +382,7 @@ export class ProductsService {
                 userFullname,
                 currentWinningBid.bidderId,
             );
-            await this.handleAutoRenewal(
-                updatedProduct,
-                product.id,
-                currentWinningBid.bidderId,
-                newPrice,
-            );
+            await this.handleAutoRenewal(updatedProduct, product.id);
 
             return updatedProduct;
         }
