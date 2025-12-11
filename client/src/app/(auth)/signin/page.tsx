@@ -5,16 +5,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input, Button } from '@/modules/shared/components/ui';
-import { authenticateUser } from '@/lib/mockData';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function SignInPage() {
     const router = useRouter();
+    const { signIn, isLoading, error, clearError } = useAuthStore();
+
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
 
     const handleInputChange =
         (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,37 +22,36 @@ export default function SignInPage() {
                 ...prev,
                 [field]: e.target.value,
             }));
-            if (error) setError('');
+            if (error) clearError();
         };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-        setIsLoading(true);
+        clearError();
 
-        (async () => {
-            try {
-                const user = authenticateUser(
+        try {
+            await signIn(formData.email, formData.password);
+
+            // Successfully signed in, navigate to home
+            router.push('/');
+        } catch (err: unknown) {
+            const apiError = err as {
+                response?: { data?: { message?: string } };
+            };
+            const message = apiError.response?.data?.message || '';
+
+            // Check if error is due to unverified email
+            if (message.includes('email') && message.includes('verify')) {
+                // Store email and redirect to verification page
+                localStorage.setItem(
+                    'pendingVerificationEmail',
                     formData.email,
-                    formData.password,
                 );
-
-                if (user) {
-                    localStorage.setItem('user', JSON.stringify(user));
-
-                    router.push('/');
-
-                    window.location.href = '/';
-                } else {
-                    setError('Invalid email or password. Please try again.');
-                }
-            } catch (err) {
+                router.push('/verify-email');
+            } else {
                 console.error('Login error:', err);
-                setError('An error occurred. Please try again.');
-            } finally {
-                setIsLoading(false);
             }
-        })();
+        }
     };
 
     return (
@@ -95,7 +94,10 @@ export default function SignInPage() {
                         Log In
                     </h1>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form
+                        onSubmit={(e) => void handleSubmit(e)}
+                        className="space-y-6"
+                    >
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                                 <p className="text-sm">{error}</p>
@@ -105,7 +107,7 @@ export default function SignInPage() {
                         <Input
                             label="Email"
                             type="email"
-                            placeholder="Email"
+                            placeholder="john@example.com"
                             value={formData.email}
                             onChange={handleInputChange('email')}
                             required
@@ -114,22 +116,30 @@ export default function SignInPage() {
                         <Input
                             label="Password"
                             type="password"
-                            placeholder="Password"
+                            placeholder="Enter your password"
                             value={formData.password}
                             onChange={handleInputChange('password')}
                             required
                         />
 
                         <div className="pt-0">
-                            <p className="font-body text-sm text-neutral-600 mb-6 text-center">
-                                Don&apos;t have an account?{' '}
+                            <div className="flex justify-between items-center mb-6">
+                                <p className="font-body text-sm text-neutral-600">
+                                    Don&apos;t have an account?{' '}
+                                    <Link
+                                        href="/signup"
+                                        className="text-black hover:underline"
+                                    >
+                                        Sign Up
+                                    </Link>
+                                </p>
                                 <Link
-                                    href="/signup"
-                                    className="text-black hover:underline"
+                                    href="/forgot-password"
+                                    className="font-body text-sm text-neutral-600 hover:text-black transition-colors"
                                 >
-                                    Sign Up
+                                    Forgot password?
                                 </Link>
-                            </p>
+                            </div>
 
                             <Button
                                 type="submit"

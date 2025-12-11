@@ -1,54 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { User } from '@/types';
-
-interface AuthUser {
-    id: string;
-    role: string;
-    username?: string;
-    email?: string;
-}
+import { useEffect } from 'react';
+import { useAuthStore } from '@/stores/authStore';
 
 export const useAuth = () => {
-    const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { user, signOut, hydrate } = useAuthStore();
 
     useEffect(() => {
-        const initializeUser = () => {
-            try {
-                const userStr = localStorage.getItem('user');
-                if (userStr) {
-                    const user: User = JSON.parse(userStr);
-                    setCurrentUser({
-                        id: user.id,
-                        role: user.role,
-                        username: user.username,
-                        email: user.email,
-                    });
-                } else {
-                    setCurrentUser(null);
-                }
-            } catch (error) {
-                console.error('Error parsing user from localStorage:', error);
-                setCurrentUser(null);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        initializeUser();
-    }, []);
-
-    const logout = () => {
-        localStorage.removeItem('user');
-        setCurrentUser(null);
-    };
+        // Hydrate store from localStorage on mount
+        hydrate();
+    }, [hydrate]);
 
     return {
-        currentUser,
-        isLoading,
-        isAuthenticated: !!currentUser,
-        logout,
+        currentUser: user,
+        isLoading: false, // Zustand is synchronous, no loading state needed for hydration
+        isAuthenticated: !!user,
+        logout: signOut,
     };
 };
