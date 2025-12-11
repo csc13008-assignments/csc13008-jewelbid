@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,36 +17,23 @@ import {
 } from 'lucide-react';
 import Button from '../ui/Button';
 import { buildSearchUrl } from '@/lib/searchUtils';
-import type { User as UserType } from '@/types';
+import { useAuthStore } from '@/stores/authStore';
+import { useState } from 'react';
 
 const Header = () => {
     const router = useRouter();
+    const { user: currentUser, signOut, hydrate } = useAuthStore();
     const [activeItem, setActiveItem] = useState('Home');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-    const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        const initializeUser = async () => {
-            try {
-                const userStr = localStorage.getItem('user');
-                if (userStr) {
-                    const user = JSON.parse(userStr);
-                    setCurrentUser(user);
-                }
-            } catch (error) {
-                console.error('Error parsing user from localStorage:', error);
-            } finally {
-                setMounted(true);
-            }
-        };
+        // Hydrate auth state from localStorage on mount
+        hydrate();
+    }, [hydrate]);
 
-        initializeUser();
-    }, []);
-
-    const handleLogout = () => {
-        localStorage.removeItem('user');
-        setCurrentUser(null);
+    const handleLogout = async () => {
+        await signOut();
+        setOpenDropdown(null);
         void router.push('/');
     };
 
@@ -194,9 +181,9 @@ const Header = () => {
                     </div>
 
                     <div className="flex-1 flex justify-end items-center gap-4">
-                        {mounted && currentUser ? (
+                        {currentUser ? (
                             <>
-                                {currentUser.role === 'seller' ? (
+                                {currentUser.role === 'Seller' ? (
                                     <Link href="/create-auction">
                                         <Button
                                             variant="primary"
@@ -206,7 +193,7 @@ const Header = () => {
                                             Sell Your Jewelry
                                         </Button>
                                     </Link>
-                                ) : currentUser.role === 'bidder' ? (
+                                ) : currentUser.role === 'Bidder' ? (
                                     <Link href="/upgrade-to-seller">
                                         <Button
                                             variant="primary"
@@ -237,8 +224,7 @@ const Header = () => {
                                     >
                                         <User className="w-6 h-6 text-black" />
                                         <span className="font-body font-medium text-black">
-                                            {currentUser.username ||
-                                                currentUser.name}
+                                            {currentUser.fullname}
                                         </span>
                                         <ChevronDown className="w-4 h-4" />
                                     </button>
@@ -305,7 +291,7 @@ const Header = () => {
                                                     Won Auctions
                                                 </button>
                                                 {currentUser.role ===
-                                                    'seller' && (
+                                                    'Seller' && (
                                                     <button
                                                         onClick={() => {
                                                             router.push(
@@ -323,7 +309,9 @@ const Header = () => {
                                                 )}
                                                 <hr className="my-2 border-neutral-200" />
                                                 <button
-                                                    onClick={handleLogout}
+                                                    onClick={() =>
+                                                        void handleLogout()
+                                                    }
                                                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
                                                 >
                                                     <LogOut className="w-4 h-4" />

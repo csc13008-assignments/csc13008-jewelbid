@@ -36,9 +36,9 @@ export interface ChangePasswordRequest {
 }
 
 export interface AuthResponse {
-    access_token: string;
-    refresh_token: string;
-    user: UserData;
+    accessToken: string;
+    refreshToken: string;
+    message: string;
 }
 
 export interface UserData {

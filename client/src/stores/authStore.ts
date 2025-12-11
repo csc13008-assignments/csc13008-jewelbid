@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authApi, UserData, AuthResponse } from '../lib/api/auth';
+import { authApi, UserData } from '../lib/api/auth';
 
 interface AuthState {
     user: UserData | null;
@@ -59,24 +59,53 @@ export const useAuthStore = create<AuthState>((set) => ({
     signIn: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-            const response: AuthResponse = await authApi.signIn({
+            const response = await authApi.signIn({
                 email,
                 password,
             });
 
-            // Save auth data
-            const { access_token, refresh_token, user } = response;
-            localStorage.setItem('access_token', access_token);
-            localStorage.setItem('refresh_token', refresh_token);
-            localStorage.setItem('user', JSON.stringify(user));
+            // Backend returns camelCase: accessToken, refreshToken
+            const { accessToken, refreshToken } = response;
 
-            set({
-                user,
-                accessToken: access_token,
-                refreshToken: refresh_token,
-                isLoading: false,
-                error: null,
-            });
+            // Save tokens
+            localStorage.setItem('access_token', accessToken);
+            localStorage.setItem('refresh_token', refreshToken);
+
+            // Decode JWT to get user info (token payload contains id, email, fullname, role)
+            try {
+                const tokenPayload = JSON.parse(
+                    atob(accessToken.split('.')[1]),
+                );
+                const user: UserData = {
+                    id: tokenPayload.id,
+                    fullname: tokenPayload.fullname,
+                    email: tokenPayload.email,
+                    phone: '',
+                    address: '',
+                    birthdate: '',
+                    role: tokenPayload.role as 'Bidder' | 'Seller' | 'Admin',
+                    isEmailVerified: true,
+                    positiveRatings: 0,
+                    negativeRatings: 0,
+                };
+                localStorage.setItem('user', JSON.stringify(user));
+
+                set({
+                    user,
+                    accessToken,
+                    refreshToken,
+                    isLoading: false,
+                    error: null,
+                });
+            } catch (decodeError) {
+                console.error('Failed to decode token:', decodeError);
+                set({
+                    accessToken,
+                    refreshToken,
+                    isLoading: false,
+                    error: null,
+                });
+            }
         } catch (error) {
             const message =
                 (error as { response?: { data?: { message?: string } } })
@@ -108,25 +137,52 @@ export const useAuthStore = create<AuthState>((set) => ({
     verifyEmail: async (email, otp) => {
         set({ isLoading: true, error: null });
         try {
-            const response: AuthResponse = await authApi.verifyEmail({
+            const response = await authApi.verifyEmail({
                 email,
                 otp,
             });
 
-            // After verification, auto login
-            const { access_token, refresh_token, user } = response;
-            localStorage.setItem('access_token', access_token);
-            localStorage.setItem('refresh_token', refresh_token);
-            localStorage.setItem('user', JSON.stringify(user));
+            // After verification, get tokens
+            const { accessToken, refreshToken } = response;
+            localStorage.setItem('access_token', accessToken);
+            localStorage.setItem('refresh_token', refreshToken);
             localStorage.removeItem('pendingVerificationEmail');
 
-            set({
-                user,
-                accessToken: access_token,
-                refreshToken: refresh_token,
-                isLoading: false,
-                error: null,
-            });
+            // Decode JWT to get user info
+            try {
+                const tokenPayload = JSON.parse(
+                    atob(accessToken.split('.')[1]),
+                );
+                const user: UserData = {
+                    id: tokenPayload.id,
+                    fullname: tokenPayload.fullname,
+                    email: tokenPayload.email,
+                    phone: '',
+                    address: '',
+                    birthdate: '',
+                    role: tokenPayload.role as 'Bidder' | 'Seller' | 'Admin',
+                    isEmailVerified: true,
+                    positiveRatings: 0,
+                    negativeRatings: 0,
+                };
+                localStorage.setItem('user', JSON.stringify(user));
+
+                set({
+                    user,
+                    accessToken,
+                    refreshToken,
+                    isLoading: false,
+                    error: null,
+                });
+            } catch (decodeError) {
+                console.error('Failed to decode token:', decodeError);
+                set({
+                    accessToken,
+                    refreshToken,
+                    isLoading: false,
+                    error: null,
+                });
+            }
         } catch (error) {
             const message =
                 (error as { response?: { data?: { message?: string } } })
@@ -199,22 +255,32 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     hydrate: () => {
         // Load auth data from localStorage on app start
-        const accessToken = localStorage.getItem('access_token');
-        const refreshToken = localStorage.getItem('refresh_token');
-        const userStr = localStorage.getItem('user');
+        try {
+            const accessToken = localStorage.getItem('access_token');
+            const refreshToken = localStorage.getItem('refresh_token');
+            const userStr = localStorage.getItem('user');
 
-        if (accessToken && refreshToken && userStr) {
-            try {
+            // Check if all required data exists and userStr is valid JSON
+            if (
+                accessToken &&
+                refreshToken &&
+                userStr &&
+                userStr !== 'undefined' &&
+                userStr !== 'null'
+            ) {
                 const user = JSON.parse(userStr);
                 set({
                     user,
                     accessToken,
                     refreshToken,
                 });
-            } catch (error) {
-                console.error('Failed to parse user data:', error);
-                localStorage.removeItem('user');
             }
+        } catch (error) {
+            console.error('Failed to parse user data:', error);
+            // Clear invalid localStorage data
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
         }
     },
 }));
