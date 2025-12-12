@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import CategoryCard from '@/modules/shared/components/ui/CategoryCard';
 import Button from '@/modules/shared/components/ui/Button';
-import { getCategoriesData } from '@/lib/mockData';
+import { getCategoriesData } from '@/lib/categories';
 
 const RecommondedSection = () => {
     const router = useRouter();

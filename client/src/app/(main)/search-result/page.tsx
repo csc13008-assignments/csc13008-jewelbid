@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/modules/shared/components/ui';
-import { mockAuctions } from '@/lib/mockData';
+import { useProductsStore } from '@/stores/productsStore';
 import { BreadcrumbItem, SearchFilters } from '@/types';
 import { getFilterLabel } from '@/lib/searchUtils';
 
@@ -13,6 +13,14 @@ export default function SearchResultPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [sortBy, setSortBy] = useState('newest');
+
+    const {
+        searchResults,
+        searchTotal,
+        isLoading,
+        fetchProducts,
+        fetchProductsByCategory,
+    } = useProductsStore();
 
     const filters: SearchFilters = {
         category: searchParams.get('category') || undefined,
@@ -34,17 +42,38 @@ export default function SearchResultPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
 
+    // Fetch products when filters or page changes
+    const fetchData = useCallback(() => {
+        if (filters.category) {
+            // Capitalize first letter to match backend enum
+            const category =
+                filters.category.charAt(0).toUpperCase() +
+                filters.category.slice(1);
+            void fetchProductsByCategory(category, currentPage, itemsPerPage);
+        } else {
+            void fetchProducts(currentPage, itemsPerPage);
+        }
+    }, [filters.category, currentPage, fetchProducts, fetchProductsByCategory]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
     const getSortedAuctions = () => {
-        const sorted = [...mockAuctions];
+        const sorted = [...searchResults];
 
         switch (sortBy) {
             case 'newest':
                 return sorted.sort(
-                    (a, b) => b.endDate.getTime() - a.endDate.getTime(),
+                    (a, b) =>
+                        new Date(b.endDate).getTime() -
+                        new Date(a.endDate).getTime(),
                 );
             case 'oldest':
                 return sorted.sort(
-                    (a, b) => a.endDate.getTime() - b.endDate.getTime(),
+                    (a, b) =>
+                        new Date(a.endDate).getTime() -
+                        new Date(b.endDate).getTime(),
                 );
             case 'price-asc':
                 return sorted.sort((a, b) => a.currentBid - b.currentBid);
@@ -59,11 +88,9 @@ export default function SearchResultPage() {
 
     const sortedAuctions = getSortedAuctions();
 
-    const totalItems = sortedAuctions.length;
+    const totalItems = searchTotal || sortedAuctions.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentItems = sortedAuctions.slice(startIndex, endIndex);
+    const currentItems = sortedAuctions;
 
     const getPageNumbers = () => {
         const pages: (number | string)[] = [];
@@ -563,14 +590,31 @@ export default function SearchResultPage() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-6">
-                            {currentItems.map((auction) => (
-                                <ProductCard
-                                    key={auction.id}
-                                    auction={auction}
-                                />
-                            ))}
-                        </div>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-20">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            </div>
+                        ) : currentItems.length === 0 ? (
+                            <div className="text-center py-20">
+                                <div className="text-6xl mb-4">💎</div>
+                                <h3 className="font-heading text-2xl font-medium text-black mb-2">
+                                    No products found
+                                </h3>
+                                <p className="text-neutral-600">
+                                    Try adjusting your filters or search
+                                    criteria
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-3 gap-6">
+                                {currentItems.map((auction) => (
+                                    <ProductCard
+                                        key={auction.id}
+                                        auction={auction}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
                         {totalPages > 1 && (
                             <div className="flex items-center justify-center gap-2 mt-12">
