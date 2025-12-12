@@ -1,27 +1,133 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ThumbsUp, ThumbsDown, X } from 'lucide-react';
 import Button from '@/modules/shared/components/ui/Button';
 import RatingBadge from '@/modules/shared/components/ui/RatingBadge';
 import UserSidebar from '@/modules/shared/components/layout/UserSidebar';
 import Image from 'next/image';
-import { mockActiveAuctions, mockCompletedAuctions } from '@/lib/mockData';
+import { productsApi, BackendProduct } from '@/lib/api/products';
+import { usersApi } from '@/lib/api/users';
+
+interface ActiveAuction {
+    id: string;
+    title: string;
+    image: string;
+    currentPrice: number;
+    endTime: string;
+    totalBids: number;
+}
+
+interface CompletedAuction {
+    id: string;
+    title: string;
+    image: string;
+    finalPrice: number;
+    sellerName: string;
+    sellerAvatar: string;
+    sellerId: string;
+    sellerRating: number;
+    dateWon: string;
+}
 
 export default function SellerDashboard() {
     const [activeTab, setActiveTab] = useState<'active' | 'completed'>(
         'active',
     );
+    const [activeAuctions, setActiveAuctions] = useState<ActiveAuction[]>([]);
+    const [completedAuctions, setCompletedAuctions] = useState<
+        CompletedAuction[]
+    >([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const [showRatingPopup, setShowRatingPopup] = useState(false);
     const [currentBidder, setCurrentBidder] = useState<{
+        id: string;
         name: string;
         avatar: string;
-    }>({ name: '', avatar: '' });
-    const [isLiked, setIsLiked] = useState<boolean | null>(null); // null = not selected, true = liked, false = disliked
+        productId: string;
+    }>({ id: '', name: '', avatar: '', productId: '' });
+    const [isLiked, setIsLiked] = useState<boolean | null>(null);
     const [comment, setComment] = useState('');
 
-    const openRatingPopup = (bidderName: string, bidderAvatar: string) => {
-        setCurrentBidder({ name: bidderName, avatar: bidderAvatar });
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+    };
+
+    const getTimeLeft = (endDate: string) => {
+        const now = new Date();
+        const end = new Date(endDate);
+        const diff = end.getTime() - now.getTime();
+        if (diff <= 0) return 'Ended';
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+            (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        );
+
+        if (days > 0) return `${days}d ${hours}h`;
+        return `${hours}h`;
+    };
+
+    const fetchSellerProducts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [activeProducts, completedProducts] = await Promise.all([
+                productsApi.getSellerProducts(),
+                productsApi.getSellerCompletedProducts(),
+            ]);
+
+            setActiveAuctions(
+                activeProducts.map((p: BackendProduct) => ({
+                    id: p.id,
+                    title: p.name,
+                    image: p.mainImage,
+                    currentPrice: p.currentPrice,
+                    endTime: getTimeLeft(p.endDate),
+                    totalBids: p.bidCount,
+                })),
+            );
+
+            setCompletedAuctions(
+                completedProducts.map((p: BackendProduct) => ({
+                    id: p.id,
+                    title: p.name,
+                    image: p.mainImage,
+                    finalPrice: p.currentPrice,
+                    sellerName: p.currentBidder?.fullname || 'Unknown Bidder',
+                    sellerAvatar: '/avatars/default.jpg',
+                    sellerId: p.currentBidder?.id || '',
+                    sellerRating: 5.0,
+                    dateWon: new Date(p.endDate).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                    }),
+                })),
+            );
+        } catch (error) {
+            console.error('Failed to fetch seller products:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void fetchSellerProducts();
+    }, [fetchSellerProducts]);
+
+    const openRatingPopup = (
+        bidderId: string,
+        bidderName: string,
+        bidderAvatar: string,
+        productId: string,
+    ) => {
+        setCurrentBidder({
+            id: bidderId,
+            name: bidderName,
+            avatar: bidderAvatar,
+            productId,
+        });
         setShowRatingPopup(true);
         setIsLiked(null);
         setComment('');
@@ -29,18 +135,27 @@ export default function SellerDashboard() {
 
     const closeRatingPopup = () => {
         setShowRatingPopup(false);
-        setCurrentBidder({ name: '', avatar: '' });
+        setCurrentBidder({ id: '', name: '', avatar: '', productId: '' });
         setIsLiked(null);
         setComment('');
     };
 
-    const handleSubmitRating = () => {
-        console.log('Bidder rating submitted:', {
-            bidder: currentBidder.name,
-            liked: isLiked,
-            comment,
-        });
-        closeRatingPopup();
+    const handleSubmitRating = async () => {
+        if (isLiked === null) return;
+
+        try {
+            await usersApi.createRating({
+                ratedUserId: currentBidder.id,
+                productId: currentBidder.productId,
+                isPositive: isLiked,
+                comment: comment,
+            });
+            closeRatingPopup();
+            alert('Rating submitted successfully!');
+        } catch (error) {
+            console.error('Failed to submit rating:', error);
+            alert('Failed to submit rating. Please try again.');
+        }
     };
 
     return (
@@ -85,174 +200,240 @@ export default function SellerDashboard() {
                             </div>
                         </div>
 
-                        {activeTab === 'active' && (
-                            <div>
-                                <div className="border border-gray-300">
-                                    <div className="grid grid-cols-5 bg-secondary border-b border-primary">
-                                        <div className="px-6 py-4 text-left font-bold text-black border-r border-primary">
-                                            Product
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                            Current Price
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                            Ends In
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                            Total Bids
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black">
-                                            Action
-                                        </div>
-                                    </div>
-
-                                    {mockActiveAuctions.map(
-                                        (auction, index) => (
-                                            <div
-                                                key={auction.id}
-                                                className={`grid grid-cols-5 ${
-                                                    index <
-                                                    mockActiveAuctions.length -
-                                                        1
-                                                        ? 'border-b border-primary'
-                                                        : ''
-                                                }`}
-                                            >
-                                                <div className="px-6 py-6 flex items-center border-r border-primary">
-                                                    <div className="flex items-center space-x-4">
-                                                        <Image
-                                                            src={auction.image}
-                                                            alt={auction.title}
-                                                            width={64}
-                                                            height={64}
-                                                            className="w-16 h-16 rounded object-cover"
-                                                        />
-                                                        <div>
-                                                            <h3 className="font-medium text-black mb-1">
-                                                                {auction.title}
-                                                            </h3>
-                                                        </div>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-20">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            </div>
+                        ) : (
+                            <>
+                                {activeTab === 'active' && (
+                                    <div>
+                                        {activeAuctions.length === 0 ? (
+                                            <div className="text-center py-16">
+                                                <div className="text-6xl mb-4">
+                                                    📦
+                                                </div>
+                                                <h3 className="font-heading text-2xl font-medium text-black mb-2">
+                                                    No active listings
+                                                </h3>
+                                                <p className="text-neutral-600 font-body">
+                                                    Create a new auction to
+                                                    start selling.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="border border-gray-300">
+                                                <div className="grid grid-cols-5 bg-secondary border-b border-primary">
+                                                    <div className="px-6 py-4 text-left font-bold text-black border-r border-primary">
+                                                        Product
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                                        Current Price
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                                        Ends In
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                                        Total Bids
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black">
+                                                        Action
                                                     </div>
                                                 </div>
-                                                <div className="px-6 py-6 text-center font-bold text-black border-r border-primary flex items-center justify-center">
-                                                    ${auction.currentPrice}
-                                                </div>
-                                                <div className="px-6 py-6 text-center text-black border-r border-primary flex items-center justify-center">
-                                                    {auction.endTime}
-                                                </div>
-                                                <div className="px-6 py-6 text-center text-black border-r border-primary flex items-center justify-center">
-                                                    {auction.totalBids}
-                                                </div>
-                                                <div className="px-6 py-6 flex justify-center items-center">
-                                                    <Button
-                                                        variant="primary"
-                                                        size="sm"
-                                                    >
-                                                        View Details
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ),
-                                    )}
-                                </div>
-                            </div>
-                        )}
 
-                        {activeTab === 'completed' && (
-                            <div>
-                                <div className="border border-primary">
-                                    <div className="grid grid-cols-5 bg-secondary border-b border-primary">
-                                        <div className="px-6 py-4 text-left font-bold text-black border-r border-primary">
-                                            Product
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                            Final Price
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                            Seller Name
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                            Date Won
-                                        </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black">
-                                            Action
-                                        </div>
-                                    </div>
-                                    {mockCompletedAuctions.map(
-                                        (auction, index) => (
-                                            <div
-                                                key={auction.id}
-                                                className={`grid grid-cols-5 ${
-                                                    index <
-                                                    mockCompletedAuctions.length -
-                                                        1
-                                                        ? 'border-b border-primary'
-                                                        : ''
-                                                }`}
-                                            >
-                                                <div className="px-6 py-6 flex items-center border-r border-primary ">
-                                                    <div className="flex items-center space-x-4">
-                                                        <Image
-                                                            src={auction.image}
-                                                            alt={auction.title}
-                                                            width={64}
-                                                            height={64}
-                                                            className="w-16 h-16 rounded object-cover"
-                                                        />
-                                                        <div>
-                                                            <h3 className="font-medium text-black mb-1">
-                                                                {auction.title}
-                                                            </h3>
+                                                {activeAuctions.map(
+                                                    (auction, index) => (
+                                                        <div
+                                                            key={auction.id}
+                                                            className={`grid grid-cols-5 ${
+                                                                index <
+                                                                activeAuctions.length -
+                                                                    1
+                                                                    ? 'border-b border-primary'
+                                                                    : ''
+                                                            }`}
+                                                        >
+                                                            <div className="px-6 py-6 flex items-center border-r border-primary">
+                                                                <div className="flex items-center space-x-4">
+                                                                    <Image
+                                                                        src={
+                                                                            auction.image
+                                                                        }
+                                                                        alt={
+                                                                            auction.title
+                                                                        }
+                                                                        width={
+                                                                            64
+                                                                        }
+                                                                        height={
+                                                                            64
+                                                                        }
+                                                                        className="w-16 h-16 rounded object-cover"
+                                                                    />
+                                                                    <div>
+                                                                        <h3 className="font-medium text-black mb-1">
+                                                                            {
+                                                                                auction.title
+                                                                            }
+                                                                        </h3>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="px-6 py-6 text-center font-bold text-black border-r border-primary flex items-center justify-center">
+                                                                {formatCurrency(
+                                                                    auction.currentPrice,
+                                                                )}
+                                                            </div>
+                                                            <div className="px-6 py-6 text-center text-black border-r border-primary flex items-center justify-center">
+                                                                {
+                                                                    auction.endTime
+                                                                }
+                                                            </div>
+                                                            <div className="px-6 py-6 text-center text-black border-r border-primary flex items-center justify-center">
+                                                                {
+                                                                    auction.totalBids
+                                                                }
+                                                            </div>
+                                                            <div className="px-6 py-6 flex justify-center items-center">
+                                                                <Button
+                                                                    variant="primary"
+                                                                    size="sm"
+                                                                >
+                                                                    View Details
+                                                                </Button>
+                                                            </div>
                                                         </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'completed' && (
+                                    <div>
+                                        {completedAuctions.length === 0 ? (
+                                            <div className="text-center py-16">
+                                                <div className="text-6xl mb-4">
+                                                    🏆
+                                                </div>
+                                                <h3 className="font-heading text-2xl font-medium text-black mb-2">
+                                                    No completed auctions
+                                                </h3>
+                                                <p className="text-neutral-600 font-body">
+                                                    Your completed auctions will
+                                                    appear here.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="border border-primary">
+                                                <div className="grid grid-cols-5 bg-secondary border-b border-primary">
+                                                    <div className="px-6 py-4 text-left font-bold text-black border-r border-primary">
+                                                        Product
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                                        Final Price
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                                        Winner
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                                        Date Won
+                                                    </div>
+                                                    <div className="px-6 py-4 text-center font-bold text-black">
+                                                        Action
                                                     </div>
                                                 </div>
-                                                <div className="px-6 py-6 text-center font-bold text-black border-r border-primary flex items-center justify-center">
-                                                    ${auction.finalPrice}
-                                                </div>
-                                                <div className="px-6 py-6 flex items-center justify-center border-r border-primary">
-                                                    <RatingBadge
-                                                        rating={
-                                                            auction.sellerRating
-                                                        }
-                                                        totalReviews={12}
-                                                        sellerName={
-                                                            auction.sellerName
-                                                        }
-                                                        avatar={
-                                                            auction.sellerAvatar
-                                                        }
-                                                        size="sm"
-                                                    />
-                                                </div>
-                                                <div className="px-6 py-6 text-center text-black border-r border-primary    flex items-center justify-center">
-                                                    {auction.dateWon}
-                                                </div>
-                                                <div className="px-1 py-6 flex justify-center items-center space-x-2">
-                                                    <Button
-                                                        variant="primary"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            openRatingPopup(
-                                                                auction.sellerName,
-                                                                auction.sellerAvatar,
-                                                            )
-                                                        }
-                                                    >
-                                                        Rating Bidder
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="bg-red-100 hover:bg-red-200 text-gray-700"
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                </div>
+                                                {completedAuctions.map(
+                                                    (auction, index) => (
+                                                        <div
+                                                            key={auction.id}
+                                                            className={`grid grid-cols-5 ${
+                                                                index <
+                                                                completedAuctions.length -
+                                                                    1
+                                                                    ? 'border-b border-primary'
+                                                                    : ''
+                                                            }`}
+                                                        >
+                                                            <div className="px-6 py-6 flex items-center border-r border-primary ">
+                                                                <div className="flex items-center space-x-4">
+                                                                    <Image
+                                                                        src={
+                                                                            auction.image
+                                                                        }
+                                                                        alt={
+                                                                            auction.title
+                                                                        }
+                                                                        width={
+                                                                            64
+                                                                        }
+                                                                        height={
+                                                                            64
+                                                                        }
+                                                                        className="w-16 h-16 rounded object-cover"
+                                                                    />
+                                                                    <div>
+                                                                        <h3 className="font-medium text-black mb-1">
+                                                                            {
+                                                                                auction.title
+                                                                            }
+                                                                        </h3>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="px-6 py-6 text-center font-bold text-black border-r border-primary flex items-center justify-center">
+                                                                {formatCurrency(
+                                                                    auction.finalPrice,
+                                                                )}
+                                                            </div>
+                                                            <div className="px-6 py-6 flex items-center justify-center border-r border-primary">
+                                                                <RatingBadge
+                                                                    rating={
+                                                                        auction.sellerRating
+                                                                    }
+                                                                    totalReviews={
+                                                                        12
+                                                                    }
+                                                                    sellerName={
+                                                                        auction.sellerName
+                                                                    }
+                                                                    avatar={
+                                                                        auction.sellerAvatar
+                                                                    }
+                                                                    size="sm"
+                                                                />
+                                                            </div>
+                                                            <div className="px-6 py-6 text-center text-black border-r border-primary    flex items-center justify-center">
+                                                                {
+                                                                    auction.dateWon
+                                                                }
+                                                            </div>
+                                                            <div className="px-1 py-6 flex justify-center items-center space-x-2">
+                                                                <Button
+                                                                    variant="primary"
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        openRatingPopup(
+                                                                            auction.sellerId,
+                                                                            auction.sellerName,
+                                                                            auction.sellerAvatar,
+                                                                            auction.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Rating
+                                                                    Bidder
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ),
+                                                )}
                                             </div>
-                                        ),
-                                    )}
-                                </div>
-                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -337,7 +518,7 @@ export default function SellerDashboard() {
                                 Cancel
                             </Button>
                             <Button
-                                onClick={handleSubmitRating}
+                                onClick={() => void handleSubmitRating()}
                                 disabled={isLiked === null}
                             >
                                 Submit Rating

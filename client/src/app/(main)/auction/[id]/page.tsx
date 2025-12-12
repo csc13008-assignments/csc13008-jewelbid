@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Heart, Calendar, Clock, X, Edit } from 'lucide-react';
-import { getAuctionById, mockAuctions } from '@/lib/mockData';
+import { productsApi } from '@/lib/api/products';
+import { mapProductToAuction } from '@/stores/productsStore';
+import { Auction } from '@/types';
 import {
     RatingBadge,
     Button,
@@ -57,12 +59,41 @@ export default function ProductDetailPage() {
         initializeUser();
     }, []);
 
-    const auction = useMemo(() => {
-        if (params.id) {
-            return getAuctionById(params.id as string);
+    // Fetch auction data from API
+    const [auction, setAuction] = useState<Auction | null>(null);
+    const [relatedAuctions, setRelatedAuctions] = useState<Auction[]>([]);
+    const [, setIsAuctionLoading] = useState(true);
+
+    const fetchAuctionData = useCallback(async () => {
+        if (!params.id) return;
+
+        setIsAuctionLoading(true);
+        try {
+            const [productData, allProductsData] = await Promise.all([
+                productsApi.getProductById(params.id as string),
+                productsApi.getAllProducts(1, 10),
+            ]);
+
+            const auctionData = mapProductToAuction(productData);
+            setAuction(auctionData);
+
+            // Set related auctions (excluding current)
+            const related = allProductsData.products
+                .filter((p) => p.id !== params.id)
+                .slice(0, 5)
+                .map(mapProductToAuction);
+            setRelatedAuctions(related);
+        } catch (error) {
+            console.error('Failed to fetch auction:', error);
+            setAuction(null);
+        } finally {
+            setIsAuctionLoading(false);
         }
-        return null;
     }, [params.id]);
+
+    useEffect(() => {
+        void fetchAuctionData();
+    }, [fetchAuctionData]);
 
     const isOwner =
         auction &&
@@ -947,19 +978,13 @@ export default function ProductDetailPage() {
                                 RELATED AUCTIONS
                             </p>
                             <div className="grid grid-cols-1 gap-6">
-                                {mockAuctions
-                                    .filter(
-                                        (relatedAuction) =>
-                                            relatedAuction.id !== auction.id,
-                                    )
-                                    .slice(0, 5)
-                                    .map((relatedAuction) => (
-                                        <ProductCard
-                                            key={relatedAuction.id}
-                                            auction={relatedAuction}
-                                            variant="horizontal"
-                                        />
-                                    ))}
+                                {relatedAuctions.map((relatedAuction) => (
+                                    <ProductCard
+                                        key={relatedAuction.id}
+                                        auction={relatedAuction}
+                                        variant="horizontal"
+                                    />
+                                ))}
                             </div>
                         </div>
                     </div>

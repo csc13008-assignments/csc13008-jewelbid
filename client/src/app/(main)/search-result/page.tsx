@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight } from 'lucide-react';
@@ -9,7 +9,7 @@ import { useProductsStore } from '@/stores/productsStore';
 import { BreadcrumbItem, SearchFilters } from '@/types';
 import { getFilterLabel } from '@/lib/searchUtils';
 
-export default function SearchResultPage() {
+function SearchResultContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [sortBy, setSortBy] = useState('newest');
@@ -678,5 +678,20 @@ export default function SearchResultPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+// Wrapper component with Suspense for useSearchParams
+export default function SearchResultPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-white flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+            }
+        >
+            <SearchResultContent />
+        </Suspense>
     );
 }

@@ -1,16 +1,70 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { ThumbsUp } from 'lucide-react';
 import { RatingBadge } from '@/modules/shared/components/ui';
 import UserSidebar from '@/modules/shared/components/layout/UserSidebar';
-import { mockRatings } from '@/lib/mockData';
+import { usersApi } from '@/lib/api/users';
+
+interface RatingDisplay {
+    id: string;
+    sellerName: string;
+    avatar: string;
+    rating: number;
+    totalReviews: number;
+    isPositive: boolean;
+    comment: string;
+}
 
 export default function MyRatingsPage() {
-    const ratingData = {
-        reputationScore: 75,
-        positiveCount: 15,
-        totalRatings: 5,
-    };
+    const [ratings, setRatings] = useState<RatingDisplay[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [ratingData, setRatingData] = useState({
+        reputationScore: 0,
+        positiveCount: 0,
+        totalRatings: 0,
+    });
+
+    const fetchMyRatings = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const data = await usersApi.getMyRatings();
+
+            const positiveCount = data.filter((r) => r.isPositive).length;
+            const totalRatings = data.length;
+            const reputationScore =
+                totalRatings > 0
+                    ? Math.round((positiveCount / totalRatings) * 100)
+                    : 0;
+
+            setRatingData({
+                reputationScore,
+                positiveCount,
+                totalRatings,
+            });
+
+            const displayRatings: RatingDisplay[] = data.map((rating) => ({
+                id: rating.id,
+                sellerName: rating.rater?.fullname || 'Unknown User',
+                avatar: rating.rater?.profileImage || '/avatars/default.jpg',
+                rating: 5.0,
+                totalReviews: 0,
+                isPositive: rating.isPositive,
+                comment: rating.comment,
+            }));
+
+            setRatings(displayRatings);
+        } catch (error) {
+            console.error('Failed to fetch ratings:', error);
+            setRatings([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void fetchMyRatings();
+    }, [fetchMyRatings]);
 
     return (
         <div className="min-h-screen bg-white">
@@ -35,60 +89,81 @@ export default function MyRatingsPage() {
                                 <div className="text-2xl font-normal text-[#5F87C1]">
                                     {ratingData.reputationScore}% Positive (
                                     {ratingData.positiveCount}+/
-                                    {ratingData.totalRatings} -)
+                                    {ratingData.totalRatings -
+                                        ratingData.positiveCount}{' '}
+                                    -)
                                 </div>
                             </div>
 
-                            <div className="border border-primary">
-                                <div className="grid grid-cols-3 bg-secondary border-b border-primary">
-                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                        Seller
-                                    </div>
-                                    <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                        Ratings
-                                    </div>
-                                    <div className="px-6 py-4 text-center font-bold text-black">
-                                        Comments
-                                    </div>
+                            {isLoading ? (
+                                <div className="flex items-center justify-center py-20">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                                 </div>
+                            ) : ratings.length === 0 ? (
+                                <div className="text-center py-16">
+                                    <div className="text-6xl mb-4">⭐</div>
+                                    <h3 className="font-heading text-2xl font-medium text-black mb-2">
+                                        No ratings yet
+                                    </h3>
+                                    <p className="text-neutral-600 font-body">
+                                        Complete transactions to receive
+                                        ratings.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="border border-primary">
+                                    <div className="grid grid-cols-3 bg-secondary border-b border-primary">
+                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                            Seller
+                                        </div>
+                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                            Ratings
+                                        </div>
+                                        <div className="px-6 py-4 text-center font-bold text-black">
+                                            Comments
+                                        </div>
+                                    </div>
 
-                                {mockRatings.map((rating, index) => (
-                                    <div
-                                        key={rating.id}
-                                        className={`grid grid-cols-3 ${
-                                            index < mockRatings.length - 1
-                                                ? 'border-b border-primary'
-                                                : ''
-                                        }`}
-                                    >
-                                        <div className="px-6 py-6 border-r border-primary">
-                                            <div className="flex items-center justify-center h-full">
-                                                <RatingBadge
-                                                    rating={rating.rating}
-                                                    totalReviews={
-                                                        rating.totalReviews
-                                                    }
-                                                    avatar={rating.avatar}
-                                                    sellerName={
-                                                        rating.sellerName
-                                                    }
-                                                    size="sm"
+                                    {ratings.map((rating, index) => (
+                                        <div
+                                            key={rating.id}
+                                            className={`grid grid-cols-3 ${
+                                                index < ratings.length - 1
+                                                    ? 'border-b border-primary'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <div className="px-6 py-6 border-r border-primary">
+                                                <div className="flex items-center justify-center h-full">
+                                                    <RatingBadge
+                                                        rating={rating.rating}
+                                                        totalReviews={
+                                                            rating.totalReviews
+                                                        }
+                                                        avatar={rating.avatar}
+                                                        sellerName={
+                                                            rating.sellerName
+                                                        }
+                                                        size="sm"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="px-6 py-6 border-r border-primary flex items-center justify-center">
+                                                <ThumbsUp
+                                                    className={`w-6 h-6 ${rating.isPositive ? 'text-green-600' : 'text-gray-400'}`}
                                                 />
                                             </div>
-                                        </div>
 
-                                        <div className="px-6 py-6 border-r border-primary flex items-center justify-center">
-                                            <ThumbsUp className="w-6 h-6 text-gray-600" />
+                                            <div className="px-6 py-6 flex items-center">
+                                                <span className="text-black text-base">
+                                                    {rating.comment}
+                                                </span>
+                                            </div>
                                         </div>
-
-                                        <div className="px-6 py-6 flex items-center">
-                                            <span className="text-black text-base">
-                                                {rating.comment}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

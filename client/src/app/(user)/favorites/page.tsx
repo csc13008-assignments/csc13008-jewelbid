@@ -1,26 +1,35 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ProductCard } from '@/modules/shared/components/ui';
 import UserSidebar from '@/modules/shared/components/layout/UserSidebar';
-import { mockAuctions } from '@/lib/mockData';
+import { productsApi } from '@/lib/api/products';
+import { mapProductToAuction } from '@/stores/productsStore';
+import { Auction } from '@/types';
 import { ChevronDown } from 'lucide-react';
 
 export default function FavoritesPage() {
     const [sortBy, setSortBy] = useState('newest');
+    const [favorites, setFavorites] = useState<Auction[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const favoriteAuctions = useMemo(() => {
-        const likedAuctions = mockAuctions.filter((auction) => auction.isLiked);
-
-        if (likedAuctions.length === 0) {
-            return mockAuctions.slice(0, 6).map((auction) => ({
-                ...auction,
-                isLiked: true,
-            }));
+    const fetchWatchlist = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const products = await productsApi.getWatchlist();
+            const auctions = products.map(mapProductToAuction);
+            setFavorites(auctions);
+        } catch (error) {
+            console.error('Failed to fetch watchlist:', error);
+            setFavorites([]);
+        } finally {
+            setIsLoading(false);
         }
-
-        return likedAuctions;
     }, []);
+
+    useEffect(() => {
+        void fetchWatchlist();
+    }, [fetchWatchlist]);
 
     const sortOptions = [
         { label: 'Newest', value: 'newest' },
@@ -31,16 +40,20 @@ export default function FavoritesPage() {
     ];
 
     const getSortedAuctions = () => {
-        const sorted = [...favoriteAuctions];
+        const sorted = [...favorites];
 
         switch (sortBy) {
             case 'newest':
                 return sorted.sort(
-                    (a, b) => b.endDate.getTime() - a.endDate.getTime(),
+                    (a, b) =>
+                        new Date(b.endDate).getTime() -
+                        new Date(a.endDate).getTime(),
                 );
             case 'oldest':
                 return sorted.sort(
-                    (a, b) => a.endDate.getTime() - b.endDate.getTime(),
+                    (a, b) =>
+                        new Date(a.endDate).getTime() -
+                        new Date(b.endDate).getTime(),
                 );
             case 'price-asc':
                 return sorted.sort((a, b) => a.currentBid - b.currentBid);
@@ -97,7 +110,11 @@ export default function FavoritesPage() {
                             </div>
                         </div>
 
-                        {sortedFavorites.length > 0 ? (
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-20">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            </div>
+                        ) : sortedFavorites.length > 0 ? (
                             <div className="grid grid-cols-3 gap-12">
                                 {sortedFavorites.map((auction) => (
                                     <ProductCard

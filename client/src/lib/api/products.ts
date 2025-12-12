@@ -28,6 +28,12 @@ export interface BackendProduct {
     } | null;
 }
 
+export interface BidHistoryItem {
+    bidderName: string;
+    bidAmount: number;
+    bidTime: string;
+}
+
 export interface HomepageProductsResponse {
     topEndingSoon: BackendProduct[];
     topBidCount: BackendProduct[];
@@ -44,6 +50,12 @@ export const productsApi = {
     // GET /products/:id
     getProductById: async (id: string): Promise<BackendProduct> => {
         const response = await apiClient.get(`/products/${id}`);
+        return response.data;
+    },
+
+    // GET /products/:id/bid-history
+    getBidHistory: async (id: string): Promise<BidHistoryItem[]> => {
+        const response = await apiClient.get(`/products/${id}/bid-history`);
         return response.data;
     },
 
@@ -94,6 +106,36 @@ export const productsApi = {
         const response = await apiClient.get(`/products/category/${category}`, {
             params: { page, limit },
         });
+        return response.data;
+    },
+
+    // GET /products/watchlist [BIDDER, SELLER] - requires auth
+    getWatchlist: async (): Promise<BackendProduct[]> => {
+        const response = await apiClient.get('/products/watchlist');
+        return response.data;
+    },
+
+    // GET /products/bidding [BIDDER] - products user is bidding on
+    getProductsUserIsBidding: async (): Promise<BackendProduct[]> => {
+        const response = await apiClient.get('/products/bidding');
+        return response.data;
+    },
+
+    // GET /products/won [BIDDER] - products user won
+    getProductsUserWon: async (): Promise<BackendProduct[]> => {
+        const response = await apiClient.get('/products/won');
+        return response.data;
+    },
+
+    // GET /products/seller [SELLER] - seller's active products
+    getSellerProducts: async (): Promise<BackendProduct[]> => {
+        const response = await apiClient.get('/products/seller');
+        return response.data;
+    },
+
+    // GET /products/seller/completed [SELLER] - seller's completed auctions
+    getSellerCompletedProducts: async (): Promise<BackendProduct[]> => {
+        const response = await apiClient.get('/products/seller/completed');
         return response.data;
     },
 };
