@@ -6,8 +6,11 @@ import Image from 'next/image';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/modules/shared/components/ui';
 import { useProductsStore } from '@/stores/productsStore';
+import { useCategoriesStore } from '@/stores/categoriesStore';
 import { BreadcrumbItem, SearchFilters } from '@/types';
 import { getFilterLabel } from '@/lib/searchUtils';
+import { materials } from '@/lib/categories';
+import { cn } from '@/lib/utils';
 
 function SearchResultContent() {
     const searchParams = useSearchParams();
@@ -17,10 +20,17 @@ function SearchResultContent() {
     const {
         searchResults,
         searchTotal,
-        isLoading,
+        isLoading: isLoadingProducts,
         fetchProducts,
         fetchProductsByCategory,
+        searchProducts,
     } = useProductsStore();
+
+    const {
+        categoryFilterOptions,
+        fetchCategories,
+        isLoading: isLoadingCategories,
+    } = useCategoriesStore();
 
     const filters: SearchFilters = {
         category: searchParams.get('category') || undefined,
@@ -29,6 +39,9 @@ function SearchResultContent() {
         targetAudience: searchParams.get('target') || undefined,
         auctionStatus: searchParams.get('status') || undefined,
     };
+
+    // Get search query from URL
+    const searchQuery = searchParams.get('q') || '';
 
     const [openFilters, setOpenFilters] = useState<Set<string>>(
         new Set([
@@ -40,11 +53,19 @@ function SearchResultContent() {
         ]),
     );
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 6;
+    const itemsPerPage = 9; // Increased for better grid layout
 
-    // Fetch products when filters or page changes
+    // Fetch products when filters, search query or page changes
     const fetchData = useCallback(() => {
-        if (filters.category) {
+        if (searchQuery) {
+            // Search by query
+            void searchProducts({
+                q: searchQuery,
+                category: filters.category,
+                page: currentPage,
+                limit: itemsPerPage,
+            });
+        } else if (filters.category) {
             // Capitalize first letter to match backend enum
             const category =
                 filters.category.charAt(0).toUpperCase() +
@@ -53,11 +74,23 @@ function SearchResultContent() {
         } else {
             void fetchProducts(currentPage, itemsPerPage);
         }
-    }, [filters.category, currentPage, fetchProducts, fetchProductsByCategory]);
+    }, [
+        searchQuery,
+        filters.category,
+        currentPage,
+        fetchProducts,
+        fetchProductsByCategory,
+        searchProducts,
+    ]);
 
     useEffect(() => {
-        fetchData();
+        void fetchData();
     }, [fetchData]);
+
+    // Fetch categories on mount
+    useEffect(() => {
+        void fetchCategories();
+    }, [fetchCategories]);
 
     const getSortedAuctions = () => {
         const sorted = [...searchResults];
@@ -167,7 +200,9 @@ function SearchResultContent() {
     const breadcrumbs = getBreadcrumbs();
 
     const getPageTitle = (): string => {
-        if (filters.category) {
+        if (searchQuery) {
+            return `Search results for "${searchQuery}"`;
+        } else if (filters.category) {
             return getFilterLabel('category', filters.category);
         } else if (filters.brand) {
             return getFilterLabel('brand', filters.brand);
@@ -183,16 +218,10 @@ function SearchResultContent() {
 
     const pageTitle = getPageTitle();
 
+    const isLoading = isLoadingProducts || isLoadingCategories;
+
     const filterOptions = {
-        category: [
-            { label: 'Ring', value: 'ring' },
-            { label: 'Necklace', value: 'necklace' },
-            { label: 'Watch', value: 'watch' },
-            { label: 'Earring', value: 'earring' },
-            { label: 'Anklet', value: 'anklet' },
-            { label: 'Pendant', value: 'pendant' },
-            { label: 'Charm', value: 'charm' },
-        ],
+        category: categoryFilterOptions,
         brand: [
             { label: 'Cartier', value: 'cartier' },
             { label: 'Tiffany & Co.', value: 'tiffany' },
@@ -201,14 +230,7 @@ function SearchResultContent() {
             { label: 'Dior', value: 'dior' },
             { label: 'Local Artisan Brands', value: 'local' },
         ],
-        material: [
-            { label: 'Gold', value: 'gold' },
-            { label: 'Silver', value: 'silver' },
-            { label: 'Platinum', value: 'platinum' },
-            { label: 'Diamond', value: 'diamond' },
-            { label: 'Gemstone', value: 'gemstone' },
-            { label: 'Leather', value: 'leather' },
-        ],
+        material: materials,
         targetAudience: [
             { label: 'For Men', value: 'for-men' },
             { label: 'For Women', value: 'for-women' },
@@ -225,8 +247,8 @@ function SearchResultContent() {
     };
 
     const sortOptions = [
-        { label: 'Newest', value: 'newest' },
-        { label: 'Oldest', value: 'oldest' },
+        { label: 'Newest Arrivals', value: 'newest' },
+        { label: 'Ending Soonest', value: 'oldest' },
         { label: 'Price: Low to High', value: 'price-asc' },
         { label: 'Price: High to Low', value: 'price-desc' },
         { label: 'Most Popular', value: 'popular' },
@@ -280,15 +302,27 @@ function SearchResultContent() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    // Check if any filter is active
+    const hasActiveFilters = Object.values(filters).some(
+        (value) => value !== undefined,
+    );
+
+    // Clear all filters
+    const handleClearFilters = () => {
+        router.push('/search-result');
+        setCurrentPage(1);
+    };
+
     return (
-        <div className="min-h-screen bg-white">
-            <div className="bg-neutral-50 border-b border-neutral-200">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm">
+        <div className="min-h-screen bg-secondary/30">
+            {/* Breadcrumb Section */}
+            <div className="bg-white border-b border-neutral-100 sticky top-[80px] z-30 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <div className="flex items-center gap-2 text-sm overflow-x-auto no-scrollbar">
                         {breadcrumbs.map((crumb, index) => (
                             <div
                                 key={index}
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 whitespace-nowrap"
                             >
                                 {index > 0 && (
                                     <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -296,12 +330,12 @@ function SearchResultContent() {
                                 {crumb.href ? (
                                     <a
                                         href={crumb.href}
-                                        className="text-neutral-600 hover:text-black transition-colors"
+                                        className="text-neutral-500 hover:text-dark-primary transition-colors"
                                     >
                                         {crumb.label}
                                     </a>
                                 ) : (
-                                    <span className="text-black font-medium">
+                                    <span className="text-neutral-900 font-medium">
                                         {crumb.label}
                                     </span>
                                 )}
@@ -311,7 +345,8 @@ function SearchResultContent() {
                 </div>
             </div>
 
-            <div className="relative h-48 bg-neutral-200">
+            {/* Banner Section */}
+            <div className="relative h-64 md:h-80 w-full overflow-hidden">
                 <Image
                     src="/bia.png"
                     alt="Banner"
@@ -319,325 +354,237 @@ function SearchResultContent() {
                     className="object-cover"
                     priority
                 />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <div className="text-center text-white p-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <h1 className="font-heading !text-white text-5xl md:text-5xl font-bold mb-2 drop-shadow-lg">
+                            {pageTitle}
+                        </h1>
+                        <p className="text-white/90 text-lg max-w-2xl mx-auto drop-shadow-md">
+                            Discover unique pieces and find your perfect match
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="flex gap-8">
-                    <aside className="w-64 shrink-0">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Sidebar Filters */}
+                    <aside className="w-64 shrink-0 hidden lg:block">
                         <div className="space-y-6">
-                            <div className="border-b border-neutral-200 pb-4">
-                                <button
-                                    onClick={() => toggleFilter('category')}
-                                    className="flex items-center justify-between w-full font-body font-bold text-black mb-3"
-                                >
-                                    Category
-                                    <ChevronDown
-                                        className={`w-4 h-4 transition-transform ${openFilters.has('category') ? 'rotate-180' : ''}`}
-                                    />
-                                </button>
-                                {openFilters.has('category') && (
-                                    <div className="space-y-2">
-                                        {filterOptions.category.map(
-                                            (option) => (
-                                                <label
-                                                    key={option.value}
-                                                    className="flex items-center gap-2 cursor-pointer"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="category"
-                                                        value={option.value}
-                                                        checked={
-                                                            filters.category ===
-                                                            option.value
-                                                        }
-                                                        onChange={(e) =>
-                                                            handleFilterChange(
-                                                                'category',
-                                                                e.target.value,
-                                                                e.target
-                                                                    .checked,
-                                                            )
-                                                        }
-                                                        className="w-4 h-4"
-                                                    />
-                                                    <span className="text-sm text-neutral-700">
-                                                        {option.label}
-                                                    </span>
-                                                </label>
-                                            ),
-                                        )}
-                                    </div>
+                            <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
+                                <h3 className="font-heading text-lg font-bold text-neutral-900">
+                                    Filters
+                                </h3>
+                                {hasActiveFilters && (
+                                    <button
+                                        onClick={handleClearFilters}
+                                        className="text-sm font-medium text-red-500 hover:text-red-700 hover:underline transition-colors"
+                                    >
+                                        Clear All
+                                    </button>
                                 )}
                             </div>
 
-                            <div className="border-b border-neutral-200 pb-4">
-                                <button
-                                    onClick={() => toggleFilter('brand')}
-                                    className="flex items-center justify-between w-full font-body font-bold text-black mb-3"
-                                >
-                                    Brand
-                                    <ChevronDown
-                                        className={`w-4 h-4 transition-transform ${openFilters.has('brand') ? 'rotate-180' : ''}`}
-                                    />
-                                </button>
-                                {openFilters.has('brand') && (
-                                    <div className="space-y-2">
-                                        {filterOptions.brand.map((option) => (
-                                            <label
-                                                key={option.value}
-                                                className="flex items-center gap-2 cursor-pointer"
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="brand"
-                                                    value={option.value}
-                                                    checked={
-                                                        filters.brand ===
-                                                        option.value
-                                                    }
-                                                    onChange={(e) =>
-                                                        handleFilterChange(
-                                                            'brand',
-                                                            e.target.value,
-                                                            e.target.checked,
-                                                        )
-                                                    }
-                                                    className="w-4 h-4"
-                                                />
-                                                <span className="text-sm text-neutral-700">
-                                                    {option.label}
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            <div className="space-y-6">
+                                {[
+                                    {
+                                        id: 'category',
+                                        label: 'Jewelry Type',
+                                        options: filterOptions.category,
+                                    },
+                                    {
+                                        id: 'brand',
+                                        label: 'Brand',
+                                        options: filterOptions.brand,
+                                    },
+                                    {
+                                        id: 'material',
+                                        label: 'Material',
+                                        options: filterOptions.material,
+                                    },
+                                    {
+                                        id: 'targetAudience',
+                                        label: 'Target Audience',
+                                        options: filterOptions.targetAudience,
+                                    },
+                                    {
+                                        id: 'auctionStatus',
+                                        label: 'Auction Status',
+                                        options: filterOptions.auctionStatus,
+                                    },
+                                ].map((section) => (
+                                    <div
+                                        key={section.id}
+                                        className="border-b border-neutral-200 pb-4 last:border-0 last:pb-0"
+                                    >
+                                        <button
+                                            onClick={() =>
+                                                toggleFilter(section.id)
+                                            }
+                                            className="flex items-center justify-between w-full font-body font-bold text-neutral-900 mb-3 hover:text-dark-primary transition-colors"
+                                        >
+                                            {section.label}
+                                            <ChevronDown
+                                                className={`w-4 h-4 text-neutral-400 transition-transform duration-300 ${openFilters.has(section.id) ? 'rotate-180' : ''}`}
+                                            />
+                                        </button>
 
-                            <div className="border-b border-neutral-200 pb-4">
-                                <button
-                                    onClick={() => toggleFilter('material')}
-                                    className="flex items-center justify-between w-full font-body font-bold text-black mb-3"
-                                >
-                                    Material
-                                    <ChevronDown
-                                        className={`w-4 h-4 transition-transform ${openFilters.has('material') ? 'rotate-180' : ''}`}
-                                    />
-                                </button>
-                                {openFilters.has('material') && (
-                                    <div className="space-y-2">
-                                        {filterOptions.material.map(
-                                            (option) => (
+                                        <div
+                                            className={cn(
+                                                'space-y-2 overflow-hidden transition-all duration-300 ease-in-out',
+                                                openFilters.has(section.id)
+                                                    ? 'max-h-[500px] opacity-100'
+                                                    : 'max-h-0 opacity-0',
+                                            )}
+                                        >
+                                            {section.options.map((option) => (
                                                 <label
                                                     key={option.value}
-                                                    className="flex items-center gap-2 cursor-pointer"
+                                                    className="flex items-center gap-3 cursor-pointer group py-1"
                                                 >
-                                                    <input
-                                                        type="radio"
-                                                        name="material"
-                                                        value={option.value}
-                                                        checked={
-                                                            filters.material ===
-                                                            option.value
-                                                        }
-                                                        onChange={(e) =>
-                                                            handleFilterChange(
-                                                                'material',
-                                                                e.target.value,
-                                                                e.target
-                                                                    .checked,
-                                                            )
-                                                        }
-                                                        className="w-4 h-4"
-                                                    />
-                                                    <span className="text-sm text-neutral-700">
+                                                    <div className="relative flex items-center">
+                                                        <input
+                                                            type="radio"
+                                                            name={section.id}
+                                                            value={option.value}
+                                                            checked={
+                                                                // @ts-expect-error - filters type is dynamic
+                                                                filters[
+                                                                    section.id
+                                                                ] ===
+                                                                option.value
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleFilterChange(
+                                                                    section.id,
+                                                                    e.target
+                                                                        .value,
+                                                                    e.target
+                                                                        .checked,
+                                                                )
+                                                            }
+                                                            className="peer appearance-none w-4 h-4 border border-neutral-300 rounded-full checked:border-dark-primary checked:bg-dark-primary transition-all"
+                                                        />
+                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100">
+                                                            <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-sm text-neutral-600 group-hover:text-dark-primary transition-colors">
                                                         {option.label}
                                                     </span>
                                                 </label>
-                                            ),
-                                        )}
+                                            ))}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="border-b border-neutral-200 pb-4">
-                                <button
-                                    onClick={() =>
-                                        toggleFilter('targetAudience')
-                                    }
-                                    className="flex items-center justify-between w-full font-body font-bold text-black mb-3"
-                                >
-                                    Target Audience
-                                    <ChevronDown
-                                        className={`w-4 h-4 transition-transform ${openFilters.has('targetAudience') ? 'rotate-180' : ''}`}
-                                    />
-                                </button>
-                                {openFilters.has('targetAudience') && (
-                                    <div className="space-y-2">
-                                        {filterOptions.targetAudience.map(
-                                            (option) => (
-                                                <label
-                                                    key={option.value}
-                                                    className="flex items-center gap-2 cursor-pointer"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="targetAudience"
-                                                        value={option.value}
-                                                        checked={
-                                                            filters.targetAudience ===
-                                                            option.value
-                                                        }
-                                                        onChange={(e) =>
-                                                            handleFilterChange(
-                                                                'targetAudience',
-                                                                e.target.value,
-                                                                e.target
-                                                                    .checked,
-                                                            )
-                                                        }
-                                                        className="w-4 h-4"
-                                                    />
-                                                    <span className="text-sm text-neutral-700">
-                                                        {option.label}
-                                                    </span>
-                                                </label>
-                                            ),
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="border-b border-neutral-200 pb-4">
-                                <button
-                                    onClick={() =>
-                                        toggleFilter('auctionStatus')
-                                    }
-                                    className="flex items-center justify-between w-full font-body font-bold text-black mb-3"
-                                >
-                                    Auction Status
-                                    <ChevronDown
-                                        className={`w-4 h-4 transition-transform ${openFilters.has('auctionStatus') ? 'rotate-180' : ''}`}
-                                    />
-                                </button>
-                                {openFilters.has('auctionStatus') && (
-                                    <div className="space-y-2">
-                                        {filterOptions.auctionStatus.map(
-                                            (option) => (
-                                                <label
-                                                    key={option.value}
-                                                    className="flex items-center gap-2 cursor-pointer"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="auctionStatus"
-                                                        value={option.value}
-                                                        checked={
-                                                            filters.auctionStatus ===
-                                                            option.value
-                                                        }
-                                                        onChange={(e) =>
-                                                            handleFilterChange(
-                                                                'auctionStatus',
-                                                                e.target.value,
-                                                                e.target
-                                                                    .checked,
-                                                            )
-                                                        }
-                                                        className="w-4 h-4"
-                                                    />
-                                                    <span className="text-sm text-neutral-700">
-                                                        {option.label}
-                                                    </span>
-                                                </label>
-                                            ),
-                                        )}
-                                    </div>
-                                )}
+                                ))}
                             </div>
                         </div>
                     </aside>
 
-                    <main className="flex-1">
+                    {/* Main Content */}
+                    <main className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="font-heading text-4xl font-bold text-black">
-                                {pageTitle}
-                            </h2>
+                            <p className="text-neutral-500">
+                                Showing{' '}
+                                <span className="font-medium text-neutral-900">
+                                    {currentItems.length}
+                                </span>{' '}
+                                results
+                            </p>
 
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <label className="text-sm text-neutral-600">
-                                        Sort by:
-                                    </label>
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => {
-                                            setSortBy(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
-                                        className="border border-primary px-3 py-1.5 text-sm focus:outline-none focus:border-black"
-                                    >
-                                        {sortOptions.map((option) => (
-                                            <option
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                            <div className="hidden lg:flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-neutral-200 shadow-sm">
+                                <span className="text-sm text-neutral-500">
+                                    Sort by:
+                                </span>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => {
+                                        setSortBy(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                    className="text-sm font-medium text-neutral-900 bg-transparent border-none focus:ring-0 cursor-pointer pr-8"
+                                >
+                                    {sortOptions.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-20">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[...Array(6)].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="bg-white rounded-2xl h-[400px] animate-pulse border border-neutral-100 shadow-sm"
+                                    ></div>
+                                ))}
                             </div>
                         ) : currentItems.length === 0 ? (
-                            <div className="text-center py-20">
-                                <div className="text-6xl mb-4">💎</div>
-                                <h3 className="font-heading text-2xl font-medium text-black mb-2">
+                            <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-12 text-center animate-in fade-in zoom-in duration-500">
+                                <div className="w-24 h-24 mx-auto mb-6 bg-secondary rounded-full flex items-center justify-center">
+                                    <span className="text-4xl">💎</span>
+                                </div>
+                                <h3 className="font-heading text-2xl font-medium text-neutral-900 mb-2">
                                     No products found
                                 </h3>
-                                <p className="text-neutral-600">
-                                    Try adjusting your filters or search
-                                    criteria
+                                <p className="text-neutral-500 max-w-md mx-auto mb-8">
+                                    We couldn&apos;t find any jewelry matching
+                                    your criteria. Try adjusting your filters or
+                                    search for something else.
                                 </p>
+                                <button
+                                    onClick={handleClearFilters}
+                                    className="px-6 py-2.5 bg-dark-primary text-white rounded-xl font-medium hover:bg-primary hover:text-dark-primary transition-all shadow-md hover:shadow-lg"
+                                >
+                                    Clear All Filters
+                                </button>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-3 gap-6">
-                                {currentItems.map((auction) => (
-                                    <ProductCard
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {currentItems.map((auction, index) => (
+                                    <div
                                         key={auction.id}
-                                        auction={auction}
-                                    />
+                                        className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
+                                        style={{
+                                            animationDelay: `${index * 100}ms`,
+                                        }}
+                                    >
+                                        <ProductCard auction={auction} />
+                                    </div>
                                 ))}
                             </div>
                         )}
 
+                        {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 mt-12">
+                            <div className="flex items-center justify-center gap-2 mt-12 animate-in fade-in duration-700 delay-300">
                                 <button
                                     onClick={() =>
                                         currentPage > 1 &&
                                         handlePageChange(currentPage - 1)
                                     }
                                     disabled={currentPage === 1}
-                                    className={`w-8 h-8 flex items-center justify-center border border-primary ${
+                                    className={cn(
+                                        'w-10 h-10 flex items-center justify-center rounded-xl border transition-all',
                                         currentPage === 1
-                                            ? 'opacity-50 cursor-not-allowed'
-                                            : 'hover:bg-secondary'
-                                    }`}
+                                            ? 'border-neutral-200 text-neutral-300 cursor-not-allowed'
+                                            : 'border-neutral-300 text-neutral-600 hover:bg-white hover:border-dark-primary hover:text-dark-primary hover:shadow-md',
+                                    )}
                                 >
-                                    ‹
+                                    <ChevronRight className="w-5 h-5 rotate-180" />
                                 </button>
 
                                 {getPageNumbers().map((page, index) =>
                                     page === '...' ? (
                                         <span
                                             key={`ellipsis-${index}`}
-                                            className="px-2"
+                                            className="w-10 h-10 flex items-center justify-center text-neutral-400"
                                         >
                                             ...
                                         </span>
@@ -647,11 +594,12 @@ function SearchResultContent() {
                                             onClick={() =>
                                                 handlePageChange(page as number)
                                             }
-                                            className={`w-8 h-8 flex items-center justify-center ${
+                                            className={cn(
+                                                'w-10 h-10 flex items-center justify-center rounded-xl font-medium transition-all',
                                                 currentPage === page
-                                                    ? 'bg-dark-primary text-sm text-black'
-                                                    : 'border border-primary hover:bg-secondary text-sm'
-                                            }`}
+                                                    ? 'bg-dark-primary text-white shadow-md scale-110'
+                                                    : 'bg-white border border-neutral-200 text-neutral-600 hover:border-dark-primary hover:text-dark-primary hover:shadow-sm',
+                                            )}
                                         >
                                             {page}
                                         </button>
@@ -664,13 +612,14 @@ function SearchResultContent() {
                                         handlePageChange(currentPage + 1)
                                     }
                                     disabled={currentPage === totalPages}
-                                    className={`w-8 h-8 flex items-center justify-center border border-primary ${
+                                    className={cn(
+                                        'w-10 h-10 flex items-center justify-center rounded-xl border transition-all',
                                         currentPage === totalPages
-                                            ? 'opacity-50 cursor-not-allowed'
-                                            : 'hover:bg-secondary'
-                                    }`}
+                                            ? 'border-neutral-200 text-neutral-300 cursor-not-allowed'
+                                            : 'border-neutral-300 text-neutral-600 hover:bg-white hover:border-dark-primary hover:text-dark-primary hover:shadow-md',
+                                    )}
                                 >
-                                    ›
+                                    <ChevronRight className="w-5 h-5" />
                                 </button>
                             </div>
                         )}
@@ -686,8 +635,8 @@ export default function SearchResultPage() {
     return (
         <Suspense
             fallback={
-                <div className="min-h-screen bg-white flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                <div className="min-h-screen bg-secondary/30 flex items-center justify-center">
+                    <div className="w-16 h-16 border-4 border-primary border-t-dark-primary rounded-full animate-spin"></div>
                 </div>
             }
         >

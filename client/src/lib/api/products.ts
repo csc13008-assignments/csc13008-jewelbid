@@ -34,6 +34,27 @@ export interface BidHistoryItem {
     bidTime: string;
 }
 
+export interface Question {
+    id: string;
+    productId: string;
+    askerId: string;
+    asker?: {
+        id: string;
+        fullname: string;
+        profileImage?: string;
+    };
+    question: string;
+    answer?: string;
+    answeredAt?: string;
+    created_at: string;
+}
+
+export interface ProductDetailsResponse {
+    product: BackendProduct;
+    relatedProducts: BackendProduct[];
+    questions: Question[];
+}
+
 export interface HomepageProductsResponse {
     topEndingSoon: BackendProduct[];
     topBidCount: BackendProduct[];
@@ -47,15 +68,72 @@ export const productsApi = {
         return response.data;
     },
 
-    // GET /products/:id
-    getProductById: async (id: string): Promise<BackendProduct> => {
+    // GET /products/:id - Get product details with related products and Q&A
+    getProductById: async (id: string): Promise<ProductDetailsResponse> => {
         const response = await apiClient.get(`/products/${id}`);
         return response.data;
     },
 
-    // GET /products/:id/bid-history
+    // GET /products/:id/bids - Get bid history
     getBidHistory: async (id: string): Promise<BidHistoryItem[]> => {
-        const response = await apiClient.get(`/products/${id}/bid-history`);
+        const response = await apiClient.get(`/products/${id}/bids`);
+        return response.data;
+    },
+
+    // POST /products/:id/bid - Place a bid [BIDDER]
+    placeBid: async (id: string, maxBid: number): Promise<BackendProduct> => {
+        const response = await apiClient.post(`/products/${id}/bid`, {
+            maxBid,
+        });
+        return response.data;
+    },
+
+    // POST /products/watchlist - Add to watchlist [BIDDER]
+    addToWatchlist: async (productId: string): Promise<{ message: string }> => {
+        const response = await apiClient.post('/products/watchlist', {
+            productId,
+        });
+        return response.data;
+    },
+
+    // DELETE /products/watchlist/:id - Remove from watchlist [BIDDER]
+    removeFromWatchlist: async (id: string): Promise<{ message: string }> => {
+        const response = await apiClient.delete(`/products/watchlist/${id}`);
+        return response.data;
+    },
+
+    // POST /products/questions - Ask a question [BIDDER]
+    askQuestion: async (
+        productId: string,
+        question: string,
+    ): Promise<{ message: string }> => {
+        const response = await apiClient.post('/products/questions', {
+            productId,
+            question,
+        });
+        return response.data;
+    },
+
+    // PATCH /products/questions/:id/answer - Answer a question [SELLER]
+    answerQuestion: async (
+        questionId: string,
+        answer: string,
+    ): Promise<{ message: string }> => {
+        const response = await apiClient.patch(
+            `/products/questions/${questionId}/answer`,
+            { answer },
+        );
+        return response.data;
+    },
+
+    // PATCH /products/:id/description - Append description [SELLER]
+    appendDescription: async (
+        id: string,
+        additionalDescription: string,
+    ): Promise<BackendProduct> => {
+        const response = await apiClient.patch(`/products/${id}/description`, {
+            additionalDescription,
+        });
         return response.data;
     },
 
@@ -109,27 +187,27 @@ export const productsApi = {
         return response.data;
     },
 
-    // GET /products/watchlist [BIDDER, SELLER] - requires auth
+    // GET /products/user/watchlist [BIDDER, SELLER] - requires auth
     getWatchlist: async (): Promise<BackendProduct[]> => {
-        const response = await apiClient.get('/products/watchlist');
+        const response = await apiClient.get('/products/user/watchlist');
         return response.data;
     },
 
-    // GET /products/bidding [BIDDER] - products user is bidding on
+    // GET /products/user/bidding [BIDDER] - products user is bidding on
     getProductsUserIsBidding: async (): Promise<BackendProduct[]> => {
-        const response = await apiClient.get('/products/bidding');
+        const response = await apiClient.get('/products/user/bidding');
         return response.data;
     },
 
-    // GET /products/won [BIDDER] - products user won
+    // GET /products/user/won [BIDDER] - products user won
     getProductsUserWon: async (): Promise<BackendProduct[]> => {
-        const response = await apiClient.get('/products/won');
+        const response = await apiClient.get('/products/user/won');
         return response.data;
     },
 
-    // GET /products/seller [SELLER] - seller's active products
+    // GET /products/seller/active [SELLER] - seller's active products
     getSellerProducts: async (): Promise<BackendProduct[]> => {
-        const response = await apiClient.get('/products/seller');
+        const response = await apiClient.get('/products/seller/active');
         return response.data;
     },
 

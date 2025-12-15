@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 
 interface CategoryCardProps extends CategoryItem {
     onClick?: (id: string) => void;
+    className?: string;
 }
 
 const CategoryCard: React.FC<CategoryCardProps> = ({
@@ -14,20 +15,14 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     name,
     image,
     onClick,
+    className,
 }) => {
     const handleClick = () => {
         onClick?.(id);
     };
 
     const bgColor = useMemo(() => {
-        const colors = [
-            'bg-primary',
-            'bg-dark-primary',
-            'bg-neutral-100',
-            'bg-neutral-200',
-            'bg-secondary',
-            'bg-stone-100',
-        ];
+        const colors = ['bg-primary', 'bg-dark-primary', 'bg-secondary'];
         let hash = 0;
         for (let i = 0; i < id.length; i++) {
             const char = id.charCodeAt(i);
@@ -41,8 +36,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     return (
         <div
             className={cn(
-                ' overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group w-[220px] h-[104px]',
-                bgColor,
+                'overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group w-full h-[120px] rounded-xl flex items-center relative',
+                className || bgColor,
             )}
             onClick={handleClick}
         >

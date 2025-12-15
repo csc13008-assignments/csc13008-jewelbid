@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ToastProvider } from '@/modules/shared/components/ui/Toast';
 
 export const metadata: Metadata = {
     title: 'JewelBid - Premium Jewelry Auction Platform',
@@ -14,7 +15,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className="font-body antialiased">{children}</body>
+            <body className="font-body antialiased">
+                <ToastProvider>{children}</ToastProvider>
+            </body>
         </html>
     );
 }

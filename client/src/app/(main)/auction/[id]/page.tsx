@@ -12,6 +12,7 @@ import {
     Button,
     ProductCard,
 } from '@/modules/shared/components/ui';
+import toast from '@/lib/toast';
 
 export default function ProductDetailPage() {
     const params = useParams();
@@ -19,6 +20,7 @@ export default function ProductDetailPage() {
     const [bidAmount, setBidAmount] = useState('');
     const [newQuestion, setNewQuestion] = useState('');
     const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
         hours: 0,
@@ -46,11 +48,12 @@ export default function ProductDetailPage() {
                     const user = JSON.parse(userStr);
                     setCurrentUser({ id: user.id, role: user.role });
                 } else {
-                    setCurrentUser({ id: 'bidder1', role: 'bidder' });
+                    // No user logged in
+                    setCurrentUser(null);
                 }
             } catch (error) {
                 console.error('Error parsing user from localStorage:', error);
-                setCurrentUser({ id: 'bidder1', role: 'bidder' });
+                setCurrentUser(null);
             } finally {
                 setIsUserLoading(false);
             }
@@ -62,27 +65,68 @@ export default function ProductDetailPage() {
     // Fetch auction data from API
     const [auction, setAuction] = useState<Auction | null>(null);
     const [relatedAuctions, setRelatedAuctions] = useState<Auction[]>([]);
-    const [, setIsAuctionLoading] = useState(true);
+    const [bidHistory, setBidHistory] = useState<
+        { bidderName: string; bidAmount: number; bidTime: Date }[]
+    >([]);
+    const [questions, setQuestions] = useState<
+        {
+            id: string;
+            author: { username: string; avatar: string; role: string };
+            content: string;
+            timestamp: Date;
+            answer?: string;
+        }[]
+    >([]);
+    const [isAuctionLoading, setIsAuctionLoading] = useState(true);
 
     const fetchAuctionData = useCallback(async () => {
         if (!params.id) return;
 
         setIsAuctionLoading(true);
         try {
-            const [productData, allProductsData] = await Promise.all([
-                productsApi.getProductById(params.id as string),
-                productsApi.getAllProducts(1, 10),
-            ]);
+            // Fetch product details (includes related products and questions)
+            const productDetails = await productsApi.getProductById(
+                params.id as string,
+            );
 
-            const auctionData = mapProductToAuction(productData);
+            const auctionData = mapProductToAuction(productDetails.product);
             setAuction(auctionData);
+            setLikeCount(auctionData.likeCount || 0);
 
-            // Set related auctions (excluding current)
-            const related = allProductsData.products
-                .filter((p) => p.id !== params.id)
-                .slice(0, 5)
-                .map(mapProductToAuction);
+            // Set related auctions from API response
+            const related =
+                productDetails.relatedProducts.map(mapProductToAuction);
             setRelatedAuctions(related);
+
+            // Map questions to UI format
+            const mappedQuestions = productDetails.questions.map((q) => ({
+                id: q.id,
+                author: {
+                    username: q.asker?.fullname || 'Anonymous',
+                    avatar: q.asker?.profileImage || '/avatars/default.jpg',
+                    role: 'bidder',
+                },
+                content: q.question,
+                timestamp: new Date(q.created_at),
+                answer: q.answer,
+            }));
+            setQuestions(mappedQuestions);
+
+            // Fetch bid history
+            try {
+                const bids = await productsApi.getBidHistory(
+                    params.id as string,
+                );
+                const mappedBids = bids.map((b) => ({
+                    bidderName: b.bidderName,
+                    bidAmount: b.bidAmount,
+                    bidTime: new Date(b.bidTime),
+                }));
+                setBidHistory(mappedBids);
+            } catch (bidError) {
+                console.error('Failed to fetch bid history:', bidError);
+                setBidHistory([]);
+            }
         } catch (error) {
             console.error('Failed to fetch auction:', error);
             setAuction(null);
@@ -149,17 +193,33 @@ export default function ProductDetailPage() {
         return () => clearInterval(timer);
     }, [auction]);
 
-    if (!auction || isUserLoading) {
+    // Show loading state while fetching
+    if (isAuctionLoading || isUserLoading) {
+        return (
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-dark-primary mx-auto mb-4"></div>
+                    <h1 className="text-xl font-bold text-gray-800 mb-2">
+                        Loading...
+                    </h1>
+                    <p className="text-gray-600">
+                        Please wait while we load the auction details.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show not found only after loading is complete and auction is null
+    if (!auction) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                        {!auction ? 'Product Not Found' : 'Loading...'}
+                        Product Not Found
                     </h1>
                     <p className="text-gray-600">
-                        {!auction
-                            ? "The auction you're looking for doesn't exist."
-                            : 'Please wait while we load the auction details.'}
+                        The auction you&apos;re looking for doesn&apos;t exist.
                     </p>
                 </div>
             </div>
@@ -188,33 +248,54 @@ export default function ProductDetailPage() {
         return parseInt(formattedValue.replace(/[^0-9]/g, '')) || 0;
     };
 
-    const maskUsername = (username: string) => {
-        if (username.length <= 2) return username;
-        if (username.length <= 4) {
-            return `${username.charAt(0)}*${username.slice(2)}`;
+    const handleLike = async () => {
+        if (!currentUser) {
+            toast.warning('Please login to add to watchlist');
+            return;
         }
-        const visibleChars = Math.ceil(username.length / 2);
-        const maskedChars = username.length - visibleChars;
-        const firstPart = username.slice(0, Math.ceil(visibleChars / 2));
-        const lastPart = username.slice(-Math.floor(visibleChars / 2));
-        const maskedMiddle = '*'.repeat(maskedChars);
-        return `${firstPart}${maskedMiddle}${lastPart}`;
+        try {
+            if (isLiked) {
+                await productsApi.removeFromWatchlist(auction.id);
+                setLikeCount((prev) => Math.max(0, prev - 1));
+                toast.info('Removed from watchlist');
+            } else {
+                await productsApi.addToWatchlist(auction.id);
+                setLikeCount((prev) => prev + 1);
+                toast.success('Added to watchlist!');
+            }
+            setIsLiked(!isLiked);
+        } catch (error) {
+            console.error('Failed to update watchlist:', error);
+            toast.error('Failed to update watchlist');
+        }
     };
 
-    const handleLike = () => {
-        setIsLiked(!isLiked);
-    };
-
-    const handleQuestionSubmit = () => {
+    const handleQuestionSubmit = async () => {
         if (!newQuestion.trim()) return;
-        console.log('Question submitted:', newQuestion);
-        setNewQuestion('');
+        if (!currentUser) {
+            toast.warning('Please login to ask a question');
+            return;
+        }
+        try {
+            await productsApi.askQuestion(auction.id, newQuestion);
+            toast.success('Question submitted successfully!');
+            setNewQuestion('');
+            // Refresh to get updated questions
+            await fetchAuctionData();
+        } catch (error) {
+            console.error('Failed to submit question:', error);
+            toast.error('Failed to submit question');
+        }
     };
 
-    const handleSetMaxBid = () => {
+    const handleSetMaxBid = async () => {
         setBidError('');
+        if (!currentUser) {
+            toast.warning('Please login to place a bid');
+            return;
+        }
         if (!bidAmount.trim()) {
-            setBidError('Please enter a bid amount');
+            setBidError('Vui lòng nhập giá');
             return;
         }
 
@@ -222,19 +303,29 @@ export default function ProductDetailPage() {
         const minimumBid = auction.currentBid + auction.bidIncrement;
 
         if (isNaN(amount) || amount <= 0) {
-            setBidError('Please enter a valid amount');
+            setBidError('Vui lòng nhập số tiền hợp lệ');
             return;
         }
 
         if (amount < minimumBid) {
-            setBidError(`Minimum bid is ${formatCurrency(minimumBid)}`);
+            setBidError(`Giá thấp nhất là ${formatCurrency(minimumBid)}`);
             return;
         }
 
-        console.log('Max bid set:', formatCurrency(amount));
-        alert(`Max bid set to ${formatCurrency(amount)}`);
-        setBidAmount('');
-        setBidError('');
+        try {
+            await productsApi.placeBid(auction.id, amount);
+            toast.success(`Bid placed successfully: ${formatCurrency(amount)}`);
+            setBidAmount('');
+            setBidError('');
+            // Refresh auction data to get updated price
+            await fetchAuctionData();
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message =
+                err.response?.data?.message || 'Failed to place bid';
+            toast.error(message);
+            setBidError(message);
+        }
     };
 
     const handleToggleBids = () => {
@@ -243,11 +334,6 @@ export default function ProductDetailPage() {
 
     const handleToggleComments = () => {
         setShowAllComments(!showAllComments);
-    };
-
-    const handleRejectBid = (bidId: string) => {
-        console.log('Rejecting bid:', bidId);
-        alert(`Bid ${bidId} has been rejected`);
     };
 
     const handleStartReply = (commentId: string) => {
@@ -260,14 +346,20 @@ export default function ProductDetailPage() {
         setReplyText('');
     };
 
-    const handleSubmitReply = (commentId: string) => {
+    const handleSubmitReply = async (questionId: string) => {
         if (!replyText.trim()) return;
 
-        console.log('Replying to comment:', commentId, 'with text:', replyText);
-        alert(`Reply submitted: "${replyText}"`);
-
-        setReplyingTo(null);
-        setReplyText('');
+        try {
+            await productsApi.answerQuestion(questionId, replyText);
+            toast.success('Reply submitted successfully!');
+            setReplyingTo(null);
+            setReplyText('');
+            // Refresh to get updated Q&A
+            await fetchAuctionData();
+        } catch (error) {
+            console.error('Failed to submit reply:', error);
+            toast.error('Failed to submit reply');
+        }
     };
 
     const handleBidAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,7 +377,7 @@ export default function ProductDetailPage() {
             const minimumBid = auction.currentBid + auction.bidIncrement;
 
             if (!isNaN(amount) && amount > 0 && amount < minimumBid) {
-                setBidError(`Minimum bid is ${formatCurrency(minimumBid)}`);
+                setBidError(`Giá thấp nhất là ${formatCurrency(minimumBid)}`);
             }
         }
     };
@@ -300,21 +392,26 @@ export default function ProductDetailPage() {
         setAdditionalDescription('');
     };
 
-    const handleSaveDescription = () => {
+    const handleSaveDescription = async () => {
         if (!additionalDescription.trim()) {
-            alert('Please enter additional description');
+            toast.warning('Please enter additional description');
             return;
         }
 
-        // Append to existing description
-        console.log('Appending description:', additionalDescription);
-        alert(`Additional description saved: "${additionalDescription}"`);
-
-        // In real app, you would call API to update auction.product.description
-        // auction.product.description += '\n\n' + additionalDescription;
-
-        setIsEditingDescription(false);
-        setAdditionalDescription('');
+        try {
+            await productsApi.appendDescription(
+                auction.id,
+                additionalDescription,
+            );
+            toast.success('Description updated successfully!');
+            setIsEditingDescription(false);
+            setAdditionalDescription('');
+            // Refresh auction data
+            await fetchAuctionData();
+        } catch (error) {
+            console.error('Failed to update description:', error);
+            toast.error('Failed to update description');
+        }
     };
     return (
         <div className="min-h-screen bg-white">
@@ -326,19 +423,17 @@ export default function ProductDetailPage() {
                                 {auction.product.name}
                             </h1>
                             <button
-                                onClick={handleLike}
+                                onClick={() => void handleLike()}
                                 className="flex items-center space-x-1 px-3 py-1 border border-dark-primary rounded-full hover:bg-gray-50"
                             >
                                 <Heart
                                     className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-dark-primary'}`}
                                 />
-                                <span className="text-sm">
-                                    {auction.likeCount}
-                                </span>
+                                <span className="text-sm">{likeCount}</span>
                             </button>
                         </div>
 
-                        <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                        <div className="relative rounded-xl aspect-square bg-gray-100 overflow-hidden">
                             <Image
                                 src={mockImages[selectedImage]}
                                 alt="Product"
@@ -352,7 +447,7 @@ export default function ProductDetailPage() {
                                 <button
                                     key={index}
                                     onClick={() => setSelectedImage(index)}
-                                    className={`relative w-20 h-20 bg-gray-100 overflow-hidden ${
+                                    className={`relative rounded-xl w-20 h-20 bg-gray-100 overflow-hidden ${
                                         selectedImage === index
                                             ? 'border-2 border-gray-400'
                                             : ''
@@ -514,9 +609,11 @@ export default function ProductDetailPage() {
                                         />
                                     </div>
                                     <Button
-                                        variant="primary"
-                                        size="lg"
-                                        onClick={handleQuestionSubmit}
+                                        variant="muted"
+                                        size="sm"
+                                        onClick={() =>
+                                            void handleQuestionSubmit()
+                                        }
                                     >
                                         Post
                                     </Button>
@@ -524,28 +621,27 @@ export default function ProductDetailPage() {
                             )}
 
                             <div className="space-y-6">
-                                {auction.qaComments &&
-                                auction.qaComments.length > 0 ? (
-                                    auction.qaComments
+                                {questions.length > 0 ? (
+                                    questions
                                         .slice(
                                             0,
                                             showAllComments
-                                                ? auction.qaComments.length
+                                                ? questions.length
                                                 : 3,
                                         )
-                                        .map((comment) => (
+                                        .map((question) => (
                                             <div
-                                                key={comment.id}
+                                                key={question.id}
                                                 className="flex items-start space-x-3"
                                             >
                                                 <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
                                                     <Image
                                                         src={
-                                                            comment.author
+                                                            question.author
                                                                 .avatar
                                                         }
                                                         alt={
-                                                            comment.author
+                                                            question.author
                                                                 .username
                                                         }
                                                         width={40}
@@ -557,18 +653,18 @@ export default function ProductDetailPage() {
                                                     <div className="flex items-center space-x-2 mb-2">
                                                         <span className="font-medium">
                                                             {
-                                                                comment.author
+                                                                question.author
                                                                     .username
                                                             }
                                                         </span>
                                                         <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
                                                             {
-                                                                comment.author
+                                                                question.author
                                                                     .role
                                                             }
                                                         </span>
                                                         <span className="text-gray-500 text-sm">
-                                                            {comment.timestamp.toLocaleDateString(
+                                                            {question.timestamp.toLocaleDateString(
                                                                 'en-US',
                                                                 {
                                                                     year: 'numeric',
@@ -579,18 +675,30 @@ export default function ProductDetailPage() {
                                                         </span>
                                                     </div>
                                                     <p className="text-gray-700 mb-3">
-                                                        {comment.content}
+                                                        {question.content}
                                                     </p>
 
+                                                    {/* Show answer if available */}
+                                                    {question.answer && (
+                                                        <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                                                            <p className="text-sm text-blue-800">
+                                                                <span className="font-medium">
+                                                                    Seller
+                                                                    reply:{' '}
+                                                                </span>
+                                                                {
+                                                                    question.answer
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Reply button for seller (only if no answer yet) */}
                                                     {isOwner &&
-                                                        (comment.author.role ===
-                                                            'bidder' ||
-                                                            comment.author
-                                                                .role ===
-                                                                'seller') && (
+                                                        !question.answer && (
                                                             <div className="mt-2">
                                                                 {replyingTo ===
-                                                                comment.id ? (
+                                                                question.id ? (
                                                                     <div className="bg-gray-50 p-3 rounded-lg">
                                                                         <textarea
                                                                             value={
@@ -616,8 +724,8 @@ export default function ProductDetailPage() {
                                                                                 variant="primary"
                                                                                 size="sm"
                                                                                 onClick={() =>
-                                                                                    handleSubmitReply(
-                                                                                        comment.id,
+                                                                                    void handleSubmitReply(
+                                                                                        question.id,
                                                                                     )
                                                                                 }
                                                                                 className="px-4 py-1"
@@ -640,7 +748,7 @@ export default function ProductDetailPage() {
                                                                     <button
                                                                         onClick={() =>
                                                                             handleStartReply(
-                                                                                comment.id,
+                                                                                question.id,
                                                                             )
                                                                         }
                                                                         className="text-[#5F87C1] text-sm transition-colors"
@@ -662,25 +770,24 @@ export default function ProductDetailPage() {
                                 )}
                             </div>
 
-                            {auction.qaComments &&
-                                auction.qaComments.length > 3 && (
-                                    <button
-                                        onClick={handleToggleComments}
-                                        className="mt-6 text-[#5F87C1] text-sm hover:text-blue-600 transition-colors"
-                                    >
-                                        {showAllComments
-                                            ? 'Show fewer comments'
-                                            : `See ${auction.qaComments.length - 3} more comments`}
-                                    </button>
-                                )}
+                            {questions.length > 3 && (
+                                <button
+                                    onClick={handleToggleComments}
+                                    className="mt-6 text-[#5F87C1] text-sm hover:text-blue-600 transition-colors"
+                                >
+                                    {showAllComments
+                                        ? 'Show fewer comments'
+                                        : `See ${questions.length - 3} more comments`}
+                                </button>
+                            )}
                         </div>
                     </div>
 
                     <div className="space-y-6">
-                        <div className="border border-gray-300 p-6">
-                            <div className="flex items-center justify-between">
+                        <div className="border rounded-xl border-gray-300 p-6">
+                            <div className="flex items-center rounded-xl justify-between">
                                 <div className="space-y-2">
-                                    <div className="flex items-center space-x-2 text-gray-600">
+                                    <div className="flex items-center space-x-2 rounded-xl text-gray-600">
                                         <Calendar className="w-4 h-4" />
                                         <span className="text-sm">
                                             {auction.startDate.toLocaleDateString(
@@ -693,7 +800,7 @@ export default function ProductDetailPage() {
                                             )}
                                         </span>
                                     </div>
-                                    <div className="flex items-center space-x-2 text-gray-600">
+                                    <div className="flex items-center space-x-2 rounded-xl text-gray-600">
                                         <Clock className="w-4 h-4" />
                                         <span className="text-sm">
                                             {auction.endDate.toLocaleDateString(
@@ -704,12 +811,11 @@ export default function ProductDetailPage() {
                                                     day: 'numeric',
                                                 },
                                             )}
-                                            , 2PM
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="bg-dark-primary text-white px-8 py-4 flex items-center justify-center space-x-6 text-center rounded">
+                                <div className="bg-dark-primary text-white px-8 py-4 flex items-center justify-center space-x-6 text-center rounded-xl">
                                     <div>
                                         <div className="text-3xl font-bold">
                                             {timeLeft.days}
@@ -738,7 +844,7 @@ export default function ProductDetailPage() {
                             </div>
                         </div>
 
-                        <div className="bg-secondary p-6">
+                        <div className="bg-secondary rounded-xl border border-primary p-6">
                             <div className="mb-4">
                                 <div className="flex items-center space-x-2">
                                     <span className="text-sm text-gray-800">
@@ -841,10 +947,13 @@ export default function ProductDetailPage() {
                                                 placeholder={`${formatCurrency(auction.currentBid + auction.bidIncrement)} or up`}
                                                 className={`flex-1 border px-4 py-1 text-lg bg-gray-200 ${bidError ? 'border-red-500' : 'border-gray-200'}`}
                                             />
+
                                             <Button
                                                 variant="outline"
                                                 size="lg"
-                                                onClick={handleSetMaxBid}
+                                                onClick={() =>
+                                                    void handleSetMaxBid()
+                                                }
                                                 className="text-dark-primary font-bold"
                                             >
                                                 Set max bid
@@ -886,36 +995,33 @@ export default function ProductDetailPage() {
 
                             <div className="mt-8">
                                 <div className="space-y-4">
-                                    {auction.bids.length > 0 ? (
-                                        auction.bids
+                                    {bidHistory.length > 0 ? (
+                                        bidHistory
                                             .sort(
                                                 (a, b) =>
-                                                    b.timestamp.getTime() -
-                                                    a.timestamp.getTime(),
+                                                    b.bidTime.getTime() -
+                                                    a.bidTime.getTime(),
                                             )
                                             .slice(
                                                 0,
                                                 showAllBids
-                                                    ? auction.bids.length
+                                                    ? bidHistory.length
                                                     : 3,
                                             )
-                                            .map((bid) => (
+                                            .map((bid, index) => (
                                                 <div
-                                                    key={bid.id}
+                                                    key={index}
                                                     className="flex justify-between items-center text-sm border-b border-gray-300 pb-2"
                                                 >
                                                     <div className="flex space-x-4">
                                                         <span className="font-medium">
-                                                            {maskUsername(
-                                                                bid.bidder
-                                                                    .username,
-                                                            )}
+                                                            {bid.bidderName}
                                                         </span>
                                                         <span className="text-gray-600">
-                                                            {bid.timestamp.toLocaleDateString(
+                                                            {bid.bidTime.toLocaleDateString(
                                                                 'vi-VN',
                                                             )}{' '}
-                                                            {bid.timestamp.toLocaleTimeString(
+                                                            {bid.bidTime.toLocaleTimeString(
                                                                 'vi-VN',
                                                                 {
                                                                     hour: '2-digit',
@@ -927,22 +1033,9 @@ export default function ProductDetailPage() {
                                                     <div className="flex items-center space-x-3">
                                                         <span className="font-bold">
                                                             {formatCurrency(
-                                                                bid.amount,
+                                                                bid.bidAmount,
                                                             )}
                                                         </span>
-                                                        {isOwner && (
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleRejectBid(
-                                                                        bid.id,
-                                                                    )
-                                                                }
-                                                                className="text-red-500 hover:text-red-700 transition-colors p-1"
-                                                                title="Từ chối bid này"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 </div>
                                             ))
@@ -954,7 +1047,7 @@ export default function ProductDetailPage() {
                                         </div>
                                     )}
 
-                                    {auction.bids.length > 3 && (
+                                    {bidHistory.length > 3 && (
                                         <button
                                             onClick={handleToggleBids}
                                             className="flex items-center space-x-2 text-black text-sm font-medium mt-4"
@@ -962,7 +1055,7 @@ export default function ProductDetailPage() {
                                             <span>
                                                 {showAllBids
                                                     ? 'Show fewer bids'
-                                                    : `See all bids (${auction.bids.length})`}
+                                                    : `See all bids (${bidHistory.length})`}
                                             </span>
                                             <span>
                                                 {showAllBids ? '⌃' : '⌄'}
@@ -974,18 +1067,28 @@ export default function ProductDetailPage() {
                         </div>
 
                         <div className="mt-16">
-                            <p className="text-2xl font-extrabold mb-4">
+                            <p className="text-2xl font-extrabold mb-2">
                                 RELATED AUCTIONS
                             </p>
-                            <div className="grid grid-cols-1 gap-6">
-                                {relatedAuctions.map((relatedAuction) => (
-                                    <ProductCard
-                                        key={relatedAuction.id}
-                                        auction={relatedAuction}
-                                        variant="horizontal"
-                                    />
-                                ))}
-                            </div>
+                            <p className="text-sm text-gray-500 mb-4">
+                                More {auction.product.category} items you might
+                                like
+                            </p>
+                            {relatedAuctions.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-6">
+                                    {relatedAuctions.map((relatedAuction) => (
+                                        <ProductCard
+                                            key={relatedAuction.id}
+                                            auction={relatedAuction}
+                                            variant="horizontal"
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    No related auctions available
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1050,7 +1153,7 @@ export default function ProductDetailPage() {
                             <Button
                                 variant="primary"
                                 size="lg"
-                                onClick={handleSaveDescription}
+                                onClick={() => void handleSaveDescription()}
                                 className="flex-1"
                             >
                                 Save Additional Description

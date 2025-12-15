@@ -8,10 +8,17 @@ import { Input, Button } from '@/modules/shared/components/ui';
 import { OTPInput } from '@/components/OTPInput';
 import { useAuthStore } from '@/stores/authStore';
 import { validatePassword } from '@/lib/validation';
+import { ArrowLeft, LockKeyhole } from 'lucide-react';
 
 export default function ResetPasswordPage() {
     const router = useRouter();
     const { resetPassword, isLoading, error, clearError } = useAuthStore();
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsVisible(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
@@ -22,13 +29,11 @@ export default function ResetPasswordPage() {
     >({});
 
     useEffect(() => {
-        // Get email from localStorage
         const resetEmail = localStorage.getItem('passwordResetEmail');
         if (!resetEmail) {
-            // No pending reset, redirect to forgot password
             router.push('/forgot-password');
         } else {
-            setEmail(resetEmail);
+            setTimeout(() => setEmail(resetEmail), 0);
         }
     }, [router]);
 
@@ -62,8 +67,6 @@ export default function ResetPasswordPage() {
         try {
             clearError();
             await resetPassword(email, otp, newPassword);
-
-            // Successfully reset, navigate to signin
             router.push('/signin');
         } catch (err) {
             console.error('Reset password error:', err);
@@ -90,123 +93,161 @@ export default function ResetPasswordPage() {
         };
 
     return (
-        <div className="min-h-screen bg-primary flex">
-            <div className="flex-1 ">
-                <div className="grid grid-cols-1 gap-6 h-full">
-                    <div className="relative overflow-hidden">
-                        <Image
-                            src="/img1.png"
-                            alt="Jewelry collection"
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
+        <div className="min-h-screen bg-secondary flex items-center justify-center p-4 lg:p-8 relative overflow-hidden">
+            {/* Background Decorations */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-3xl opacity-50"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-dark-primary/10 rounded-full blur-3xl opacity-50"></div>
+            </div>
 
-                    <div className="grid grid-cols-2 gap-6 flex-1">
-                        <div className="relative overflow-hidden">
+            <div
+                className={`w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-primary/20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+            >
+                {/* Left: Image */}
+                <div className="lg:w-1/2 bg-primary/5 p-8 relative hidden lg:block overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('/pattern.png')] opacity-5"></div>
+                    <div className="h-full flex items-center justify-center relative z-10">
+                        <div
+                            className={`relative w-full aspect-square max-w-sm rounded-2xl overflow-hidden shadow-lg transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                        >
                             <Image
                                 src="/img2.png"
-                                alt="Necklace"
+                                alt="Jewelry"
                                 fill
-                                className="object-cover"
+                                className="object-cover hover:scale-110 transition-transform duration-700"
                             />
-                        </div>
-                        <div className="relative overflow-hidden">
-                            <Image
-                                src="/img3.png"
-                                alt="Earrings"
-                                fill
-                                className="object-cover"
-                            />
+                            <div className="absolute inset-0 bg-black/20"></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                                    <LockKeyhole className="w-10 h-10 text-white" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="flex-1 flex items-center justify-center p-8">
-                <div className="w-full max-w-md">
-                    <h1 className="font-heading text-5xl text-center font-medium text-black mb-4">
-                        Reset Password
-                    </h1>
-
-                    <p className="font-body text-base text-neutral-600 text-center mb-8">
-                        Enter the 6-digit code sent to
-                        <br />
-                        <span className="font-semibold text-black">
-                            {email}
-                        </span>
-                    </p>
-
-                    <form
-                        onSubmit={(e) => void handleSubmit(e)}
-                        className="space-y-6"
+                {/* Right: Form */}
+                <div className="lg:w-1/2 p-8 lg:p-16 flex flex-col justify-center relative">
+                    <Link
+                        href="/forgot-password"
+                        className="absolute top-8 left-8 text-neutral-500 hover:text-dark-primary transition-colors flex items-center gap-2 group"
                     >
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                                <p className="text-sm text-center">{error}</p>
-                            </div>
-                        )}
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        Back
+                    </Link>
 
-                        <div>
-                            <label className="block font-body text-base font-medium text-black mb-2">
-                                Verification Code
-                            </label>
-                            <OTPInput
-                                value={otp}
-                                onChange={setOtp}
-                                disabled={isLoading}
-                                error={!!validationErrors.otp || !!error}
-                            />
-                            {validationErrors.otp && (
-                                <p className="text-sm text-red-600 font-body mt-2 text-center">
-                                    {validationErrors.otp}
-                                </p>
-                            )}
+                    <div
+                        className={`max-w-md mx-auto w-full mt-8 transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}
+                    >
+                        <div className="text-center mb-8">
+                            <h1 className="font-heading text-4xl font-medium text-neutral-900 mb-3">
+                                Reset Password
+                            </h1>
+                            <p className="text-neutral-500">
+                                Enter the code sent to{' '}
+                                <span className="font-semibold text-neutral-900">
+                                    {email}
+                                </span>{' '}
+                                and set your new password.
+                            </p>
                         </div>
 
-                        <Input
-                            label="New Password"
-                            type="password"
-                            placeholder="Min 8 chars, 1 uppercase, 1 number"
-                            value={newPassword}
-                            onChange={handlePasswordChange('newPassword')}
-                            required
-                            error={validationErrors.password}
-                        />
+                        <form
+                            onSubmit={(e) => void handleSubmit(e)}
+                            className="space-y-6"
+                        >
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2 animate-shake">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                    <p className="text-sm font-medium">
+                                        {error}
+                                    </p>
+                                </div>
+                            )}
 
-                        <Input
-                            label="Confirm Password"
-                            type="password"
-                            placeholder="Re-enter your new password"
-                            value={confirmPassword}
-                            onChange={handlePasswordChange('confirmPassword')}
-                            required
-                            error={validationErrors.confirmPassword}
-                        />
+                            <div>
+                                <label className="block font-body text-sm font-medium text-neutral-700 mb-2">
+                                    Verification Code
+                                </label>
+                                <div className="flex justify-center">
+                                    <OTPInput
+                                        value={otp}
+                                        onChange={setOtp}
+                                        disabled={isLoading}
+                                        error={
+                                            !!validationErrors.otp || !!error
+                                        }
+                                    />
+                                </div>
+                                {validationErrors.otp && (
+                                    <p className="text-sm text-red-600 font-body mt-2 text-center">
+                                        {validationErrors.otp}
+                                    </p>
+                                )}
+                            </div>
 
-                        <div className="pt-4 space-y-4">
+                            <Input
+                                label="New Password"
+                                type="password"
+                                placeholder="Min 8 chars, 1 uppercase, 1 number"
+                                value={newPassword}
+                                onChange={handlePasswordChange('newPassword')}
+                                required
+                                error={validationErrors.password}
+                                className="rounded-xl"
+                            />
+
+                            <Input
+                                label="Confirm Password"
+                                type="password"
+                                placeholder="Re-enter your new password"
+                                value={confirmPassword}
+                                onChange={handlePasswordChange(
+                                    'confirmPassword',
+                                )}
+                                required
+                                error={validationErrors.confirmPassword}
+                                className="rounded-xl"
+                            />
+
                             <Button
                                 type="submit"
                                 variant="muted"
                                 size="lg"
-                                className="w-full"
+                                className="w-full h-12 rounded-xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
                                 disabled={isLoading}
                             >
-                                {isLoading
-                                    ? 'Resetting Password...'
-                                    : 'Reset Password'}
+                                {isLoading ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        Resetting...
+                                    </div>
+                                ) : (
+                                    'Reset Password'
+                                )}
                             </Button>
-
-                            <Link
-                                href="/signin"
-                                className="block text-center text-sm text-neutral-600 hover:text-black transition-colors"
-                            >
-                                Back to Sign In
-                            </Link>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
+
+            <style jsx>{`
+                @keyframes shake {
+                    0%,
+                    100% {
+                        transform: translateX(0);
+                    }
+                    25% {
+                        transform: translateX(-5px);
+                    }
+                    75% {
+                        transform: translateX(5px);
+                    }
+                }
+                .animate-shake {
+                    animation: shake 0.4s ease-in-out;
+                }
+            `}</style>
         </div>
     );
 }

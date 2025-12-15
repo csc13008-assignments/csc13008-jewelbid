@@ -29,14 +29,19 @@ export default function Home() {
 
     if (isLoading && endingSoon.length === 0) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="min-h-screen flex items-center justify-center bg-secondary">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-14 h-14 rounded-full border-4 border-primary border-t-dark-primary animate-spin"></div>
+                    <p className="text-neutral-500 animate-pulse font-medium">
+                        Loading amazing deals...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-white">
             <HeroSection />
             <TopDealsSection auctions={topDealsData} />
             <RecommondedSection />

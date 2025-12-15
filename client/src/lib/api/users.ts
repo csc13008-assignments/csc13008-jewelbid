@@ -28,6 +28,28 @@ export interface RatingStats {
     positivePercentage: number;
 }
 
+export interface UpdateProfileData {
+    fullname?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    birthdate?: string;
+    profileImage?: string;
+}
+
+export interface UserProfile {
+    id: string;
+    fullname: string;
+    email: string;
+    phone: string;
+    address: string;
+    birthdate: string;
+    profileImage?: string;
+    role: string;
+    positiveRatings: number;
+    negativeRatings: number;
+}
+
 export const usersApi = {
     // GET /users/user/my-ratings - ratings given by current user
     getMyRatings: async (): Promise<BackendRating[]> => {
@@ -55,6 +77,18 @@ export const usersApi = {
         comment: string;
     }): Promise<BackendRating> => {
         const response = await apiClient.post('/users/ratings', data);
+        return response.data;
+    },
+
+    // PATCH /users/user - update current user's profile
+    updateProfile: async (data: UpdateProfileData): Promise<UserProfile> => {
+        const response = await apiClient.patch('/users/user', data);
+        return response.data;
+    },
+
+    // GET /users/user - get current user's profile
+    getProfile: async (): Promise<UserProfile> => {
+        const response = await apiClient.get('/users/user');
         return response.data;
     },
 };

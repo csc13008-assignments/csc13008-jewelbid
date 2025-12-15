@@ -2,11 +2,20 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ThumbsUp, ThumbsDown, X } from 'lucide-react';
+import Image from 'next/image';
+import {
+    ThumbsUp,
+    ThumbsDown,
+    X,
+    Trophy,
+    Calendar,
+    ArrowRight,
+} from 'lucide-react';
 import { RatingBadge, Button } from '@/modules/shared/components/ui';
 import UserSidebar from '@/modules/shared/components/layout/UserSidebar';
 import { productsApi } from '@/lib/api/products';
 import { usersApi } from '@/lib/api/users';
+import toast from '@/lib/toast';
 
 interface WonAuction {
     id: string;
@@ -23,6 +32,7 @@ interface WonAuction {
 export default function WonAuctionsPage() {
     const [wonAuctions, setWonAuctions] = useState<WonAuction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isVisible, setIsVisible] = useState(false);
     const [showRatingPopup, setShowRatingPopup] = useState(false);
     const [currentSeller, setCurrentSeller] = useState<{
         id: string;
@@ -64,6 +74,7 @@ export default function WonAuctionsPage() {
             setWonAuctions([]);
         } finally {
             setIsLoading(false);
+            setTimeout(() => setIsVisible(true), 100);
         }
     }, []);
 
@@ -100,98 +111,140 @@ export default function WonAuctionsPage() {
                 comment: comment,
             });
             closeRatingPopup();
-            alert('Rating submitted successfully!');
+            toast.success('Rating submitted successfully!');
         } catch (error) {
             console.error('Failed to submit rating:', error);
-            alert('Failed to submit rating. Please try again.');
+            toast.error('Failed to submit rating. Please try again.');
         }
     };
 
     return (
-        <div className="min-h-screen bg-white">
-            <div className="max-w-7xl mx-auto px-6 py-20">
+        <div className="min-h-screen bg-secondary">
+            <div className="max-w-7xl mx-auto px-6 py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                     <div className="lg:col-span-1">
                         <UserSidebar />
                     </div>
 
                     <div className="lg:col-span-3">
-                        <div className="bg-white">
-                            <h1 className="font-heading text-5xl font-normal text-black mb-8">
-                                Won Auctions
-                            </h1>
-
-                            {isLoading ? (
-                                <div className="flex items-center justify-center py-20">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                                </div>
-                            ) : wonAuctions.length === 0 ? (
-                                <div className="text-center py-16">
-                                    <div className="text-6xl mb-4">🏆</div>
-                                    <h3 className="font-heading text-2xl font-medium text-black mb-2">
-                                        No won auctions yet
-                                    </h3>
-                                    <p className="text-neutral-600 font-body">
-                                        Keep bidding to win your first auction!
+                        <div
+                            className={`bg-white rounded-xl shadow-lg border border-primary p-8 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-8 pb-6 border-b border-primary">
+                                <div className="relative">
+                                    <div className="absolute -left-4 top-0 bottom-0 w-1 bg-dark-primary rounded-full"></div>
+                                    <h1 className="font-heading text-3xl font-semibold text-neutral-900 flex items-center gap-3">
+                                        Won Auctions
+                                        <Trophy className="w-7 h-7 text-dark-primary" />
+                                    </h1>
+                                    <p className="text-neutral-500 mt-1">
+                                        Your winning moments and achievements
                                     </p>
                                 </div>
+                                <div className="flex items-center gap-2 px-4 py-2 bg-primary rounded-xl border border-dark-primary/30">
+                                    <Trophy className="w-4 h-4 text-dark-primary" />
+                                    <span className="text-sm font-medium text-neutral-700">
+                                        {wonAuctions.length} wins
+                                    </span>
+                                </div>
+                            </div>
+
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20">
+                                    <div className="w-12 h-12 rounded-xl border-4 border-primary border-t-dark-primary animate-spin"></div>
+                                    <p className="mt-4 text-neutral-500 animate-pulse">
+                                        Loading your victories...
+                                    </p>
+                                </div>
+                            ) : wonAuctions.length === 0 ? (
+                                <div className="text-center py-16 px-4">
+                                    <div className="w-20 h-20 mx-auto mb-6 bg-primary rounded-xl flex items-center justify-center shadow-inner">
+                                        <Trophy className="w-10 h-10 text-dark-primary" />
+                                    </div>
+                                    <h3 className="font-heading text-xl font-medium text-neutral-900 mb-2">
+                                        No won auctions yet
+                                    </h3>
+                                    <p className="text-neutral-500 max-w-sm mx-auto mb-6">
+                                        Keep bidding to win your first auction!
+                                    </p>
+                                    <Link href="/search-result">
+                                        <Button variant="muted">
+                                            Start Bidding
+                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        </Button>
+                                    </Link>
+                                </div>
                             ) : (
-                                <div className="border border-gray-300">
-                                    <div className="grid grid-cols-5 bg-secondary border-b border-primary">
-                                        <div className="px-6 py-4 text-left font-bold text-black border-r border-primary">
+                                <div className="overflow-hidden rounded-xl border border-primary">
+                                    {/* Table Header */}
+                                    <div className="grid grid-cols-12 bg-primary border-b border-dark-primary/20">
+                                        <div className="col-span-4 px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                                             Product
                                         </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                                             Final Price
                                         </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
-                                            Seller Name
+                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                            Seller
                                         </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black border-r border-primary">
+                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                                             Date Won
                                         </div>
-                                        <div className="px-6 py-4 text-center font-bold text-black">
+                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                                             Action
                                         </div>
                                     </div>
 
+                                    {/* Table Body */}
                                     {wonAuctions.map((auction, index) => (
                                         <div
                                             key={auction.id}
-                                            className={`grid grid-cols-5 ${
+                                            className={`grid grid-cols-12 items-center hover:bg-secondary transition-all duration-300 ${
                                                 index < wonAuctions.length - 1
                                                     ? 'border-b border-primary'
                                                     : ''
                                             }`}
+                                            style={{
+                                                animation: isVisible
+                                                    ? `fadeInUp 0.5s ease-out ${index * 0.1}s both`
+                                                    : 'none',
+                                            }}
                                         >
-                                            <div className="px-6 py-6 flex items-center border-r border-gray-300">
-                                                <div className="flex items-center space-x-4">
-                                                    <img
-                                                        src={
-                                                            auction.productImage
-                                                        }
-                                                        alt={auction.product}
-                                                        className="w-16 h-16 object-cover bg-gray-200"
-                                                    />
-                                                    <div>
-                                                        <Link
-                                                            href={`/auction/${auction.id}`}
-                                                            className="font-medium text-black text-sm mb-1 hover:underline"
-                                                        >
-                                                            {auction.product}
-                                                        </Link>
+                                            <div className="col-span-4 px-6 py-5">
+                                                <Link
+                                                    href={`/auction/${auction.id}`}
+                                                    className="flex items-center gap-4 group"
+                                                >
+                                                    <div className="relative">
+                                                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary flex-shrink-0 group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+                                                            <Image
+                                                                src={
+                                                                    auction.productImage
+                                                                }
+                                                                alt={
+                                                                    auction.product
+                                                                }
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        </div>
+                                                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-dark-primary rounded-xl flex items-center justify-center shadow-sm">
+                                                            <Trophy className="w-3 h-3 text-white" />
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                    <span className="font-medium text-neutral-900 group-hover:text-dark-primary transition-colors line-clamp-2">
+                                                        {auction.product}
+                                                    </span>
+                                                </Link>
                                             </div>
-
-                                            <div className="px-6 py-4 border-r border-primary text-center items-center justify-center flex">
-                                                <span className="text-black font-bold">
+                                            <div className="col-span-2 px-4 py-5 text-center">
+                                                <span className="font-bold text-neutral-900">
                                                     {auction.finalPrice}
                                                 </span>
                                             </div>
-
-                                            <div className="px-6 py-4 border-r border-primary text-center">
-                                                <div className="flex items-center justify-center">
+                                            <div className="col-span-2 px-4 py-5">
+                                                <div className="flex justify-center">
                                                     <RatingBadge
                                                         rating={5.0}
                                                         totalReviews={12}
@@ -205,16 +258,17 @@ export default function WonAuctionsPage() {
                                                     />
                                                 </div>
                                             </div>
-
-                                            <div className="px-6 py-4 border-r border-primary text-center items-center justify-center flex">
-                                                <span className="text-black">
-                                                    {auction.dateWon}
-                                                </span>
+                                            <div className="col-span-2 px-4 py-5 text-center">
+                                                <div className="inline-flex items-center gap-1.5 text-neutral-600 bg-primary px-3 py-1.5 rounded-xl">
+                                                    <Calendar className="w-4 h-4 text-dark-primary" />
+                                                    <span className="text-sm">
+                                                        {auction.dateWon}
+                                                    </span>
+                                                </div>
                                             </div>
-
-                                            <div className="px-6 py-4 text-center items-center justify-center flex">
+                                            <div className="col-span-2 px-4 py-5 text-center">
                                                 <Button
-                                                    variant="primary"
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() =>
                                                         openRatingPopup(
@@ -223,8 +277,9 @@ export default function WonAuctionsPage() {
                                                             auction.id,
                                                         )
                                                     }
+                                                    className="hover:bg-primary hover:border-dark-primary transition-all duration-200"
                                                 >
-                                                    {auction.action}
+                                                    Rate Seller
                                                 </Button>
                                             </div>
                                         </div>
@@ -236,87 +291,101 @@ export default function WonAuctionsPage() {
                 </div>
             </div>
 
+            {/* Rating Popup */}
             {showRatingPopup && (
-                <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50">
-                    <div className="bg-white p-6 max-w-md w-full mx-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-2xl font-bold text-dark-primary">
-                                Rate Seller: {currentSeller.name}
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scaleIn border border-primary">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-neutral-900">
+                                Rate Seller
                             </h3>
                             <button
                                 onClick={closeRatingPopup}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-primary p-2 rounded-full transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="mb-4">
-                            <p className="text-sm font-medium text-gray-700 mb-3">
-                                How was your experience with this seller?
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setIsLiked(true)}
-                                    className={`flex items-center gap-2 px-4 py-3 border transition-colors flex-1 justify-center ${
-                                        isLiked === true
-                                            ? 'border-green-500 bg-green-50 text-green-700'
-                                            : 'border-gray-300 hover:bg-gray-50 text-gray-600'
-                                    }`}
-                                >
-                                    <ThumbsUp
-                                        className={`w-5 h-5 ${
-                                            isLiked === true
-                                                ? 'fill-green-500 text-green-500'
-                                                : 'text-gray-400'
-                                        }`}
-                                    />
-                                    <span className="font-medium">Like</span>
-                                </button>
+                        <p className="text-neutral-600 mb-4">
+                            How was your experience with{' '}
+                            <span className="font-semibold text-neutral-900">
+                                {currentSeller.name}
+                            </span>
+                            ?
+                        </p>
 
-                                <button
-                                    onClick={() => setIsLiked(false)}
-                                    className={`flex items-center gap-2 px-4 py-3 border transition-colors flex-1 justify-center ${
-                                        isLiked === false
-                                            ? 'border-red-500 bg-red-50 text-red-700'
-                                            : 'border-gray-300 hover:bg-gray-50 text-gray-600'
+                        <div className="flex gap-4 mb-6">
+                            <button
+                                onClick={() => setIsLiked(true)}
+                                className={`flex-1 flex flex-col items-center gap-2 px-6 py-4 rounded-xl border-2 transition-all duration-300 ${
+                                    isLiked === true
+                                        ? 'border-green-500 bg-green-50 scale-105 shadow-lg'
+                                        : 'border-primary hover:border-green-300 hover:bg-green-50/50'
+                                }`}
+                            >
+                                <ThumbsUp
+                                    className={`w-8 h-8 transition-colors ${
+                                        isLiked === true
+                                            ? 'text-green-500 fill-green-500'
+                                            : 'text-neutral-400'
                                     }`}
+                                />
+                                <span
+                                    className={`font-medium ${isLiked === true ? 'text-green-700' : 'text-neutral-600'}`}
                                 >
-                                    <ThumbsDown
-                                        className={`w-5 h-5 ${
-                                            isLiked === false
-                                                ? 'fill-red-500 text-red-500'
-                                                : 'text-gray-400'
-                                        }`}
-                                    />
-                                    <span className="font-medium">Dislike</span>
-                                </button>
-                            </div>
+                                    Positive
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={() => setIsLiked(false)}
+                                className={`flex-1 flex flex-col items-center gap-2 px-6 py-4 rounded-xl border-2 transition-all duration-300 ${
+                                    isLiked === false
+                                        ? 'border-red-500 bg-red-50 scale-105 shadow-lg'
+                                        : 'border-primary hover:border-red-300 hover:bg-red-50/50'
+                                }`}
+                            >
+                                <ThumbsDown
+                                    className={`w-8 h-8 transition-colors ${
+                                        isLiked === false
+                                            ? 'text-red-500 fill-red-500'
+                                            : 'text-neutral-400'
+                                    }`}
+                                />
+                                <span
+                                    className={`font-medium ${isLiked === false ? 'text-red-700' : 'text-neutral-600'}`}
+                                >
+                                    Negative
+                                </span>
+                            </button>
                         </div>
 
                         <div className="mb-6">
-                            <p className="text-sm font-medium text-gray-700 mb-2">
-                                Comment (optional):
-                            </p>
+                            <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                Comment (optional)
+                            </label>
                             <textarea
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}
-                                placeholder="Write your comment about this seller..."
-                                className="w-full border border-gray-300 p-3 text-sm resize-none"
+                                placeholder="Share your experience..."
+                                className="w-full border border-primary rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary transition-all"
                                 rows={3}
                             />
                         </div>
 
-                        <div className="flex gap-3 justify-end">
+                        <div className="flex gap-3">
                             <Button
                                 variant="outline"
                                 onClick={closeRatingPopup}
+                                className="flex-1"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={() => void handleSubmitRating()}
                                 disabled={isLiked === null}
+                                className="flex-1 bg-dark-primary hover:shadow-lg transition-all duration-300"
                             >
                                 Submit Rating
                             </Button>
@@ -324,6 +393,43 @@ export default function WonAuctionsPage() {
                     </div>
                 </div>
             )}
+
+            <style jsx>{`
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                    }
+                    to {
+                        opacity: 1;
+                    }
+                }
+                @keyframes scaleIn {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.9);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.2s ease-out;
+                }
+                .animate-scaleIn {
+                    animation: scaleIn 0.3s ease-out;
+                }
+            `}</style>
         </div>
     );
 }

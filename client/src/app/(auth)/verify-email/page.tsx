@@ -6,11 +6,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { OTPInput } from '@/components/OTPInput';
 import { useAuthStore } from '@/stores/authStore';
+import { ArrowLeft, MailCheck } from 'lucide-react';
 
 export default function VerifyEmailPage() {
     const router = useRouter();
     const { verifyEmail, resendVerification, isLoading, error, clearError } =
         useAuthStore();
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsVisible(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const [otp, setOtp] = useState('');
     const [email, setEmail] = useState('');
@@ -18,23 +25,20 @@ export default function VerifyEmailPage() {
     const [countdown, setCountdown] = useState(0);
 
     useEffect(() => {
-        // Get email from localStorage
         const pendingEmail = localStorage.getItem('pendingVerificationEmail');
         if (!pendingEmail) {
-            // No pending verification, redirect to signup
             router.push('/signup');
         } else {
-            setEmail(pendingEmail);
+            setTimeout(() => setEmail(pendingEmail), 0);
         }
     }, [router]);
 
     useEffect(() => {
-        // Countdown timer for resend button
         if (countdown > 0) {
             const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
             return () => clearTimeout(timer);
         } else {
-            setCanResend(true);
+            setTimeout(() => setCanResend(true), 0);
         }
     }, [countdown]);
 
@@ -43,7 +47,6 @@ export default function VerifyEmailPage() {
 
         try {
             await verifyEmail(email, value);
-            // Successfully verified, navigate to home
             router.push('/');
         } catch (err) {
             console.error('Verification error:', err);
@@ -57,111 +60,138 @@ export default function VerifyEmailPage() {
             clearError();
             await resendVerification(email);
             setCanResend(false);
-            setCountdown(60); // 60 seconds cooldown
-            setOtp(''); // Clear OTP input
+            setCountdown(60);
+            setOtp('');
         } catch (err) {
             console.error('Resend error:', err);
         }
     };
 
     return (
-        <div className="min-h-screen bg-primary flex">
-            <div className="flex-1 ">
-                <div className="grid grid-cols-1 gap-6 h-full">
-                    <div className="relative overflow-hidden">
-                        <Image
-                            src="/img1.png"
-                            alt="Jewelry collection"
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
+        <div className="min-h-screen bg-secondary flex items-center justify-center p-4 lg:p-8 relative overflow-hidden">
+            {/* Background Decorations */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-3xl opacity-50"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-dark-primary/10 rounded-full blur-3xl opacity-50"></div>
+            </div>
 
-                    <div className="grid grid-cols-2 gap-6 flex-1">
-                        <div className="relative overflow-hidden">
+            <div
+                className={`w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-primary/20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+            >
+                {/* Left: Image */}
+                <div className="lg:w-1/2 bg-primary/5 p-8 relative hidden lg:block overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('/pattern.png')] opacity-5"></div>
+                    <div className="h-full flex items-center justify-center relative z-10">
+                        <div
+                            className={`relative w-full aspect-square max-w-sm rounded-2xl overflow-hidden shadow-lg transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                        >
                             <Image
-                                src="/img2.png"
-                                alt="Necklace"
+                                src="/img1.png"
+                                alt="Jewelry"
                                 fill
-                                className="object-cover"
+                                className="object-cover hover:scale-110 transition-transform duration-700"
                             />
-                        </div>
-                        <div className="relative overflow-hidden">
-                            <Image
-                                src="/img3.png"
-                                alt="Earrings"
-                                fill
-                                className="object-cover"
-                            />
+                            <div className="absolute inset-0 bg-black/20"></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                                    <MailCheck className="w-10 h-10 text-white" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="flex-1 flex items-center justify-center p-8">
-                <div className="w-full max-w-md">
-                    <h1 className="font-heading text-5xl text-center font-medium text-black mb-4">
-                        Verify Email
-                    </h1>
+                {/* Right: Form */}
+                <div className="lg:w-1/2 p-8 lg:p-16 flex flex-col justify-center relative">
+                    <Link
+                        href="/signup"
+                        className="absolute top-8 left-8 text-neutral-500 hover:text-dark-primary transition-colors flex items-center gap-2 group"
+                    >
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        Back to Sign Up
+                    </Link>
 
-                    <p className="font-body text-base text-neutral-600 text-center mb-8">
-                        We've sent a 6-digit code to
-                        <br />
-                        <span className="font-semibold text-black">
-                            {email}
-                        </span>
-                    </p>
-
-                    <div className="space-y-6">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                                <p className="text-sm text-center">{error}</p>
-                            </div>
-                        )}
-
-                        <OTPInput
-                            value={otp}
-                            onChange={setOtp}
-                            onComplete={(value) =>
-                                void handleOtpComplete(value)
-                            }
-                            disabled={isLoading}
-                            error={!!error}
-                        />
-
-                        <div className="pt-4 space-y-4">
-                            <p className="font-body text-sm text-neutral-600 text-center">
-                                Didn't receive the code?{' '}
-                                <button
-                                    type="button"
-                                    onClick={() => void handleResend()}
-                                    disabled={!canResend || isLoading}
-                                    className="text-black hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {countdown > 0
-                                        ? `Resend in ${countdown}s`
-                                        : 'Resend Code'}
-                                </button>
+                    <div
+                        className={`max-w-md mx-auto w-full mt-8 transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}
+                    >
+                        <div className="text-center mb-8">
+                            <h1 className="font-heading text-4xl font-medium text-neutral-900 mb-3">
+                                Verify Email
+                            </h1>
+                            <p className="text-neutral-500">
+                                We&apos;ve sent a 6-digit code to <br />
+                                <span className="font-semibold text-neutral-900">
+                                    {email}
+                                </span>
                             </p>
-
-                            <Link
-                                href="/signin"
-                                className="block text-center text-sm text-neutral-600 hover:text-black transition-colors"
-                            >
-                                Back to Sign In
-                            </Link>
                         </div>
 
-                        {isLoading && (
-                            <div className="text-center">
-                                <p className="text-sm text-neutral-600">
-                                    Verifying...
-                                </p>
+                        <div className="space-y-8">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2 animate-shake">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                    <p className="text-sm font-medium">
+                                        {error}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex justify-center">
+                                <OTPInput
+                                    value={otp}
+                                    onChange={setOtp}
+                                    onComplete={(value) =>
+                                        void handleOtpComplete(value)
+                                    }
+                                    disabled={isLoading}
+                                    error={!!error}
+                                />
                             </div>
-                        )}
+
+                            <div className="space-y-4 text-center">
+                                <p className="text-sm text-neutral-600">
+                                    Didn&apos;t receive the code?{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => void handleResend()}
+                                        disabled={!canResend || isLoading}
+                                        className="text-dark-primary font-medium hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:underline"
+                                    >
+                                        {countdown > 0
+                                            ? `Resend in ${countdown}s`
+                                            : 'Resend Code'}
+                                    </button>
+                                </p>
+
+                                {isLoading && (
+                                    <div className="flex items-center justify-center gap-2 text-neutral-500 text-sm">
+                                        <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-600 rounded-full animate-spin"></div>
+                                        Verifying...
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <style jsx>{`
+                @keyframes shake {
+                    0%,
+                    100% {
+                        transform: translateX(0);
+                    }
+                    25% {
+                        transform: translateX(-5px);
+                    }
+                    75% {
+                        transform: translateX(5px);
+                    }
+                }
+                .animate-shake {
+                    animation: shake 0.4s ease-in-out;
+                }
+            `}</style>
         </div>
     );
 }

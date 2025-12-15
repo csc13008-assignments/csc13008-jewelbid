@@ -26,7 +26,8 @@ const getTimeRemaining = (endDate: Date): TimeRemaining => {
 };
 
 const formatCurrency = (amount: number): string => {
-    return amount.toLocaleString('vi-VN');
+    // Remove decimal places and format with dot separator, add VND suffix
+    return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' VND';
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -38,6 +39,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     const router = useRouter();
     const [isLiked, setIsLiked] = useState(auction.isLiked || false);
     const [likeCount, setLikeCount] = useState(auction.likeCount);
+    const [isLikeLoading, setIsLikeLoading] = useState(false);
     const timeRemaining = getTimeRemaining(auction.endDate);
 
     // Tìm highest bidder
@@ -53,18 +55,72 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
     const highestBidder = getHighestBidder();
 
-    const handleLike = () => {
+    const handleLike = async () => {
+        // Dynamic import useToast to avoid SSR issues
+        await import('./Toast');
+
+        // Check if user is logged in
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+            // Can't use hook here, use event-based approach
+            window.dispatchEvent(
+                new CustomEvent('show-toast', {
+                    detail: {
+                        type: 'warning',
+                        message: 'Please login to add to watchlist',
+                    },
+                }),
+            );
+            router.push('/signin');
+            return;
+        }
+
+        if (isLikeLoading) return;
+        setIsLikeLoading(true);
+
         const newLikedState = !isLiked;
-        console.log('Like clicked! Current:', isLiked, 'New:', newLikedState);
-        setIsLiked(newLikedState);
 
-        setLikeCount((prev) => {
-            const newCount = newLikedState ? prev + 1 : prev - 1;
-            console.log('Like count changed from', prev, 'to', newCount);
-            return newCount;
-        });
+        try {
+            const { productsApi } = await import('@/lib/api/products');
 
-        onLike?.(auction.id);
+            if (newLikedState) {
+                await productsApi.addToWatchlist(auction.id);
+                window.dispatchEvent(
+                    new CustomEvent('show-toast', {
+                        detail: {
+                            type: 'success',
+                            message: 'Đã thêm vào danh sách yêu thích',
+                        },
+                    }),
+                );
+            } else {
+                await productsApi.removeFromWatchlist(auction.id);
+                window.dispatchEvent(
+                    new CustomEvent('show-toast', {
+                        detail: {
+                            type: 'info',
+                            message: 'Đã xóa khỏi danh sách yêu thích',
+                        },
+                    }),
+                );
+            }
+
+            setIsLiked(newLikedState);
+            setLikeCount((prev) => (newLikedState ? prev + 1 : prev - 1));
+            onLike?.(auction.id);
+        } catch (error) {
+            console.error('Failed to update watchlist:', error);
+            window.dispatchEvent(
+                new CustomEvent('show-toast', {
+                    detail: {
+                        type: 'error',
+                        message: 'Cập nhật danh sách yêu thích thất bại',
+                    },
+                }),
+            );
+        } finally {
+            setIsLikeLoading(false);
+        }
     };
 
     const handleCardClick = () => {
@@ -76,7 +132,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <div
                 onClick={handleCardClick}
                 className={cn(
-                    'bg-white overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer',
+                    'bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer',
                     'flex items-center gap-4 p-4 h-32',
                     className,
                 )}
@@ -106,7 +162,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    handleLike();
+                                    void handleLike();
                                 }}
                                 className="hover:scale-110 transition-transform duration-200 cursor-pointer"
                                 aria-label={isLiked ? 'Unlike' : 'Like'}
@@ -225,7 +281,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div
             onClick={handleCardClick}
             className={cn(
-                ' overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer',
+                ' overflow-hidden rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer',
                 'w-[308px] h-[490px] flex flex-col',
                 className,
             )}
@@ -255,7 +311,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleLike();
+                                void handleLike();
                             }}
                             className="hover:scale-110 transition-transform duration-200 cursor-pointer"
                             aria-label={isLiked ? 'Unlike' : 'Like'}

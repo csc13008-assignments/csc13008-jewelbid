@@ -22,19 +22,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref,
     ) => {
         const baseStyles =
-            'inline-flex items-center justify-center gap-2 font-body font-medium transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none';
+            'group inline-flex items-center justify-center gap-2 font-body font-medium rounded-xl transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none hover:shadow-lg hover:-translate-y-0.5';
 
         const variants = {
-            primary: 'bg-primary text-black hover:bg-dark-primary',
+            primary: 'bg-primary text-white hover:bg-dark-primary',
             outline:
                 'border border-dark-primary text-dark-primary bg-white hover:bg-secondary hover:border-dark-primary hover:text-black',
             muted: 'bg-dark-primary text-white hover:bg-[#7D6D5A] hover:text-white',
         };
 
         const sizes = {
-            sm: 'h-7 py-2 px-2 text-sm',
-            md: 'h-9 py-3 px-3 text-base',
-            lg: 'h-11 py-4 px-4 text-base',
+            sm: 'px-2 py-1 text-sm',
+            md: 'px-6 py-3 text-base',
+            lg: 'px-8 py-4 text-base',
         };
 
         return (

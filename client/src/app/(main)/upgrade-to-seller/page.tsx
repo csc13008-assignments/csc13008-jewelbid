@@ -1,21 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Input, Button } from '@/modules/shared/components/ui';
-import { Upload, X } from 'lucide-react';
+import { Upload, CheckCircle, FileText } from 'lucide-react';
 
 export default function UpgradeToSellerPage() {
-    const router = useRouter();
     const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
+        businessName: '',
+        taxId: '',
         address: '',
-        idOrPassport: '',
+        phone: '',
+        description: '',
+        idCardFront: null as File | null,
+        idCardBack: null as File | null,
     });
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -27,233 +29,277 @@ export default function UpgradeToSellerPage() {
         }));
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (files) {
-            const newFiles = Array.from(files);
-            setUploadedFiles((prev) => [...prev, ...newFiles]);
+    const handleFileChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        field: 'idCardFront' | 'idCardBack',
+    ) => {
+        if (e.target.files && e.target.files[0]) {
+            setFormData((prev) => ({
+                ...prev,
+                [field]: e.target.files![0],
+            }));
         }
-    };
-
-    const removeFile = (index: number) => {
-        setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
+        setIsSubmitting(true);
 
+        // Simulate API call
         setTimeout(() => {
-            setIsLoading(false);
-            router.push('/upgrade-to-seller/success');
+            setIsSubmitting(false);
+            setSubmitSuccess(true);
         }, 2000);
     };
 
-    return (
-        <div className="min-h-screen bg-gray-50 py-12">
-            <div className="max-w-4xl mx-auto px-6">
-                <div className="bg-white border border-neutral-200 p-8">
-                    <div className="mb-8">
-                        <h1 className="font-heading text-4xl font-bold text-black mb-2">
-                            Upgrade to Seller Account
-                        </h1>
-                        <p className="text-black font-body text-base">
-                            Become a verified seller to start listing your own
-                            items for auction.
-                        </p>
-                        <p className="text-black font-body text-base">
-                            Please provide the required information and
-                            documents for verification.
-                        </p>
+    if (submitSuccess) {
+        return (
+            <div className="min-h-screen bg-neutral-50/50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-neutral-100 p-8 text-center animate-in fade-in zoom-in duration-500">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <CheckCircle className="w-10 h-10 text-green-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-neutral-900 mb-4">
+                        Application Submitted!
+                    </h2>
+                    <p className="text-neutral-600 mb-8 leading-relaxed">
+                        Thank you for applying to become a seller. Our team will
+                        review your documents and get back to you within 2-3
+                        business days.
+                    </p>
+                    <Link href="/application-status">
+                        <Button
+                            variant="primary"
+                            className="w-full rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all py-3"
+                        >
+                            Check Application Status
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
-                        <p className="text-red-400 text-sm font-body font-bold italic">
-                            All documents are used for identity verification
-                            only and will not be shared publicly.
+    return (
+        <div className="min-h-screen bg-neutral-50/50 py-12 lg:py-20">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="bg-white shadow-sm border border-neutral-100 rounded-2xl p-8 lg:p-10">
+                    <div className="mb-8">
+                        <h1 className="font-heading text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
+                            Become a Seller
+                        </h1>
+                        <p className="text-neutral-600 text-lg">
+                            Join our exclusive community of jewelry sellers.
+                            Please provide your business details and
+                            identification documents for verification.
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <label className="block text-sm font-medium text-black mb-3">
-                                    Full Name
-                                </label>
-                                <Input
-                                    name="fullName"
-                                    placeholder="Enter your full name"
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full h-12 text-base"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-black mb-3">
-                                    Email
-                                </label>
-                                <Input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Enter your email address"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full h-12 text-base"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <label className="block text-sm font-medium text-black mb-3">
-                                    Phone number
-                                </label>
-                                <Input
-                                    type="tel"
-                                    name="phoneNumber"
-                                    placeholder="Enter your phone number"
-                                    value={formData.phoneNumber}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full h-12 text-base"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-black mb-3">
-                                    Address
-                                </label>
-                                <Input
-                                    name="address"
-                                    placeholder="Enter your address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full h-12 text-base"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <label className="block text-sm font-medium text-black mb-3">
-                                    ID / Passport (front & back)
-                                </label>
-
-                                <div className="border-2 border-dashed border-neutral-300 p-6 text-center hover:border-neutral-400 transition-colors">
-                                    <input
-                                        type="file"
-                                        id="idUpload"
-                                        multiple
-                                        accept="image/*"
-                                        onChange={handleFileUpload}
-                                        className="hidden"
-                                    />
-                                    <label
-                                        htmlFor="idUpload"
-                                        className="cursor-pointer"
-                                    >
-                                        <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
-                                        <p className="text-neutral-600 font-body">
-                                            Click to upload or drag and drop
-                                        </p>
-                                        <p className="text-sm text-neutral-500 font-body">
-                                            PNG, JPG, JPEG up to 10MB
-                                        </p>
+                        <div className="space-y-6">
+                            <h3 className="text-xl font-bold text-neutral-900 border-b border-neutral-100 pb-2">
+                                Business Information
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                        Business Name *
                                     </label>
+                                    <Input
+                                        name="businessName"
+                                        value={formData.businessName}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter business name"
+                                        className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
+                                        required
+                                    />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                        Tax ID / Business Reg. No. *
+                                    </label>
+                                    <Input
+                                        name="taxId"
+                                        value={formData.taxId}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter tax ID"
+                                        className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
+                                        required
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                        Business Address *
+                                    </label>
+                                    <Input
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter full business address"
+                                        className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                        Phone Number *
+                                    </label>
+                                    <Input
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter phone number"
+                                        className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
+                                        required
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                        Business Description
+                                    </label>
+                                    <textarea
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleInputChange}
+                                        rows={4}
+                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all resize-none"
+                                        placeholder="Tell us about your business and the type of jewelry you sell..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                                {uploadedFiles.length > 0 && (
-                                    <div className="mt-4 space-y-2">
-                                        {uploadedFiles.map((file, index) => (
-                                            <div
-                                                key={index}
-                                                className="flex items-center justify-between bg-neutral-50 p-3 rounded"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm text-neutral-700">
-                                                        {file.name}
+                        <div className="space-y-6">
+                            <h3 className="text-xl font-bold text-neutral-900 border-b border-neutral-100 pb-2">
+                                Identity Verification
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                        ID Card (Front) *
+                                    </label>
+                                    <div className="border-2 border-dashed border-neutral-300 rounded-xl p-6 text-center hover:border-dark-primary hover:bg-neutral-50 transition-all cursor-pointer group h-48 flex flex-col items-center justify-center">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) =>
+                                                handleFileChange(
+                                                    e,
+                                                    'idCardFront',
+                                                )
+                                            }
+                                            className="hidden"
+                                            id="id-front"
+                                            required
+                                        />
+                                        <label
+                                            htmlFor="id-front"
+                                            className="cursor-pointer w-full h-full flex flex-col items-center justify-center"
+                                        >
+                                            {formData.idCardFront ? (
+                                                <div className="flex flex-col items-center">
+                                                    <FileText className="w-10 h-10 text-green-500 mb-2" />
+                                                    <span className="text-sm font-medium text-green-700 truncate max-w-[200px]">
+                                                        {
+                                                            formData.idCardFront
+                                                                .name
+                                                        }
                                                     </span>
-                                                    <span className="text-xs text-neutral-500">
-                                                        (
-                                                        {(
-                                                            file.size /
-                                                            1024 /
-                                                            1024
-                                                        ).toFixed(2)}{' '}
-                                                        MB)
+                                                    <span className="text-xs text-green-600 mt-1">
+                                                        Click to change
                                                     </span>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        removeFile(index)
-                                                    }
-                                                    className="text-red-500 hover:text-red-700"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        ))}
+                                            ) : (
+                                                <>
+                                                    <Upload className="w-10 h-10 text-neutral-400 group-hover:text-dark-primary mb-3 transition-colors" />
+                                                    <span className="text-dark-primary font-bold">
+                                                        Upload Front Side
+                                                    </span>
+                                                    <span className="text-xs text-neutral-500 mt-1">
+                                                        JPG, PNG or PDF
+                                                    </span>
+                                                </>
+                                            )}
+                                        </label>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="flex flex-col justify-end">
-                                <div className="space-y-3 text-sm text-neutral-700 font-body">
-                                    <div className="flex items-start gap-2">
-                                        <span className="text-yellow-500 mt-0.5">
-                                            🔸
-                                        </span>
-                                        <span>
-                                            Your application will be reviewed by
-                                            our admin team within 7 business
-                                            days.
-                                        </span>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                        <span className="text-yellow-500 mt-0.5">
-                                            🔸
-                                        </span>
-                                        <span>
-                                            Please check your email regularly
-                                            for status updates or additional
-                                            verification requests.
-                                        </span>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                        <span className="text-yellow-500 mt-0.5">
-                                            🔸
-                                        </span>
-                                        <span>
-                                            You&apos;ll receive a confirmation
-                                            once your seller account is
-                                            approved.
-                                        </span>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                        <span className="text-yellow-500 mt-0.5">
-                                            🔸
-                                        </span>
-                                        <span>
-                                            Incomplete or unclear submissions
-                                            may cause delays in approval.
-                                        </span>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                        ID Card (Back) *
+                                    </label>
+                                    <div className="border-2 border-dashed border-neutral-300 rounded-xl p-6 text-center hover:border-dark-primary hover:bg-neutral-50 transition-all cursor-pointer group h-48 flex flex-col items-center justify-center">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) =>
+                                                handleFileChange(
+                                                    e,
+                                                    'idCardBack',
+                                                )
+                                            }
+                                            className="hidden"
+                                            id="id-back"
+                                            required
+                                        />
+                                        <label
+                                            htmlFor="id-back"
+                                            className="cursor-pointer w-full h-full flex flex-col items-center justify-center"
+                                        >
+                                            {formData.idCardBack ? (
+                                                <div className="flex flex-col items-center">
+                                                    <FileText className="w-10 h-10 text-green-500 mb-2" />
+                                                    <span className="text-sm font-medium text-green-700 truncate max-w-[200px]">
+                                                        {
+                                                            formData.idCardBack
+                                                                .name
+                                                        }
+                                                    </span>
+                                                    <span className="text-xs text-green-600 mt-1">
+                                                        Click to change
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <Upload className="w-10 h-10 text-neutral-400 group-hover:text-dark-primary mb-3 transition-colors" />
+                                                    <span className="text-dark-primary font-bold">
+                                                        Upload Back Side
+                                                    </span>
+                                                    <span className="text-xs text-neutral-500 mt-1">
+                                                        JPG, PNG or PDF
+                                                    </span>
+                                                </>
+                                            )}
+                                        </label>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex justify-end pt-2">
+                        <div className="pt-6 border-t border-neutral-100 flex items-center justify-between">
+                            <p className="text-sm text-neutral-500">
+                                By submitting, you agree to our{' '}
+                                <Link
+                                    href="/terms"
+                                    className="text-dark-primary hover:underline"
+                                >
+                                    Seller Terms & Conditions
+                                </Link>
+                            </p>
                             <Button
                                 type="submit"
-                                variant="primary"
-                                size="lg"
-                                className="px-12 py-3 text-base"
-                                disabled={isLoading}
+                                variant="muted"
+                                size="md"
+                                disabled={isSubmitting}
+                                className="px-8 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
                             >
-                                {isLoading ? 'Submitting...' : 'Submit'}
+                                {isSubmitting ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                        Processing...
+                                    </>
+                                ) : (
+                                    'Submit Application'
+                                )}
                             </Button>
                         </div>
                     </form>

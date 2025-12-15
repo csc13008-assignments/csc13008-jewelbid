@@ -1,8 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Flame,
+    TrendingUp,
+    Clock,
+} from 'lucide-react';
 import { TopDealsTabsProps, TopDealsTab } from '@/types';
 import { cn } from '@/lib/utils';
 import ProductCard from '@/modules/shared/components/ui/ProductCard';
@@ -11,11 +17,21 @@ import { Button } from '@/modules/shared/components/ui';
 const TopDealsSection: React.FC<TopDealsTabsProps> = ({ auctions }) => {
     const [activeTab, setActiveTab] = useState<TopDealsTab>('ending-soon');
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsVisible(true), 300);
+        return () => clearTimeout(timer);
+    }, []);
 
     const tabs = [
-        { id: 'ending-soon' as TopDealsTab, label: 'Top 5 Ending Soon' },
-        { id: 'most-bids' as TopDealsTab, label: 'Top 5 Most Bids' },
-        { id: 'highest-price' as TopDealsTab, label: 'Top 5 Highest Price' },
+        { id: 'ending-soon' as TopDealsTab, label: 'Ending Soon', icon: Clock },
+        { id: 'most-bids' as TopDealsTab, label: 'Most Bids', icon: Flame },
+        {
+            id: 'highest-price' as TopDealsTab,
+            label: 'Highest Price',
+            icon: TrendingUp,
+        },
     ];
 
     const getCurrentAuctions = () => {
@@ -58,42 +74,58 @@ const TopDealsSection: React.FC<TopDealsTabsProps> = ({ auctions }) => {
     );
 
     return (
-        <section className="bg-secondary py-16">
+        <section className="bg-secondary py-20 overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl font-heading text-black mb-8">
+                {/* Header */}
+                <div
+                    className={`text-center mb-14 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                >
+                    <h2 className="text-4xl font-heading text-black mb-4">
                         Hot Deals & Top Bids
                     </h2>
+                    <p className="text-neutral-600 max-w-md mx-auto mb-8">
+                        Don&apos;t miss out on these exciting auctions. Bid now
+                        before time runs out!
+                    </p>
 
+                    {/* Tabs */}
                     <div className="flex justify-center items-center">
-                        <div className="inline-flex bg-primary rounded-full p-2">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => handleTabChange(tab.id)}
-                                    className={cn(
-                                        'px-14 py-1 rounded-full font-body text-md font-normal transition-all duration-200',
-                                        activeTab === tab.id
-                                            ? 'bg-secondary text-black shadow-sm'
-                                            : 'text-neutral-600 hover:text-black',
-                                    )}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
+                        <div className="inline-flex bg-white rounded-2xl p-2 shadow-lg border border-primary">
+                            {tabs.map((tab) => {
+                                const IconComponent = tab.icon;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => handleTabChange(tab.id)}
+                                        className={cn(
+                                            'px-6 py-3 rounded-xl font-body text-sm font-medium transition-all duration-300 flex items-center gap-2',
+                                            activeTab === tab.id
+                                                ? 'bg-dark-primary text-white shadow-md'
+                                                : 'text-neutral-600 hover:text-dark-primary hover:bg-primary/50',
+                                        )}
+                                    >
+                                        <IconComponent className="w-4 h-4" />
+                                        {tab.label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
 
-                <div className="relative flex justify-center">
+                {/* Products Carousel */}
+                <div
+                    className={`relative flex justify-center transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                >
+                    {/* Navigation Buttons */}
                     <button
                         onClick={handlePrevious}
                         disabled={!canGoPrevious}
                         className={cn(
-                            'absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all',
+                            'absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 rounded-xl shadow-lg flex items-center justify-center transition-all duration-300',
                             canGoPrevious
-                                ? 'bg-white hover:shadow-xl text-neutral-600'
-                                : 'bg-neutral-200 text-neutral-400 cursor-not-allowed',
+                                ? 'bg-white hover:shadow-xl hover:-translate-x-5 text-neutral-600 border border-primary'
+                                : 'bg-neutral-100 text-neutral-300 cursor-not-allowed',
                         )}
                         aria-label="Previous products"
                     >
@@ -104,36 +136,60 @@ const TopDealsSection: React.FC<TopDealsTabsProps> = ({ auctions }) => {
                         onClick={handleNext}
                         disabled={!canGoNext}
                         className={cn(
-                            'absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all',
+                            'absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 rounded-xl shadow-lg flex items-center justify-center transition-all duration-300',
                             canGoNext
-                                ? 'bg-white hover:shadow-xl text-neutral-600'
-                                : 'bg-neutral-200 text-neutral-400 cursor-not-allowed',
+                                ? 'bg-white hover:shadow-xl hover:translate-x-5 text-neutral-600 border border-primary'
+                                : 'bg-neutral-100 text-neutral-300 cursor-not-allowed',
                         )}
                         aria-label="Next products"
                     >
                         <ChevronRight className="w-5 h-5" />
                     </button>
 
-                    <div className="flex gap-6 justify-center max-w-fit">
-                        {visibleAuctions.map((auction) => (
-                            <ProductCard
+                    {/* Products Grid */}
+                    <div className="flex gap-8 justify-center max-w-fit">
+                        {visibleAuctions.map((auction, index) => (
+                            <div
                                 key={auction.id}
-                                auction={auction}
-                                onLike={(id) => console.log('Liked:', id)}
-                                onBid={(id) => console.log('Bid on:', id)}
-                            />
+                                className="transition-all duration-500"
+                                style={{
+                                    animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
+                                }}
+                            >
+                                <ProductCard
+                                    auction={auction}
+                                    onLike={(id) => console.log('Liked:', id)}
+                                    onBid={(id) => console.log('Bid on:', id)}
+                                />
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="text-center mt-12">
+                {/* View All Button */}
+                <div
+                    className={`text-center mt-14 transition-all duration-700 delay-400 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                >
                     <Link href="/search-result">
-                        <Button variant="primary" size="lg" className="px-8">
+                        <Button variant="muted" size="md">
                             View All Auctions
                         </Button>
                     </Link>
                 </div>
             </div>
+
+            <style jsx>{`
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `}</style>
         </section>
     );
 };
