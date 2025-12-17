@@ -19,7 +19,7 @@ import Button from '../ui/Button';
 import { buildSearchUrl } from '@/lib/searchUtils';
 import { useAuthStore } from '@/stores/authStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
-import { materials } from '@/lib/categories';
+import { useFiltersStore } from '@/stores/filtersStore';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -30,6 +30,13 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
     const router = useRouter();
     const { user: currentUser, signOut, hydrate } = useAuthStore();
     const { categoryFilterOptions, fetchCategories } = useCategoriesStore();
+    const {
+        brandOptions,
+        materialOptions,
+        targetAudienceOptions,
+        auctionStatusOptions,
+        fetchAllFilters,
+    } = useFiltersStore();
     const [activeItem, setActiveItem] = useState('Home');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -38,6 +45,7 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
     useEffect(() => {
         hydrate();
         void fetchCategories();
+        void fetchAllFilters();
 
         const handleScroll = () => {
             setScrolled(window.scrollY > 20);
@@ -45,7 +53,7 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
 
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [hydrate, fetchCategories]);
+    }, [hydrate, fetchCategories, fetchAllFilters]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,7 +71,6 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
         void router.push('/');
     };
 
-    // Build dropdown data with categories from API
     const dropdownData = {
         'Jewelry Type':
             categoryFilterOptions.length > 0
@@ -77,28 +84,19 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
                       'Pendant',
                       'Charm',
                   ],
-        Brand: [
-            'Cartier',
-            'Tiffany & Co',
-            'Pandora',
-            'Gucci',
-            'Dior',
-            'Local Artisan Brands',
-        ],
-        Material: materials.map((m) => m.label),
-        'Target Audience': [
-            'For Men',
-            'For Women',
-            'For Couples',
-            'For Kids',
-            'Unisex',
-        ],
-        'Ongoing Auction': [
-            'Ending Soon',
-            'Most Bids',
-            'Highest Price',
-            'Newly Listed',
-        ],
+        Brand: brandOptions.length > 0 ? brandOptions.map((b) => b.label) : [],
+        Material:
+            materialOptions.length > 0
+                ? materialOptions.map((m) => m.label)
+                : [],
+        'Target Audience':
+            targetAudienceOptions.length > 0
+                ? targetAudienceOptions.map((t) => t.label)
+                : [],
+        'Ongoing Auction':
+            auctionStatusOptions.length > 0
+                ? auctionStatusOptions.map((a) => a.label)
+                : [],
     };
 
     const navItems = [

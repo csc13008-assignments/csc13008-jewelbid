@@ -1,12 +1,5 @@
 import { CategoryItem } from '@/types';
 
-// Filter option type
-export interface FilterOption {
-    label: string;
-    value: string;
-}
-
-// Static categories data - these rarely change
 export const categories: CategoryItem[] = [
     {
         id: 'ring-category',
@@ -40,20 +33,6 @@ export const categories: CategoryItem[] = [
     },
 ];
 
-// Static materials data
-export const materials: FilterOption[] = [
-    { label: 'Gold', value: 'gold' },
-    { label: 'Silver', value: 'silver' },
-    { label: 'Platinum', value: 'platinum' },
-    { label: 'Diamond', value: 'diamond' },
-    { label: 'Gemstone', value: 'gemstone' },
-    { label: 'Leather', value: 'leather' },
-];
-
 export const getCategoriesData = (): CategoryItem[] => {
     return categories;
-};
-
-export const getMaterialsData = (): FilterOption[] => {
-    return materials;
 };
