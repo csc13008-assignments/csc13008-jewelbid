@@ -56,6 +56,42 @@ export class Product extends BaseEntity {
     category: JewelryCategory;
 
     @ApiProperty({
+        description: 'Product brand',
+        example: 'Cartier',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 100,
+        nullable: true,
+    })
+    brand?: string;
+
+    @ApiProperty({
+        description: 'Product material',
+        example: 'Gold',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 100,
+        nullable: true,
+    })
+    material?: string;
+
+    @ApiProperty({
+        description: 'Target audience',
+        example: 'unisex',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 50,
+        nullable: true,
+    })
+    targetAudience?: string;
+
+    @ApiProperty({
         description: 'Starting price',
         example: 5000000,
     })

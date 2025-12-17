@@ -8,6 +8,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { FiltersModule } from './modules/filters/filters.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { MailerModule } from '@nestjs-modules/mailer';
 
@@ -68,6 +69,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         OrdersModule,
         ChatModule,
         SettingsModule,
+        FiltersModule,
     ],
 })
 export class AppModule {}
