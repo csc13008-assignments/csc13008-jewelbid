@@ -75,15 +75,7 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
         'Jewelry Type':
             categoryFilterOptions.length > 0
                 ? categoryFilterOptions.map((c) => c.label)
-                : [
-                      'Ring',
-                      'Necklace',
-                      'Watch',
-                      'Earring',
-                      'Anklet',
-                      'Pendant',
-                      'Charm',
-                  ],
+                : [],
         Brand: brandOptions.length > 0 ? brandOptions.map((b) => b.label) : [],
         Material:
             materialOptions.length > 0
