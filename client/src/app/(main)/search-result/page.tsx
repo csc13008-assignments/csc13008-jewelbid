@@ -7,9 +7,8 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/modules/shared/components/ui';
 import { useProductsStore } from '@/stores/productsStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
+import { useFiltersStore } from '@/stores/filtersStore';
 import { BreadcrumbItem, SearchFilters } from '@/types';
-import { getFilterLabel } from '@/lib/searchUtils';
-import { materials } from '@/lib/categories';
 import { cn } from '@/lib/utils';
 
 function SearchResultContent() {
@@ -31,6 +30,16 @@ function SearchResultContent() {
         fetchCategories,
         isLoading: isLoadingCategories,
     } = useCategoriesStore();
+
+    const {
+        brandOptions,
+        materialOptions,
+        targetAudienceOptions,
+        auctionStatusOptions,
+        fetchAllFilters,
+        getFilterLabel,
+        isLoading: isLoadingFilters,
+    } = useFiltersStore();
 
     const filters: SearchFilters = {
         category: searchParams.get('category') || undefined,
@@ -54,6 +63,11 @@ function SearchResultContent() {
     );
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 9; // Increased for better grid layout
+
+    // Fetch filters on mount
+    useEffect(() => {
+        void fetchAllFilters();
+    }, [fetchAllFilters]);
 
     // Fetch products when filters, search query or page changes
     const fetchData = useCallback(() => {
@@ -218,32 +232,15 @@ function SearchResultContent() {
 
     const pageTitle = getPageTitle();
 
-    const isLoading = isLoadingProducts || isLoadingCategories;
+    const isLoading =
+        isLoadingProducts || isLoadingCategories || isLoadingFilters;
 
     const filterOptions = {
         category: categoryFilterOptions,
-        brand: [
-            { label: 'Cartier', value: 'cartier' },
-            { label: 'Tiffany & Co.', value: 'tiffany' },
-            { label: 'Pandora', value: 'pandora' },
-            { label: 'Gucci', value: 'gucci' },
-            { label: 'Dior', value: 'dior' },
-            { label: 'Local Artisan Brands', value: 'local' },
-        ],
-        material: materials,
-        targetAudience: [
-            { label: 'For Men', value: 'for-men' },
-            { label: 'For Women', value: 'for-women' },
-            { label: 'For Couples', value: 'for-couples' },
-            { label: 'For Kids', value: 'for-kids' },
-            { label: 'Unisex', value: 'unisex' },
-        ],
-        auctionStatus: [
-            { label: 'Ending Soon', value: 'ending-soon' },
-            { label: 'Most Bids', value: 'most-bids' },
-            { label: 'Highest Price', value: 'highest-price' },
-            { label: 'Newly Listed', value: 'newly-listed' },
-        ],
+        brand: brandOptions,
+        material: materialOptions,
+        targetAudience: targetAudienceOptions,
+        auctionStatus: auctionStatusOptions,
     };
 
     const sortOptions = [
