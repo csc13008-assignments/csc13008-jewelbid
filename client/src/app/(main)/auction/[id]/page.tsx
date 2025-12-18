@@ -155,18 +155,18 @@ export default function ProductDetailPage() {
     const isOwner =
         auction &&
         currentUser &&
-        currentUser.role === 'seller' &&
+        currentUser.role.toLowerCase() === 'seller' &&
         currentUser.id === auction.seller.id;
 
     const canComment =
         currentUser &&
-        (currentUser.role === 'bidder' ||
-            (currentUser.role === 'seller' && !isOwner));
+        (currentUser.role.toLowerCase() === 'bidder' ||
+            (currentUser.role.toLowerCase() === 'seller' && !isOwner));
 
     const canBid =
         currentUser &&
-        (currentUser.role === 'bidder' ||
-            (currentUser.role === 'seller' && !isOwner));
+        (currentUser.role.toLowerCase() === 'bidder' ||
+            (currentUser.role.toLowerCase() === 'seller' && !isOwner));
 
     const highestBidder =
         auction && auction.bids && auction.bids.length > 0

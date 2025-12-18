@@ -38,14 +38,21 @@ export default function SignInPage() {
         clearError();
 
         try {
-            const result = await signIn(formData.email, formData.password);
-            toast.success('Login successful! Welcome back.');
+            await signIn(formData.email, formData.password);
 
-            // Role-based redirect
-            if ((result as any)?.user?.role === 'Admin') {
-                router.push('/admin/categories');
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user: { id: string; role: string } = JSON.parse(userStr);
+
+                toast.success('Login successful! Welcome back.');
+
+                if (user.role.toLowerCase() === 'admin') {
+                    router.push('/admin/categories');
+                } else {
+                    router.push('/');
+                }
             } else {
-                router.push('/');
+                throw new Error('User not found');
             }
         } catch (err: unknown) {
             const apiError = err as {

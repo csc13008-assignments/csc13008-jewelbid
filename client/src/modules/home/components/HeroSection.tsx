@@ -5,9 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import Button from '@/modules/shared/components/ui/Button';
+import { useAuthStore } from '@/stores/authStore';
 
 const HeroSection = () => {
     const [isVisible, setIsVisible] = useState(false);
+    const { user: currentUser } = useAuthStore();
 
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 100);
@@ -67,15 +69,17 @@ const HeroSection = () => {
                                 </Button>
                             </Link>
 
-                            <Link href="/signin">
-                                <Button
-                                    variant="outline"
-                                    size="md"
-                                    className="h-[48px]"
-                                >
-                                    Sign In
-                                </Button>
-                            </Link>
+                            {!currentUser && (
+                                <Link href="/signin">
+                                    <Button
+                                        variant="outline"
+                                        size="md"
+                                        className="h-[48px]"
+                                    >
+                                        Sign In
+                                    </Button>
+                                </Link>
+                            )}
                         </div>
 
                         {/* Stats */}

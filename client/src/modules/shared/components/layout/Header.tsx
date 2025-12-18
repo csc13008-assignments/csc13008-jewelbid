@@ -219,7 +219,7 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
 
                         {currentUser ? (
                             <>
-                                {currentUser.role === 'Seller' ? (
+                                {currentUser.role.toLowerCase() === 'seller' ? (
                                     <Link
                                         href="/create-auction"
                                         className="hidden md:block"
@@ -232,7 +232,8 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
                                             Sell Your Jewelry
                                         </Button>
                                     </Link>
-                                ) : currentUser.role === 'Bidder' ? (
+                                ) : currentUser.role.toLowerCase() ===
+                                  'bidder' ? (
                                     <Link
                                         href="/upgrade-to-seller"
                                         className="hidden md:block"
@@ -360,8 +361,8 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
                                                     <Trophy className="w-4 h-4" />
                                                     Won Auctions
                                                 </button>
-                                                {currentUser.role ===
-                                                    'Seller' && (
+                                                {currentUser.role.toLowerCase() ===
+                                                    'seller' && (
                                                     <button
                                                         onClick={() => {
                                                             router.push(
