@@ -92,8 +92,10 @@ export const adminApi = {
 
     // ===== PRODUCTS =====
 
-    // GET /products - List products (can filter by status, etc.)
-    getProducts: async (params?: { status?: string }): Promise<any[]> => {
+    // GET /products - List products with pagination
+    getProducts: async (params?: {
+        status?: string;
+    }): Promise<{ products?: any[]; data?: any[] } | any[]> => {
         const response = await apiClient.get('/products', { params });
         return response.data;
     },

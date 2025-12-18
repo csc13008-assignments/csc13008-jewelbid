@@ -44,13 +44,12 @@ export default function ProductsPage() {
             // Handle response - may be array or object with data property
             const data = Array.isArray(response)
                 ? response
-                : (response as any).data || [];
+                : response?.products || (response as any)?.data || [];
             // Map backend products to admin format
             const mapped = data.map((p: any) => ({
                 id: p.id,
                 name: p.name,
-                categoryName:
-                    p.categoryName || p.category?.name || 'Uncategorized',
+                categoryName: p.categoryName || p.category || 'Uncategorized',
                 mainImage: p.mainImage || p.images?.[0] || '/placeholder.jpg',
                 currentPrice: p.currentPrice || p.startingPrice || 0,
                 buyNowPrice: p.buyNowPrice,
