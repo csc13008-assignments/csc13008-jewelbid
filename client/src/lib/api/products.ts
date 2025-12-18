@@ -13,6 +13,7 @@ export interface BackendProduct {
     endDate: string;
     status: string;
     bidCount: number;
+    watchlistCount: number;
     mainImage: string;
     additionalImages: string[];
     seller: {
@@ -59,6 +60,20 @@ export interface HomepageProductsResponse {
     topEndingSoon: BackendProduct[];
     topBidCount: BackendProduct[];
     topPrice: BackendProduct[];
+}
+
+export interface CreateProductRequest {
+    name: string;
+    description: string;
+    category: string;
+    startingPrice: number;
+    stepPrice: number;
+    buyNowPrice?: number;
+    endDate: string;
+    autoRenewal?: boolean;
+    mainImage: string;
+    additionalImages: string[];
+    allowNewBidders?: boolean;
 }
 
 export const productsApi = {
@@ -214,6 +229,14 @@ export const productsApi = {
     // GET /products/seller/completed [SELLER] - seller's completed auctions
     getSellerCompletedProducts: async (): Promise<BackendProduct[]> => {
         const response = await apiClient.get('/products/seller/completed');
+        return response.data;
+    },
+
+    // POST /products [SELLER] - create a new product
+    createProduct: async (
+        productData: CreateProductRequest,
+    ): Promise<BackendProduct> => {
+        const response = await apiClient.post('/products', productData);
         return response.data;
     },
 };

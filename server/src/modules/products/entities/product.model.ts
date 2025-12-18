@@ -216,6 +216,16 @@ export class Product extends BaseEntity {
     allowNewBidders: boolean;
 
     @ApiProperty({
+        description: 'Number of users who added this product to watchlist',
+        example: 5,
+    })
+    @Column({
+        type: 'int',
+        default: 0,
+    })
+    watchlistCount: number;
+
+    @ApiProperty({
         description: 'Seller ID',
         example: '01234567-89ab-cdef-0123-456789abcdef',
     })

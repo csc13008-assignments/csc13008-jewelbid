@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Input, Button } from '@/modules/shared/components/ui';
 import {
     X,
@@ -13,8 +14,10 @@ import {
     ListOrdered,
     Link,
 } from 'lucide-react';
+import { productsApi } from '@/lib/api/products';
 
 export default function CreateAuctionPage() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         productName: '',
         startingPrice: '',
@@ -34,10 +37,13 @@ export default function CreateAuctionPage() {
         category: '',
         surroundingStonesCaratWeight: '',
         size: '',
+        endDate: '',
+        allowNewBidders: true,
     });
 
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [editorRef, setEditorRef] = useState<HTMLDivElement | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleInputChange = (
         e: React.ChangeEvent<
@@ -106,9 +112,61 @@ export default function CreateAuctionPage() {
         setImagePreviews((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Form data:', formData);
+        setIsSubmitting(true);
+
+        try {
+            // Map frontend form fields to backend DTO structure
+            const categoryMap: Record<string, string> = {
+                ring: 'Ring',
+                necklace: 'Necklace',
+                earring: 'Earring',
+                bracelet: 'Bracelet',
+                watch: 'Watch',
+                pendant: 'Pendant',
+                brooch: 'Brooch',
+                cufflink: 'Cufflink',
+                other: 'Other',
+            };
+
+            // For now, use placeholder URLs for images
+            // TODO: Implement proper image upload to cloud storage
+            const imageUrls = formData.images.map(
+                (_, index) =>
+                    `https://via.placeholder.com/800x600?text=Product+Image+${index + 1}`,
+            );
+
+            const productData = {
+                name: formData.productName,
+                description: formData.description,
+                category: categoryMap[formData.category] || formData.category,
+                startingPrice: parseFloat(formData.startingPrice),
+                stepPrice: parseFloat(formData.bidIncrement),
+                buyNowPrice: formData.buyNowPrice
+                    ? parseFloat(formData.buyNowPrice)
+                    : undefined,
+                endDate: formData.endDate,
+                autoRenewal: formData.enableAutoExtension,
+                mainImage: imageUrls[0] || '',
+                additionalImages: imageUrls.slice(1),
+                allowNewBidders: formData.allowNewBidders,
+            };
+
+            const createdProduct = await productsApi.createProduct(productData);
+
+            // Success - show alert and redirect
+            alert('Product created successfully!');
+            router.push(`/auction/${createdProduct.id}`);
+        } catch (error: any) {
+            console.error('Error creating product:', error);
+            const errorMessage =
+                error.response?.data?.message ||
+                'Failed to create product. Please try again.';
+            alert(`Error: ${errorMessage}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -119,7 +177,10 @@ export default function CreateAuctionPage() {
                         Create a New Auction Listing
                     </h1>
 
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                    <form
+                        onSubmit={(e) => void handleSubmit(e)}
+                        className="space-y-8"
+                    >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-bold text-neutral-700 mb-2">
@@ -178,6 +239,47 @@ export default function CreateAuctionPage() {
                                     placeholder="Buy Now Price"
                                     className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
                                 />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                    Auction End Date *
+                                </label>
+                                <Input
+                                    name="endDate"
+                                    type="datetime-local"
+                                    value={formData.endDate}
+                                    onChange={handleInputChange}
+                                    className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
+                                    required
+                                />
+                                <p className="text-xs text-neutral-500 mt-1">
+                                    When should this auction end?
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-neutral-700 mb-2">
+                                    Allow New Bidders
+                                </label>
+                                <div className="flex items-center h-[42px]">
+                                    <input
+                                        type="checkbox"
+                                        id="allowNewBidders"
+                                        name="allowNewBidders"
+                                        checked={formData.allowNewBidders}
+                                        onChange={handleInputChange}
+                                        className="w-4 h-4 text-dark-primary border-neutral-300 rounded focus:ring-dark-primary"
+                                    />
+                                    <label
+                                        htmlFor="allowNewBidders"
+                                        className="ml-2 text-sm text-neutral-600 cursor-pointer"
+                                    >
+                                        Allow bidders with no rating history
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
@@ -651,6 +753,7 @@ export default function CreateAuctionPage() {
                                     type="button"
                                     variant="outline"
                                     className="px-8 rounded-xl"
+                                    disabled={isSubmitting}
                                 >
                                     Save as Draft
                                 </Button>
@@ -662,7 +765,9 @@ export default function CreateAuctionPage() {
                                         !formData.productName ||
                                         !formData.startingPrice ||
                                         !formData.bidIncrement ||
-                                        !formData.category
+                                        !formData.category ||
+                                        !formData.endDate ||
+                                        isSubmitting
                                             ? 'opacity-50 cursor-not-allowed'
                                             : ''
                                     }`}
@@ -671,10 +776,14 @@ export default function CreateAuctionPage() {
                                         !formData.productName ||
                                         !formData.startingPrice ||
                                         !formData.bidIncrement ||
-                                        !formData.category
+                                        !formData.category ||
+                                        !formData.endDate ||
+                                        isSubmitting
                                     }
                                 >
-                                    Publish Auction
+                                    {isSubmitting
+                                        ? 'Publishing...'
+                                        : 'Publish Auction'}
                                 </Button>
                             </div>
                         </div>

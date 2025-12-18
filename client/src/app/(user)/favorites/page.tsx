@@ -5,6 +5,7 @@ import { ProductCard, Button } from '@/modules/shared/components/ui';
 import UserSidebar from '@/modules/shared/components/layout/UserSidebar';
 import { productsApi } from '@/lib/api/products';
 import { mapProductToAuction } from '@/stores/productsStore';
+import { useWatchlistStore } from '@/stores/watchlistStore';
 import { Auction } from '@/types';
 import { ChevronDown, Trash2, Heart, ArrowRight } from 'lucide-react';
 import toast from '@/lib/toast';
@@ -21,7 +22,10 @@ export default function FavoritesPage() {
         setIsLoading(true);
         try {
             const products = await productsApi.getWatchlist();
-            const auctions = products.map(mapProductToAuction);
+            const { isInWatchlist } = useWatchlistStore.getState();
+            const auctions = products.map((p) =>
+                mapProductToAuction(p, isInWatchlist),
+            );
             setFavorites(auctions);
         } catch (error) {
             console.error('Failed to fetch watchlist:', error);

@@ -363,7 +363,16 @@ export class ProductsRepository {
                 productId,
             });
 
-            return await this.watchlistRepository.save(watchlistItem);
+            await this.watchlistRepository.save(watchlistItem);
+
+            // Increment watchlist count
+            await this.productRepository.increment(
+                { id: productId },
+                'watchlistCount',
+                1,
+            );
+
+            return watchlistItem;
         } catch (error) {
             if (error instanceof BadRequestException) {
                 throw error;
@@ -386,6 +395,13 @@ export class ProductsRepository {
             if (result.affected === 0) {
                 throw new NotFoundException('Watchlist item not found');
             }
+
+            // Decrement watchlist count
+            await this.productRepository.decrement(
+                { id: productId },
+                'watchlistCount',
+                1,
+            );
         } catch (error) {
             if (error instanceof NotFoundException) {
                 throw error;
@@ -594,6 +610,23 @@ export class ProductsRepository {
 
             if (!includeCompleted) {
                 where.status = ProductStatus.ACTIVE;
+            } else {
+                // For completed products: status must be COMPLETED
+                // OR (status is ACTIVE but endDate has passed)
+                const now = new Date();
+                const products = await this.productRepository.find({
+                    where: { sellerId },
+                    relations: ['currentBidder'],
+                    order: { created_at: 'DESC' },
+                });
+
+                // Filter to only include completed/ended products
+                return products.filter(
+                    (p) =>
+                        p.status === ProductStatus.COMPLETED ||
+                        (p.status === ProductStatus.ACTIVE &&
+                            new Date(p.endDate) < now),
+                );
             }
 
             return await this.productRepository.find({

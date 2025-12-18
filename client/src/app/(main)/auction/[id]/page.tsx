@@ -13,9 +13,15 @@ import {
     ProductCard,
 } from '@/modules/shared/components/ui';
 import toast from '@/lib/toast';
+import { useWatchlistStore } from '@/stores/watchlistStore';
 
 export default function ProductDetailPage() {
     const params = useParams();
+
+    // Watchlist store - must be at top to maintain hook order
+    const { addToWatchlist, removeFromWatchlist, isInWatchlist } =
+        useWatchlistStore();
+
     const [selectedImage, setSelectedImage] = useState(0);
     const [bidAmount, setBidAmount] = useState('');
     const [newQuestion, setNewQuestion] = useState('');
@@ -89,13 +95,20 @@ export default function ProductDetailPage() {
                 params.id as string,
             );
 
-            const auctionData = mapProductToAuction(productDetails.product);
+            const { isInWatchlist: checkWatchlist } =
+                useWatchlistStore.getState();
+            const auctionData = mapProductToAuction(
+                productDetails.product,
+                checkWatchlist,
+            );
             setAuction(auctionData);
             setLikeCount(auctionData.likeCount || 0);
+            setIsLiked(checkWatchlist(productDetails.product.id));
 
             // Set related auctions from API response
-            const related =
-                productDetails.relatedProducts.map(mapProductToAuction);
+            const related = productDetails.relatedProducts.map((p) =>
+                mapProductToAuction(p, checkWatchlist),
+            );
             setRelatedAuctions(related);
 
             // Map questions to UI format
@@ -193,6 +206,13 @@ export default function ProductDetailPage() {
         return () => clearInterval(timer);
     }, [auction]);
 
+    // Sync isLiked with watchlist - MUST be before early return
+    useEffect(() => {
+        if (auction) {
+            setIsLiked(isInWatchlist(auction.id));
+        }
+    }, [isInWatchlist, auction]);
+
     // Show loading state while fetching
     if (isAuctionLoading || isUserLoading) {
         return (
@@ -256,10 +276,12 @@ export default function ProductDetailPage() {
         try {
             if (isLiked) {
                 await productsApi.removeFromWatchlist(auction.id);
+                removeFromWatchlist(auction.id);
                 setLikeCount((prev) => Math.max(0, prev - 1));
                 toast.info('Removed from watchlist');
             } else {
                 await productsApi.addToWatchlist(auction.id);
+                addToWatchlist(auction.id);
                 setLikeCount((prev) => prev + 1);
                 toast.success('Added to watchlist!');
             }
@@ -856,28 +878,35 @@ export default function ProductDetailPage() {
                                 </div>
                             </div>
 
-                            <div className="mb-4">
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm text-gray-800">
-                                        BUY NOW BID:
-                                    </span>
-                                    <span className="text-md font-bold text-black">
-                                        {formatCurrency(
-                                            auction.buyNowPrice ||
-                                                auction.currentBid,
-                                        )}
-                                    </span>
+                            {auction.buyNowPrice && (
+                                <div className="mb-4">
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-sm text-gray-800">
+                                            BUY NOW PRICE:
+                                        </span>
+                                        <span className="text-md font-bold text-black">
+                                            {formatCurrency(
+                                                auction.buyNowPrice,
+                                            )}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             <div className="flex justify-between items-start mb-6">
                                 <div>
                                     <div className="text-sm text-gray-800 mb-4">
                                         CURRENT BID
                                     </div>
-                                    <div className="text-5xl font-bold text-black">
-                                        {formatCurrency(auction.currentBid)}
-                                    </div>
+                                    {bidHistory.length > 0 ? (
+                                        <div className="text-5xl font-bold text-black">
+                                            {formatCurrency(auction.currentBid)}
+                                        </div>
+                                    ) : (
+                                        <div className="text-3xl font-medium text-gray-400 italic">
+                                            No bids yet
+                                        </div>
+                                    )}
                                     <div className="border border-black inline-block px-3 py-1 mt-4">
                                         <span className="text-sm font-bold">
                                             BID INCREMENT:{' '}
@@ -966,21 +995,24 @@ export default function ProductDetailPage() {
                                         )}
                                     </div>
 
-                                    <div className="text-center text-gray-500 mb-4">
-                                        OR
-                                    </div>
+                                    {auction.buyNowPrice && (
+                                        <>
+                                            <div className="text-center text-gray-500 mb-4">
+                                                OR
+                                            </div>
 
-                                    <Button
-                                        variant="muted"
-                                        size="lg"
-                                        className="w-full font-bold text-lg"
-                                    >
-                                        Buy now for{' '}
-                                        {formatCurrency(
-                                            auction.buyNowPrice ||
-                                                auction.currentBid,
-                                        )}
-                                    </Button>
+                                            <Button
+                                                variant="muted"
+                                                size="lg"
+                                                className="w-full font-bold text-lg"
+                                            >
+                                                Buy now for{' '}
+                                                {formatCurrency(
+                                                    auction.buyNowPrice,
+                                                )}
+                                            </Button>
+                                        </>
+                                    )}
                                 </>
                             )}
 

@@ -12,6 +12,8 @@ import {
     Lock,
     Check,
     Shield,
+    Eye,
+    EyeOff,
 } from 'lucide-react';
 import { usersApi } from '@/lib/api/users';
 import { authApi } from '@/lib/api/auth';
@@ -35,6 +37,9 @@ export default function ProfileSettingsPage() {
     const [isVisible, setIsVisible] = useState(false);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isSavingPassword, setIsSavingPassword] = useState(false);
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         const loadUserData = () => {
@@ -167,6 +172,7 @@ export default function ProfileSettingsPage() {
             await authApi.changePassword({
                 oldPassword: passwordData.oldPassword,
                 newPassword: passwordData.newPassword,
+                confirmPassword: passwordData.confirmPassword,
             });
 
             toast.success('Password changed successfully!');
@@ -442,42 +448,107 @@ export default function ProfileSettingsPage() {
                                         <label className="block text-sm font-medium text-neutral-700">
                                             Current Password
                                         </label>
-                                        <Input
-                                            name="oldPassword"
-                                            type="password"
-                                            placeholder="Enter current password"
-                                            value={passwordData.oldPassword}
-                                            onChange={handlePasswordChange}
-                                            className="w-full h-12 rounded-lg border-primary focus:border-dark-primary focus:ring-dark-primary/20 transition-all"
-                                        />
+                                        <div className="relative">
+                                            <Input
+                                                name="oldPassword"
+                                                type={
+                                                    showOldPassword
+                                                        ? 'text'
+                                                        : 'password'
+                                                }
+                                                placeholder="Enter current password"
+                                                value={passwordData.oldPassword}
+                                                onChange={handlePasswordChange}
+                                                className="w-full h-12 rounded-lg border-primary focus:border-dark-primary focus:ring-dark-primary/20 transition-all pr-12"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowOldPassword(
+                                                        !showOldPassword,
+                                                    )
+                                                }
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-dark-primary transition-colors"
+                                            >
+                                                {showOldPassword ? (
+                                                    <EyeOff className="w-5 h-5" />
+                                                ) : (
+                                                    <Eye className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-neutral-700">
                                             New Password
                                         </label>
-                                        <Input
-                                            name="newPassword"
-                                            type="password"
-                                            placeholder="Enter new password"
-                                            value={passwordData.newPassword}
-                                            onChange={handlePasswordChange}
-                                            className="w-full h-12 rounded-lg border-primary focus:border-dark-primary focus:ring-dark-primary/20 transition-all"
-                                        />
+                                        <div className="relative">
+                                            <Input
+                                                name="newPassword"
+                                                type={
+                                                    showNewPassword
+                                                        ? 'text'
+                                                        : 'password'
+                                                }
+                                                placeholder="Enter new password"
+                                                value={passwordData.newPassword}
+                                                onChange={handlePasswordChange}
+                                                className="w-full h-12 rounded-lg border-primary focus:border-dark-primary focus:ring-dark-primary/20 transition-all pr-12"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowNewPassword(
+                                                        !showNewPassword,
+                                                    )
+                                                }
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-dark-primary transition-colors"
+                                            >
+                                                {showNewPassword ? (
+                                                    <EyeOff className="w-5 h-5" />
+                                                ) : (
+                                                    <Eye className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-neutral-700">
                                             Confirm Password
                                         </label>
-                                        <Input
-                                            name="confirmPassword"
-                                            type="password"
-                                            placeholder="Confirm new password"
-                                            value={passwordData.confirmPassword}
-                                            onChange={handlePasswordChange}
-                                            className="w-full h-12 rounded-lg border-primary focus:border-dark-primary focus:ring-dark-primary/20 transition-all"
-                                        />
+                                        <div className="relative">
+                                            <Input
+                                                name="confirmPassword"
+                                                type={
+                                                    showConfirmPassword
+                                                        ? 'text'
+                                                        : 'password'
+                                                }
+                                                placeholder="Confirm new password"
+                                                value={
+                                                    passwordData.confirmPassword
+                                                }
+                                                onChange={handlePasswordChange}
+                                                className="w-full h-12 rounded-lg border-primary focus:border-dark-primary focus:ring-dark-primary/20 transition-all pr-12"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowConfirmPassword(
+                                                        !showConfirmPassword,
+                                                    )
+                                                }
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-dark-primary transition-colors"
+                                            >
+                                                {showConfirmPassword ? (
+                                                    <EyeOff className="w-5 h-5" />
+                                                ) : (
+                                                    <Eye className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 

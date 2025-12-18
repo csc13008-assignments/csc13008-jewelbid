@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { productsApi, BackendProduct } from '../lib/api/products';
 import { Auction } from '@/types';
+import { useWatchlistStore } from './watchlistStore';
 
 interface ProductsState {
     // Homepage data
@@ -36,7 +37,10 @@ interface ProductsState {
 }
 
 // Map backend Product to frontend Auction type
-export const mapProductToAuction = (product: BackendProduct): Auction => {
+export const mapProductToAuction = (
+    product: BackendProduct,
+    isInWatchlist: (id: string) => boolean = () => false,
+): Auction => {
     return {
         id: product.id,
         product: {
@@ -53,8 +57,8 @@ export const mapProductToAuction = (product: BackendProduct): Auction => {
         bidIncrement: product.stepPrice,
         buyNowPrice: product.buyNowPrice || undefined,
         bidCount: product.bidCount,
-        likeCount: 0,
-        isLiked: false,
+        likeCount: product.watchlistCount || 0,
+        isLiked: isInWatchlist(product.id),
         startDate: new Date(),
         endDate: new Date(product.endDate),
         status: product.status.toLowerCase() as 'active' | 'ended' | 'upcoming',
@@ -92,11 +96,18 @@ export const useProductsStore = create<ProductsState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await productsApi.getHomepageProducts();
+            const { isInWatchlist } = useWatchlistStore.getState();
 
             set({
-                endingSoon: response.topEndingSoon.map(mapProductToAuction),
-                mostBids: response.topBidCount.map(mapProductToAuction),
-                highestPrice: response.topPrice.map(mapProductToAuction),
+                endingSoon: response.topEndingSoon.map((p) =>
+                    mapProductToAuction(p, isInWatchlist),
+                ),
+                mostBids: response.topBidCount.map((p) =>
+                    mapProductToAuction(p, isInWatchlist),
+                ),
+                highestPrice: response.topPrice.map((p) =>
+                    mapProductToAuction(p, isInWatchlist),
+                ),
                 isLoading: false,
             });
         } catch (error) {
@@ -111,8 +122,11 @@ export const useProductsStore = create<ProductsState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await productsApi.getAllProducts(page, limit);
+            const { isInWatchlist } = useWatchlistStore.getState();
             set({
-                searchResults: response.products.map(mapProductToAuction),
+                searchResults: response.products.map((p) =>
+                    mapProductToAuction(p, isInWatchlist),
+                ),
                 searchTotal: response.total,
                 searchPage: response.page,
                 searchLimit: response.limit,
@@ -130,8 +144,11 @@ export const useProductsStore = create<ProductsState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await productsApi.searchProducts(params);
+            const { isInWatchlist } = useWatchlistStore.getState();
             set({
-                searchResults: response.products.map(mapProductToAuction),
+                searchResults: response.products.map((p) =>
+                    mapProductToAuction(p, isInWatchlist),
+                ),
                 searchTotal: response.total,
                 searchPage: response.page,
                 searchLimit: response.limit,
@@ -153,8 +170,11 @@ export const useProductsStore = create<ProductsState>((set) => ({
                 page,
                 limit,
             );
+            const { isInWatchlist } = useWatchlistStore.getState();
             set({
-                searchResults: response.products.map(mapProductToAuction),
+                searchResults: response.products.map((p) =>
+                    mapProductToAuction(p, isInWatchlist),
+                ),
                 searchTotal: response.total,
                 searchPage: response.page,
                 searchLimit: response.limit,

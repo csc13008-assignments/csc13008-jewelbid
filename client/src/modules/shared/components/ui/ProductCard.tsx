@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Heart, Calendar, Clock, Diamond } from 'lucide-react';
 import { ProductCardProps, TimeRemaining } from '@/types';
 import { cn } from '@/lib/utils';
+import { useWatchlistStore } from '@/stores/watchlistStore';
 
 const getTimeRemaining = (endDate: Date): TimeRemaining => {
     const now = new Date();
@@ -37,10 +38,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
     variant = 'vertical',
 }) => {
     const router = useRouter();
-    const [isLiked, setIsLiked] = useState(auction.isLiked || false);
+    const { addToWatchlist, removeFromWatchlist, isInWatchlist } =
+        useWatchlistStore();
+    const [isLiked, setIsLiked] = useState(isInWatchlist(auction.id));
     const [likeCount, setLikeCount] = useState(auction.likeCount);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const timeRemaining = getTimeRemaining(auction.endDate);
+
+    // Sync isLiked with watchlist store
+    useEffect(() => {
+        setIsLiked(isInWatchlist(auction.id));
+    }, [isInWatchlist, auction.id]);
 
     // Tìm highest bidder
     const getHighestBidder = () => {
@@ -85,6 +93,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
             if (newLikedState) {
                 await productsApi.addToWatchlist(auction.id);
+                addToWatchlist(auction.id);
+                setLikeCount((prev) => prev + 1);
                 window.dispatchEvent(
                     new CustomEvent('show-toast', {
                         detail: {
@@ -95,6 +105,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 );
             } else {
                 await productsApi.removeFromWatchlist(auction.id);
+                removeFromWatchlist(auction.id);
+                setLikeCount((prev) => Math.max(0, prev - 1));
                 window.dispatchEvent(
                     new CustomEvent('show-toast', {
                         detail: {
@@ -194,7 +206,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                         {auction.buyNowPrice && (
                             <div className="flex-1 min-w-0">
                                 <span className="font-body text-neutral-400 block">
-                                    BUY NOW BID
+                                    BUY NOW PRICE
                                 </span>
                                 <span className="font-body font-medium text-neutral-600">
                                     {formatCurrency(auction.buyNowPrice)}
@@ -349,7 +361,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     {auction.buyNowPrice && (
                         <div className="flex justify-between items-center">
                             <span className="font-body text-sm text-neutral-400">
-                                BUY NOW BID
+                                BUY NOW PRICE
                             </span>
                             <span className="font-body text-sm font-medium text-neutral-600">
                                 {formatCurrency(auction.buyNowPrice)}

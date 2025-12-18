@@ -38,9 +38,15 @@ export default function SignInPage() {
         clearError();
 
         try {
-            await signIn(formData.email, formData.password);
+            const result = await signIn(formData.email, formData.password);
             toast.success('Login successful! Welcome back.');
-            router.push('/');
+
+            // Role-based redirect
+            if ((result as any)?.user?.role === 'Admin') {
+                router.push('/admin/categories');
+            } else {
+                router.push('/');
+            }
         } catch (err: unknown) {
             const apiError = err as {
                 response?: { data?: { message?: string } };
