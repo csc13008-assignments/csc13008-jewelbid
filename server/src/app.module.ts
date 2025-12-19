@@ -28,7 +28,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
                 password: configService.get('DB_PASSWORD'),
                 database: configService.get('DB_DATABASE'),
                 autoLoadEntities: true,
-                synchronize: configService.get('NODE_ENV') === 'development',
+                synchronize: true,
                 ssl: {
                     rejectUnauthorized: false,
                 },

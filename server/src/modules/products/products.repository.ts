@@ -57,6 +57,13 @@ export class ProductsRepository {
     async findAllActive(
         limit?: number,
         offset?: number,
+        filters?: {
+            category?: string;
+            brand?: string;
+            material?: string;
+            targetAudience?: string;
+            auctionStatus?: string;
+        },
     ): Promise<[Product[], number]> {
         try {
             const query = this.productRepository
@@ -67,6 +74,52 @@ export class ProductsRepository {
                 .andWhere('product.endDate > :now', { now: new Date() })
                 .leftJoinAndSelect('product.seller', 'seller')
                 .leftJoinAndSelect('product.currentBidder', 'currentBidder');
+
+            // Apply filters
+            if (filters?.category) {
+                query.andWhere('product.category = :category', {
+                    category: filters.category,
+                });
+            }
+
+            if (filters?.brand) {
+                query.andWhere('LOWER(product.brand) = LOWER(:brand)', {
+                    brand: filters.brand,
+                });
+            }
+
+            if (filters?.material) {
+                query.andWhere('LOWER(product.material) = LOWER(:material)', {
+                    material: filters.material,
+                });
+            }
+
+            if (filters?.targetAudience) {
+                query.andWhere(
+                    'LOWER(product.targetAudience) = LOWER(:targetAudience)',
+                    {
+                        targetAudience: filters.targetAudience,
+                    },
+                );
+            }
+
+            if (filters?.auctionStatus) {
+                if (filters.auctionStatus === 'ending-soon') {
+                    // Ending within 24 hours
+                    const next24Hours = new Date();
+                    next24Hours.setHours(next24Hours.getHours() + 24);
+                    query.andWhere('product.endDate <= :endingSoon', {
+                        endingSoon: next24Hours,
+                    });
+                } else if (filters.auctionStatus === 'new-arrivals') {
+                    // Created within 7 days
+                    const last7Days = new Date();
+                    last7Days.setDate(last7Days.getDate() - 7);
+                    query.andWhere('product.created_at >= :newArrivals', {
+                        newArrivals: last7Days,
+                    });
+                }
+            }
 
             if (limit) {
                 query.take(limit);

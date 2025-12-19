@@ -56,6 +56,13 @@ export class ProductsService {
     async getAllProducts(
         page: number = 1,
         limit: number = 20,
+        filters?: {
+            category?: string;
+            brand?: string;
+            material?: string;
+            targetAudience?: string;
+            auctionStatus?: string;
+        },
     ): Promise<{
         products: Product[];
         total: number;
@@ -66,6 +73,7 @@ export class ProductsService {
         const [products, total] = await this.productsRepository.findAllActive(
             limit,
             offset,
+            filters,
         );
 
         return {

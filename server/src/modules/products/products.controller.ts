@@ -49,10 +49,42 @@ export class ProductsController {
         return await this.productsService.getHomePageProducts();
     }
 
-    @ApiOperation({ summary: 'Get all active products with pagination' })
+    @ApiOperation({
+        summary: 'Get all active products with pagination and filters',
+    })
     @Get()
     @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
     @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+    @ApiQuery({
+        name: 'category',
+        required: false,
+        type: String,
+        example: 'Ring',
+    })
+    @ApiQuery({
+        name: 'brand',
+        required: false,
+        type: String,
+        example: 'Cartier',
+    })
+    @ApiQuery({
+        name: 'material',
+        required: false,
+        type: String,
+        example: 'Gold',
+    })
+    @ApiQuery({
+        name: 'targetAudience',
+        required: false,
+        type: String,
+        example: 'Women',
+    })
+    @ApiQuery({
+        name: 'auctionStatus',
+        required: false,
+        type: String,
+        example: 'ending-soon',
+    })
     @ApiResponse({
         status: 200,
         description: 'Products fetched successfully',
@@ -60,8 +92,19 @@ export class ProductsController {
     async getAllProducts(
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 20,
+        @Query('category') category?: string,
+        @Query('brand') brand?: string,
+        @Query('material') material?: string,
+        @Query('targetAudience') targetAudience?: string,
+        @Query('auctionStatus') auctionStatus?: string,
     ) {
-        return await this.productsService.getAllProducts(page, limit);
+        return await this.productsService.getAllProducts(page, limit, {
+            category,
+            brand,
+            material,
+            targetAudience,
+            auctionStatus,
+        });
     }
 
     @ApiOperation({ summary: 'Get products by category' })
