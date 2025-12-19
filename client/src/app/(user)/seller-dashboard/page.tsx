@@ -128,23 +128,6 @@ export default function SellerDashboard() {
         void fetchSellerProducts();
     }, [fetchSellerProducts]);
 
-    const openRatingPopup = (
-        bidderId: string,
-        bidderName: string,
-        bidderAvatar: string,
-        productId: string,
-    ) => {
-        setCurrentBidder({
-            id: bidderId,
-            name: bidderName,
-            avatar: bidderAvatar,
-            productId,
-        });
-        setShowRatingPopup(true);
-        setIsLiked(null);
-        setComment('');
-    };
-
     const closeRatingPopup = () => {
         setShowRatingPopup(false);
         setCurrentBidder({ id: '', name: '', avatar: '', productId: '' });
@@ -273,111 +256,113 @@ export default function SellerDashboard() {
                                                     </Link>
                                                 </div>
                                             ) : (
-                                                <div className="overflow-hidden rounded-xl border border-primary/50 shadow-sm">
-                                                    <div className="grid grid-cols-12 bg-secondary border-b border-primary/50 text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                                                        <div className="col-span-5 px-6 py-4">
-                                                            Product
+                                                <div className="overflow-x-auto rounded-xl border border-primary/50 shadow-sm">
+                                                    <div className="min-w-[800px]">
+                                                        <div className="grid grid-cols-12 bg-secondary border-b border-primary/50 text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                                                            <div className="col-span-5 px-6 py-4">
+                                                                Product
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Current Price
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Ends In
+                                                            </div>
+                                                            <div className="col-span-1 px-6 py-4 text-center">
+                                                                Bids
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Action
+                                                            </div>
                                                         </div>
-                                                        <div className="col-span-2 px-6 py-4 text-center">
-                                                            Current Price
-                                                        </div>
-                                                        <div className="col-span-2 px-6 py-4 text-center">
-                                                            Ends In
-                                                        </div>
-                                                        <div className="col-span-1 px-6 py-4 text-center">
-                                                            Bids
-                                                        </div>
-                                                        <div className="col-span-2 px-6 py-4 text-center">
-                                                            Action
-                                                        </div>
-                                                    </div>
 
-                                                    <div className="divide-y divide-primary/30 bg-white">
-                                                        {activeAuctions.map(
-                                                            (
-                                                                auction,
-                                                                index,
-                                                            ) => (
-                                                                <div
-                                                                    key={
-                                                                        auction.id
-                                                                    }
-                                                                    className="grid grid-cols-12 items-center hover:bg-secondary/30 transition-colors duration-200"
-                                                                    style={{
-                                                                        animation:
-                                                                            isVisible
-                                                                                ? `fadeInUp 0.5s ease-out ${index * 0.05}s both`
-                                                                                : 'none',
-                                                                    }}
-                                                                >
-                                                                    <div className="col-span-5 px-6 py-4 flex items-center gap-4">
-                                                                        <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 shadow-sm flex-shrink-0">
-                                                                            <Image
-                                                                                src={
-                                                                                    auction.image
-                                                                                }
-                                                                                alt={
-                                                                                    auction.title
-                                                                                }
-                                                                                fill
-                                                                                className="object-cover"
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <h3
-                                                                                className="font-medium text-neutral-900 line-clamp-1"
-                                                                                title={
-                                                                                    auction.title
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    auction.title
-                                                                                }
-                                                                            </h3>
-                                                                            <p className="text-xs text-neutral-500 mt-1">
-                                                                                ID:{' '}
-                                                                                {auction.id.substring(
-                                                                                    0,
-                                                                                    8,
-                                                                                )}
-                                                                                ...
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="col-span-2 px-6 py-4 text-center font-medium text-dark-primary">
-                                                                        {formatCurrency(
-                                                                            auction.currentPrice,
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="col-span-2 px-6 py-4 text-center">
-                                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200">
-                                                                            <Clock className="w-3 h-3" />
-                                                                            {
-                                                                                auction.endTime
-                                                                            }
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="col-span-1 px-6 py-4 text-center text-neutral-600 font-medium">
-                                                                        {
-                                                                            auction.totalBids
+                                                        <div className="divide-y divide-primary/30 bg-white">
+                                                            {activeAuctions.map(
+                                                                (
+                                                                    auction,
+                                                                    index,
+                                                                ) => (
+                                                                    <div
+                                                                        key={
+                                                                            auction.id
                                                                         }
-                                                                    </div>
-                                                                    <div className="col-span-2 px-6 py-4 flex justify-center">
-                                                                        <Link
-                                                                            href={`/auction/${auction.id}`}
-                                                                        >
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                size="sm"
-                                                                                className="rounded-xl hover:bg-primary/20 hover:text-dark-primary hover:border-dark-primary/50"
+                                                                        className="grid grid-cols-12 items-center hover:bg-secondary/30 transition-colors duration-200"
+                                                                        style={{
+                                                                            animation:
+                                                                                isVisible
+                                                                                    ? `fadeInUp 0.5s ease-out ${index * 0.05}s both`
+                                                                                    : 'none',
+                                                                        }}
+                                                                    >
+                                                                        <div className="col-span-5 px-6 py-4 flex items-center gap-4">
+                                                                            <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 shadow-sm flex-shrink-0">
+                                                                                <Image
+                                                                                    src={
+                                                                                        auction.image
+                                                                                    }
+                                                                                    alt={
+                                                                                        auction.title
+                                                                                    }
+                                                                                    fill
+                                                                                    className="object-cover"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <h3
+                                                                                    className="font-medium text-neutral-900 line-clamp-1"
+                                                                                    title={
+                                                                                        auction.title
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        auction.title
+                                                                                    }
+                                                                                </h3>
+                                                                                <p className="text-xs text-neutral-500 mt-1">
+                                                                                    ID:{' '}
+                                                                                    {auction.id.substring(
+                                                                                        0,
+                                                                                        8,
+                                                                                    )}
+                                                                                    ...
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="col-span-2 px-6 py-4 text-center font-medium text-dark-primary">
+                                                                            {formatCurrency(
+                                                                                auction.currentPrice,
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="col-span-2 px-6 py-4 text-center">
+                                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200">
+                                                                                <Clock className="w-3 h-3" />
+                                                                                {
+                                                                                    auction.endTime
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="col-span-1 px-6 py-4 text-center text-neutral-600 font-medium">
+                                                                            {
+                                                                                auction.totalBids
+                                                                            }
+                                                                        </div>
+                                                                        <div className="col-span-2 px-6 py-4 flex justify-center">
+                                                                            <Link
+                                                                                href={`/auction/${auction.id}`}
                                                                             >
-                                                                                View
-                                                                            </Button>
-                                                                        </Link>
+                                                                                <Button
+                                                                                    variant="muted"
+                                                                                    size="sm"
+                                                                                    className="rounded-xl hover:bg-primary/20 hover:text-dark-primary hover:border-dark-primary/50"
+                                                                                >
+                                                                                    View
+                                                                                </Button>
+                                                                            </Link>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            ),
-                                                        )}
+                                                                ),
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
@@ -401,128 +386,132 @@ export default function SellerDashboard() {
                                                     </p>
                                                 </div>
                                             ) : (
-                                                <div className="overflow-hidden rounded-xl border border-primary/50 shadow-sm">
-                                                    <div className="grid grid-cols-12 bg-secondary border-b border-primary/50 text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                                                        <div className="col-span-4 px-6 py-4">
-                                                            Product
+                                                <div className="overflow-x-auto rounded-xl border border-primary/50 shadow-sm">
+                                                    <div className="min-w-[900px]">
+                                                        <div className="grid grid-cols-12 bg-secondary border-b border-primary/50 text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                                                            <div className="col-span-3 px-6 py-4">
+                                                                Product
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Final Price
+                                                            </div>
+                                                            <div className="col-span-3 px-6 py-4 text-center">
+                                                                Winner
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Date
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Action
+                                                            </div>
                                                         </div>
-                                                        <div className="col-span-2 px-6 py-4 text-center">
-                                                            Final Price
-                                                        </div>
-                                                        <div className="col-span-3 px-6 py-4 text-center">
-                                                            Winner
-                                                        </div>
-                                                        <div className="col-span-2 px-6 py-4 text-center">
-                                                            Date
-                                                        </div>
-                                                        <div className="col-span-1 px-6 py-4 text-center">
-                                                            Action
-                                                        </div>
-                                                    </div>
 
-                                                    <div className="divide-y divide-primary/30 bg-white">
-                                                        {completedAuctions.map(
-                                                            (
-                                                                auction,
-                                                                index,
-                                                            ) => (
-                                                                <div
-                                                                    key={
-                                                                        auction.id
-                                                                    }
-                                                                    className="grid grid-cols-12 items-center hover:bg-secondary/30 transition-colors duration-200"
-                                                                    style={{
-                                                                        animation:
-                                                                            isVisible
-                                                                                ? `fadeInUp 0.5s ease-out ${index * 0.05}s both`
-                                                                                : 'none',
-                                                                    }}
-                                                                >
-                                                                    <div className="col-span-4 px-6 py-4 flex items-center gap-4">
-                                                                        <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 shadow-sm flex-shrink-0">
-                                                                            <Image
-                                                                                src={
-                                                                                    auction.image
-                                                                                }
-                                                                                alt={
-                                                                                    auction.title
-                                                                                }
-                                                                                fill
-                                                                                className="object-cover"
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <h3
-                                                                                className="font-medium text-neutral-900 line-clamp-1"
-                                                                                title={
-                                                                                    auction.title
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    auction.title
-                                                                                }
-                                                                            </h3>
-                                                                            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-200">
-                                                                                Sold
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="col-span-2 px-6 py-4 text-center font-bold text-dark-primary">
-                                                                        {formatCurrency(
-                                                                            auction.finalPrice,
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="col-span-3 px-6 py-4 flex justify-center">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200">
+                                                        <div className="divide-y divide-primary/30 bg-white">
+                                                            {completedAuctions.map(
+                                                                (
+                                                                    auction,
+                                                                    index,
+                                                                ) => (
+                                                                    <div
+                                                                        key={
+                                                                            auction.id
+                                                                        }
+                                                                        className="grid grid-cols-12 items-center hover:bg-secondary/30 transition-colors duration-200"
+                                                                        style={{
+                                                                            animation:
+                                                                                isVisible
+                                                                                    ? `fadeInUp 0.5s ease-out ${index * 0.05}s both`
+                                                                                    : 'none',
+                                                                        }}
+                                                                    >
+                                                                        <div className="col-span-3 px-6 py-4 flex items-center gap-4">
+                                                                            <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 shadow-sm flex-shrink-0">
                                                                                 <Image
                                                                                     src={
-                                                                                        auction.sellerAvatar
+                                                                                        auction.image
                                                                                     }
                                                                                     alt={
-                                                                                        auction.sellerName
+                                                                                        auction.title
                                                                                     }
                                                                                     fill
                                                                                     className="object-cover"
                                                                                 />
                                                                             </div>
-                                                                            <span
-                                                                                className="text-sm font-medium text-neutral-700 truncate max-w-[100px]"
-                                                                                title={
-                                                                                    auction.sellerName
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    auction.sellerName
-                                                                                }
-                                                                            </span>
+                                                                            <div>
+                                                                                <h3
+                                                                                    className="font-medium text-neutral-900 line-clamp-1"
+                                                                                    title={
+                                                                                        auction.title
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        auction.title
+                                                                                    }
+                                                                                </h3>
+                                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-200">
+                                                                                    Sold
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="col-span-2 px-6 py-4 text-center font-bold text-dark-primary">
+                                                                            {formatCurrency(
+                                                                                auction.finalPrice,
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="col-span-3 px-6 py-4 flex justify-center">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200">
+                                                                                    <Image
+                                                                                        src={
+                                                                                            auction.sellerAvatar
+                                                                                        }
+                                                                                        alt={
+                                                                                            auction.sellerName
+                                                                                        }
+                                                                                        fill
+                                                                                        className="object-cover"
+                                                                                    />
+                                                                                </div>
+                                                                                <span
+                                                                                    className="text-sm font-medium text-neutral-700 truncate max-w-[100px]"
+                                                                                    title={
+                                                                                        auction.sellerName
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        auction.sellerName
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="col-span-2 px-6 py-4 text-center text-sm text-neutral-600">
+                                                                            {
+                                                                                auction.dateWon
+                                                                            }
+                                                                        </div>
+                                                                        <div className="col-span-2 px-6 py-4 flex justify-center">
+                                                                            <div className="flex flex-col gap-2 items-center">
+                                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                                                    Shipping
+                                                                                </span>
+                                                                                <Link
+                                                                                    href={`/order/${auction.id}`}
+                                                                                >
+                                                                                    <Button
+                                                                                        variant="muted"
+                                                                                        size="sm"
+                                                                                        className="rounded-xl shadow-sm w-full text-xs"
+                                                                                    >
+                                                                                        View
+                                                                                        Order
+                                                                                    </Button>
+                                                                                </Link>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="col-span-2 px-6 py-4 text-center text-sm text-neutral-600">
-                                                                        {
-                                                                            auction.dateWon
-                                                                        }
-                                                                    </div>
-                                                                    <div className="col-span-1 px-6 py-4 flex justify-center">
-                                                                        <Button
-                                                                            variant="primary"
-                                                                            size="sm"
-                                                                            className="rounded-xl shadow-sm"
-                                                                            onClick={() =>
-                                                                                openRatingPopup(
-                                                                                    auction.sellerId,
-                                                                                    auction.sellerName,
-                                                                                    auction.sellerAvatar,
-                                                                                    auction.id,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            Rate
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            ),
-                                                        )}
+                                                                ),
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

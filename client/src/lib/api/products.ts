@@ -23,9 +23,13 @@ export interface BackendProduct {
         positiveRatings: number;
         negativeRatings: number;
     };
-    currentBidder: {
+    currentBidderId?: string | null;
+    currentBidder?: {
         id: string;
         fullname: string;
+        profileImage?: string;
+        positiveRatings?: number;
+        negativeRatings?: number;
     } | null;
 }
 
@@ -100,6 +104,12 @@ export const productsApi = {
         const response = await apiClient.post(`/products/${id}/bid`, {
             maxBid,
         });
+        return response.data;
+    },
+
+    // POST /products/:id/buy-now - Buy product immediately [BIDDER]
+    buyNow: async (id: string): Promise<BackendProduct> => {
+        const response = await apiClient.post(`/products/${id}/buy-now`, {});
         return response.data;
     },
 

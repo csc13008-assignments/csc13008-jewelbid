@@ -41,6 +41,32 @@ export const mapProductToAuction = (
     product: BackendProduct,
     isInWatchlist: (id: string) => boolean = () => false,
 ): Auction => {
+    // Create bids array from currentBidder if exists
+    const bids = product.currentBidder
+        ? [
+              {
+                  id: product.currentBidderId || '',
+                  amount: Number(product.currentPrice),
+                  bidder: {
+                      id: product.currentBidder.id,
+                      username: product.currentBidder.fullname,
+                      avatar: product.currentBidder.profileImage || '',
+                      rating:
+                          product.currentBidder.positiveRatings &&
+                          product.currentBidder.negativeRatings !== undefined
+                              ? product.currentBidder.positiveRatings /
+                                (product.currentBidder.positiveRatings +
+                                    product.currentBidder.negativeRatings || 1)
+                              : 0,
+                      reviewCount:
+                          (product.currentBidder.positiveRatings || 0) +
+                          (product.currentBidder.negativeRatings || 0),
+                  },
+                  timestamp: new Date(),
+              },
+          ]
+        : [];
+
     return {
         id: product.id,
         product: {
@@ -52,10 +78,12 @@ export const mapProductToAuction = (
             brand: '',
             description: product.description,
         },
-        startBid: product.startingPrice,
-        currentBid: product.currentPrice,
-        bidIncrement: product.stepPrice,
-        buyNowPrice: product.buyNowPrice || undefined,
+        startBid: Number(product.startingPrice),
+        currentBid: Number(product.currentPrice),
+        bidIncrement: Number(product.stepPrice),
+        buyNowPrice: product.buyNowPrice
+            ? Number(product.buyNowPrice)
+            : undefined,
         bidCount: product.bidCount,
         likeCount: product.watchlistCount || 0,
         isLiked: isInWatchlist(product.id),
@@ -77,7 +105,7 @@ export const mapProductToAuction = (
                 (product.seller?.positiveRatings || 0) +
                 (product.seller?.negativeRatings || 0),
         },
-        bids: [],
+        bids,
     };
 };
 

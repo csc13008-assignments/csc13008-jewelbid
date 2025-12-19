@@ -82,17 +82,6 @@ export default function WonAuctionsPage() {
         void fetchWonAuctions();
     }, [fetchWonAuctions]);
 
-    const openRatingPopup = (
-        sellerId: string,
-        sellerName: string,
-        productId: string,
-    ) => {
-        setCurrentSeller({ id: sellerId, name: sellerName, productId });
-        setShowRatingPopup(true);
-        setIsLiked(null);
-        setComment('');
-    };
-
     const closeRatingPopup = () => {
         setShowRatingPopup(false);
         setCurrentSeller({ id: '', name: '', productId: '' });
@@ -267,20 +256,22 @@ export default function WonAuctionsPage() {
                                                 </div>
                                             </div>
                                             <div className="col-span-2 px-4 py-5 text-center">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        openRatingPopup(
-                                                            auction.sellerId,
-                                                            auction.sellerName,
-                                                            auction.id,
-                                                        )
-                                                    }
-                                                    className="hover:bg-primary hover:border-dark-primary transition-all duration-200"
-                                                >
-                                                    Rate Seller
-                                                </Button>
+                                                <div className="flex flex-col gap-2 items-center">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        Payment Pending
+                                                    </span>
+                                                    <Link
+                                                        href={`/order/${auction.id}`}
+                                                    >
+                                                        <Button
+                                                            variant="primary"
+                                                            size="sm"
+                                                            className="w-full text-xs"
+                                                        >
+                                                            View Order
+                                                        </Button>
+                                                    </Link>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

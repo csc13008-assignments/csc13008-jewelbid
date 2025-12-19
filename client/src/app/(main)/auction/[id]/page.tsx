@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Heart, Calendar, Clock, X, Edit } from 'lucide-react';
 import { productsApi } from '@/lib/api/products';
@@ -17,6 +17,7 @@ import { useWatchlistStore } from '@/stores/watchlistStore';
 
 export default function ProductDetailPage() {
     const params = useParams();
+    const router = useRouter();
 
     // Watchlist store - must be at top to maintain hook order
     const { addToWatchlist, removeFromWatchlist, isInWatchlist } =
@@ -206,6 +207,36 @@ export default function ProductDetailPage() {
         return () => clearInterval(timer);
     }, [auction]);
 
+    // Check if auction ended and redirect seller/winner to order page
+    useEffect(() => {
+        const checkAuctionEndAndRedirect = async () => {
+            if (!auction || !currentUser) return;
+
+            const hasEnded = new Date() > new Date(auction.endDate);
+            const isSeller = currentUser.id === auction.seller.id;
+            const isWinner =
+                auction.bids &&
+                auction.bids.length > 0 &&
+                currentUser.id === auction.bids[0].bidder.id;
+
+            // If auction ended and user is seller or winner, redirect to order page
+            if (hasEnded && (isSeller || isWinner)) {
+                // TODO: Get actual order ID from backend
+                // For now, use product ID as placeholder
+                router.push(`/order/${auction.id}`);
+            }
+        };
+
+        // Check every 5 seconds
+        const interval = setInterval(
+            () => void checkAuctionEndAndRedirect(),
+            5000,
+        );
+        void checkAuctionEndAndRedirect(); // Check immediately
+
+        return () => clearInterval(interval);
+    }, [auction, currentUser, router]);
+
     // Sync isLiked with watchlist - MUST be before early return
     useEffect(() => {
         if (auction) {
@@ -230,7 +261,6 @@ export default function ProductDetailPage() {
         );
     }
 
-    // Show not found only after loading is complete and auction is null
     if (!auction) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
@@ -298,11 +328,14 @@ export default function ProductDetailPage() {
             toast.warning('Please login to ask a question');
             return;
         }
+        if (newQuestion.trim().length < 10) {
+            toast.warning('Question must be at least 10 characters long');
+            return;
+        }
         try {
             await productsApi.askQuestion(auction.id, newQuestion);
             toast.success('Question submitted successfully!');
             setNewQuestion('');
-            // Refresh to get updated questions
             await fetchAuctionData();
         } catch (error) {
             console.error('Failed to submit question:', error);
@@ -322,7 +355,8 @@ export default function ProductDetailPage() {
         }
 
         const amount = parseFormattedNumber(bidAmount);
-        const minimumBid = auction.currentBid + auction.bidIncrement;
+        const minimumBid =
+            (auction.currentBid || auction.startBid) + auction.bidIncrement;
 
         if (isNaN(amount) || amount <= 0) {
             setBidError('Vui lòng nhập số tiền hợp lệ');
@@ -370,6 +404,10 @@ export default function ProductDetailPage() {
 
     const handleSubmitReply = async (questionId: string) => {
         if (!replyText.trim()) return;
+        if (replyText.trim().length < 10) {
+            toast.warning('Answer must be at least 10 characters long');
+            return;
+        }
 
         try {
             await productsApi.answerQuestion(questionId, replyText);
@@ -396,11 +434,38 @@ export default function ProductDetailPage() {
 
         if (formattedValue.trim() && auction) {
             const amount = parseFormattedNumber(formattedValue);
-            const minimumBid = auction.currentBid + auction.bidIncrement;
+            const minimumBid =
+                (auction.currentBid || auction.startBid) + auction.bidIncrement;
 
             if (!isNaN(amount) && amount > 0 && amount < minimumBid) {
                 setBidError(`Giá thấp nhất là ${formatCurrency(minimumBid)}`);
             }
+        }
+    };
+
+    const handleBuyNow = async () => {
+        try {
+            if (!currentUser) {
+                toast.error('Please login to buy');
+                router.push('/login');
+                return;
+            }
+
+            if (!auction.buyNowPrice) {
+                toast.error('Buy Now price not available');
+                return;
+            }
+
+            await productsApi.buyNow(auction.id);
+            toast.success('Purchase successful! Redirecting to order page...');
+
+            // Redirect to order page (using product ID as placeholder)
+            setTimeout(() => {
+                router.push(`/order/${auction.id}`);
+            }, 1000);
+        } catch (error) {
+            console.error('Failed to buy now:', error);
+            toast.error('Failed to complete purchase');
         }
     };
 
@@ -435,6 +500,9 @@ export default function ProductDetailPage() {
             toast.error('Failed to update description');
         }
     };
+
+    // Order handlers
+
     return (
         <div className="min-h-screen bg-white">
             <div className="max-w-7xl mx-auto px-4 py-16">
@@ -492,7 +560,7 @@ export default function ProductDetailPage() {
                                 </p>
                                 {isOwner && (
                                     <Button
-                                        variant="primary"
+                                        variant="muted"
                                         size="md"
                                         onClick={handleEditDescription}
                                     >
@@ -627,12 +695,12 @@ export default function ProductDetailPage() {
                                                 setNewQuestion(e.target.value)
                                             }
                                             placeholder="Add a comment"
-                                            className="w-full h-11 border border-dark-primary px-4 "
+                                            className="w-full h-12 rounded-xl border border-dark-primary px-4 "
                                         />
                                     </div>
                                     <Button
                                         variant="muted"
-                                        size="sm"
+                                        size="md"
                                         onClick={() =>
                                             void handleQuestionSubmit()
                                         }
@@ -743,7 +811,7 @@ export default function ProductDetailPage() {
                                                                         />
                                                                         <div className="flex space-x-2 mt-2">
                                                                             <Button
-                                                                                variant="primary"
+                                                                                variant="muted"
                                                                                 size="sm"
                                                                                 onClick={() =>
                                                                                     void handleSubmitReply(
@@ -898,7 +966,7 @@ export default function ProductDetailPage() {
                                     <div className="text-sm text-gray-800 mb-4">
                                         CURRENT BID
                                     </div>
-                                    {bidHistory.length > 0 ? (
+                                    {auction.currentBid > auction.startBid ? (
                                         <div className="text-5xl font-bold text-black">
                                             {formatCurrency(auction.currentBid)}
                                         </div>
@@ -973,17 +1041,23 @@ export default function ProductDetailPage() {
                                                 type="text"
                                                 value={bidAmount}
                                                 onChange={handleBidAmountChange}
-                                                placeholder={`${formatCurrency(auction.currentBid + auction.bidIncrement)} or up`}
-                                                className={`flex-1 border px-4 py-1 text-lg bg-gray-200 ${bidError ? 'border-red-500' : 'border-gray-200'}`}
+                                                placeholder={(() => {
+                                                    const basePrice =
+                                                        auction.currentBid ||
+                                                        auction.startBid;
+
+                                                    return `${formatCurrency(basePrice + auction.bidIncrement)} or up`;
+                                                })()}
+                                                className={`flex-1 rounded-xl border px-4 py-1 text-lg bg-gray-200 ${bidError ? 'border-red-500' : 'border-gray-200'}`}
                                             />
 
                                             <Button
-                                                variant="outline"
+                                                variant="muted"
                                                 size="lg"
                                                 onClick={() =>
                                                     void handleSetMaxBid()
                                                 }
-                                                className="text-dark-primary font-bold"
+                                                className="font-bold"
                                             >
                                                 Set max bid
                                             </Button>
@@ -1002,6 +1076,9 @@ export default function ProductDetailPage() {
                                             </div>
 
                                             <Button
+                                                onClick={() =>
+                                                    void handleBuyNow()
+                                                }
                                                 variant="muted"
                                                 size="lg"
                                                 className="w-full font-bold text-lg"
@@ -1051,10 +1128,10 @@ export default function ProductDetailPage() {
                                                         </span>
                                                         <span className="text-gray-600">
                                                             {bid.bidTime.toLocaleDateString(
-                                                                'vi-VN',
+                                                                'en-US',
                                                             )}{' '}
                                                             {bid.bidTime.toLocaleTimeString(
-                                                                'vi-VN',
+                                                                'en-US',
                                                                 {
                                                                     hour: '2-digit',
                                                                     minute: '2-digit',
@@ -1146,7 +1223,7 @@ export default function ProductDetailPage() {
                             <label className="block text-sm font-medium text-black mb-2">
                                 Current Description:
                             </label>
-                            <div className="p-4 bg-gray-100 border max-h-32 overflow-y-auto">
+                            <div className="p-4 bg-gray-100 border rounded-xl max-h-32 overflow-y-auto">
                                 <p className="text-black">
                                     {auction.product.description}
                                 </p>
@@ -1164,7 +1241,7 @@ export default function ProductDetailPage() {
                                     setAdditionalDescription(e.target.value)
                                 }
                                 placeholder="Enter additional information about your product..."
-                                className="w-full h-32 border border-dark-primary px-4 py-3 resize-none focus:outline-none focus:border-dark-primary"
+                                className="w-full rounded-xl h-32 border border-dark-primary px-4 py-3 resize-none focus:outline-none focus:border-dark-primary"
                                 rows={6}
                             />
                             <p className="text-sm text-red-500 italic mt-1">
@@ -1183,7 +1260,7 @@ export default function ProductDetailPage() {
                                 Cancel
                             </Button>
                             <Button
-                                variant="primary"
+                                variant="muted"
                                 size="lg"
                                 onClick={() => void handleSaveDescription()}
                                 className="flex-1"

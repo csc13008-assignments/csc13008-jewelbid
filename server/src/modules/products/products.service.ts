@@ -16,6 +16,7 @@ import { PlaceBidDto, BidHistoryItemDto } from './dtos/bid.dto';
 import { AskQuestionDto, AnswerQuestionDto } from './dtos/question.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
+import { OrdersService } from '../orders/orders.service';
 
 @Injectable()
 export class ProductsService {
@@ -24,6 +25,7 @@ export class ProductsService {
         private readonly usersRepository: UsersRepository,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
+        private readonly ordersService: OrdersService,
     ) {}
 
     async createProduct(
@@ -226,6 +228,69 @@ export class ProductsService {
             placeBidDto.maxBid,
             minBidAmount,
         );
+    }
+
+    async buyNow(productId: string, userId: string): Promise<Product> {
+        const product = await this.productsRepository.findById(productId);
+
+        if (product.status !== ProductStatus.ACTIVE) {
+            throw new BadRequestException(
+                'Product is not available for purchase',
+            );
+        }
+
+        if (product.endDate < new Date()) {
+            throw new BadRequestException('Auction has ended');
+        }
+
+        if (!product.buyNowPrice) {
+            throw new BadRequestException(
+                'Buy Now is not available for this product',
+            );
+        }
+
+        if (product.sellerId === userId) {
+            throw new BadRequestException(
+                'Seller cannot buy their own product',
+            );
+        }
+
+        // Close auction
+        await this.productsRepository.updateEndDate(productId, new Date());
+        // Might need to update status to SOLD or similar if supported?
+        // Logic seems to rely on End Date + Winning Bid.
+        // If Buy Now -> Create a winning bid at buyNowPrice?
+        // Or directly create Order?
+        // If we create Order, the product is effectively sold.
+        // Let's create a "winning bid" first so system consistency is maintained?
+        // Step 869 handleAutoBid creates bids.
+        // If I create a bid at buyNowPrice, handleAutoBid throws error "Use buy now feature".
+        // So I should manually insert the winning bid.
+
+        // 1. Place winning bid
+        await this.productsRepository.placeBid(
+            productId,
+            userId,
+            Number(product.buyNowPrice),
+            Number(product.buyNowPrice),
+        );
+
+        const updatedProduct =
+            await this.productsRepository.updateProductAfterBid(
+                productId,
+                userId,
+                Number(product.buyNowPrice),
+            );
+
+        // 2. Create Order
+        await this.ordersService.createOrderFromAuction(
+            productId,
+            product.sellerId,
+            userId,
+            Number(product.buyNowPrice),
+        );
+
+        return updatedProduct;
     }
 
     private async handleAutoBid(

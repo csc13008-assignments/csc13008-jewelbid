@@ -11,6 +11,7 @@ import { Question } from './entities/question.model';
 import { RejectedBidder } from './entities/rejected-bidder.model';
 import { UsersModule } from '../users/users.module';
 import { AccessControlService } from '../ac/ac.service';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { AccessControlService } from '../ac/ac.service';
         ]),
         ConfigModule,
         UsersModule,
+        OrdersModule,
     ],
     controllers: [ProductsController],
     providers: [ProductsService, ProductsRepository, AccessControlService],

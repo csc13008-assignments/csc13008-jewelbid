@@ -180,6 +180,19 @@ export class ProductsController {
         );
     }
 
+    @ApiOperation({ summary: 'Buy product immediately [BIDDER]' })
+    @ApiBearerAuth('access-token')
+    @Post(':id/buy-now')
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.BIDDER)
+    @ApiResponse({
+        status: 200,
+        description: 'Product purchased successfully',
+    })
+    async buyNow(@Param('id') id: string, @Request() req: any) {
+        return await this.productsService.buyNow(id, req.user.id);
+    }
+
     @ApiOperation({ summary: 'Add product to watchlist [BIDDER]' })
     @ApiBearerAuth('access-token')
     @Post('watchlist')
