@@ -40,6 +40,8 @@ export default function FavoritesPage() {
         void fetchWatchlist();
     }, [fetchWatchlist]);
 
+    const { removeFromWatchlist } = useWatchlistStore();
+
     const handleRemoveFromFavorites = async (productId: string) => {
         if (removingIds.has(productId)) return;
 
@@ -50,6 +52,8 @@ export default function FavoritesPage() {
             setFavorites((prev) =>
                 prev.filter((item) => item.id !== productId),
             );
+            // Sync with watchlist store so ProductCards update correctly
+            removeFromWatchlist(productId);
             toast.success('Removed from favorites');
         } catch (error) {
             console.error('Failed to remove from watchlist:', error);
