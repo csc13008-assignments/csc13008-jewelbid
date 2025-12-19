@@ -20,7 +20,17 @@ interface ProductsState {
 
     // Actions
     fetchHomepageProducts: () => Promise<void>;
-    fetchProducts: (page?: number, limit?: number) => Promise<void>;
+    fetchProducts: (
+        page?: number,
+        limit?: number,
+        filters?: {
+            category?: string;
+            brand?: string;
+            material?: string;
+            targetAudience?: string;
+            auctionStatus?: string;
+        },
+    ) => Promise<void>;
     searchProducts: (params: {
         q?: string;
         category?: string;
@@ -146,10 +156,24 @@ export const useProductsStore = create<ProductsState>((set) => ({
         }
     },
 
-    fetchProducts: async (page = 1, limit = 20) => {
+    fetchProducts: async (
+        page = 1,
+        limit = 20,
+        filters?: {
+            category?: string;
+            brand?: string;
+            material?: string;
+            targetAudience?: string;
+            auctionStatus?: string;
+        },
+    ) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await productsApi.getAllProducts(page, limit);
+            const response = await productsApi.getAllProducts(
+                page,
+                limit,
+                filters,
+            );
             const { isInWatchlist } = useWatchlistStore.getState();
             set({
                 searchResults: response.products.map((p) =>

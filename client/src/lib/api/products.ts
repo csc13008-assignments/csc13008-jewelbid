@@ -162,10 +162,17 @@ export const productsApi = {
         return response.data;
     },
 
-    // GET /products with pagination
+    // GET /products with pagination and filters
     getAllProducts: async (
         page: number = 1,
         limit: number = 20,
+        filters?: {
+            category?: string;
+            brand?: string;
+            material?: string;
+            targetAudience?: string;
+            auctionStatus?: string;
+        },
     ): Promise<{
         products: BackendProduct[];
         total: number;
@@ -173,7 +180,11 @@ export const productsApi = {
         limit: number;
     }> => {
         const response = await apiClient.get('/products', {
-            params: { page, limit },
+            params: {
+                page,
+                limit,
+                ...filters,
+            },
         });
         return response.data;
     },

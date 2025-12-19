@@ -21,7 +21,6 @@ function SearchResultContent() {
         searchTotal,
         isLoading: isLoadingProducts,
         fetchProducts,
-        fetchProductsByCategory,
         searchProducts,
     } = useProductsStore();
 
@@ -72,28 +71,53 @@ function SearchResultContent() {
     // Fetch products when filters, search query or page changes
     const fetchData = useCallback(() => {
         if (searchQuery) {
-            // Search by query
+            // Search by query with optional filters
             void searchProducts({
                 q: searchQuery,
                 category: filters.category,
                 page: currentPage,
                 limit: itemsPerPage,
             });
-        } else if (filters.category) {
-            // Capitalize first letter to match backend enum
-            const category =
-                filters.category.charAt(0).toUpperCase() +
-                filters.category.slice(1);
-            void fetchProductsByCategory(category, currentPage, itemsPerPage);
         } else {
-            void fetchProducts(currentPage, itemsPerPage);
+            // Fetch products with all filters
+            const apiFilters: {
+                category?: string;
+                brand?: string;
+                material?: string;
+                targetAudience?: string;
+                auctionStatus?: string;
+            } = {};
+
+            // Capitalize category to match backend enum
+            if (filters.category) {
+                apiFilters.category =
+                    filters.category.charAt(0).toUpperCase() +
+                    filters.category.slice(1);
+            }
+            if (filters.brand) {
+                apiFilters.brand = filters.brand;
+            }
+            if (filters.material) {
+                apiFilters.material = filters.material;
+            }
+            if (filters.targetAudience) {
+                apiFilters.targetAudience = filters.targetAudience;
+            }
+            if (filters.auctionStatus) {
+                apiFilters.auctionStatus = filters.auctionStatus;
+            }
+
+            void fetchProducts(currentPage, itemsPerPage, apiFilters);
         }
     }, [
         searchQuery,
         filters.category,
+        filters.brand,
+        filters.material,
+        filters.targetAudience,
+        filters.auctionStatus,
         currentPage,
         fetchProducts,
-        fetchProductsByCategory,
         searchProducts,
     ]);
 
