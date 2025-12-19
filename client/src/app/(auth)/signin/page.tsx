@@ -55,6 +55,12 @@ export default function SignInPage() {
                 throw new Error('User not found');
             }
         } catch (err: unknown) {
+            // Clear only password field on error, keep email
+            setFormData((prev) => ({
+                ...prev,
+                password: '',
+            }));
+
             const apiError = err as {
                 response?: { data?: { message?: string } };
             };
