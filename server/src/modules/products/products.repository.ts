@@ -247,12 +247,31 @@ export class ProductsRepository {
                     status: ProductStatus.ACTIVE,
                 })
                 .andWhere('product.endDate > :now', { now: new Date() })
-                .andWhere(
-                    '(product.name ILIKE :searchTerm OR product.description ILIKE :searchTerm)',
-                    { searchTerm: `%${searchTerm}%` },
-                )
                 .leftJoinAndSelect('product.seller', 'seller')
                 .leftJoinAndSelect('product.currentBidder', 'currentBidder');
+
+            const sanitizedTerm = searchTerm
+                .trim()
+                .replace(/[^\w\s]/g, '') // Remove special characters
+                .split(/\s+/)
+                .filter((word) => word.length > 0)
+                .map((word) => word + ':*')
+                .join(' & ');
+
+            if (sanitizedTerm) {
+                query
+                    .andWhere(
+                        `product.search_vector @@ to_tsquery('english', :searchQuery)`,
+                        { searchQuery: sanitizedTerm },
+                    )
+                    .addSelect(
+                        `ts_rank(product.search_vector, to_tsquery('english', :searchQuery))`,
+                        'search_rank',
+                    )
+                    .orderBy('search_rank', 'DESC');
+            } else {
+                throw new BadRequestException('Invalid search term');
+            }
 
             if (category) {
                 query.andWhere('product.category = :category', { category });

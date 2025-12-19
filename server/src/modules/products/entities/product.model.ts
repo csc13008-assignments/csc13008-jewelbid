@@ -225,6 +225,13 @@ export class Product extends BaseEntity {
     })
     watchlistCount: number;
 
+    @Column({
+        type: 'tsvector',
+        nullable: true,
+        select: false, // Don't include in normal queries
+    })
+    search_vector?: string;
+
     @ApiProperty({
         description: 'Seller ID',
         example: '01234567-89ab-cdef-0123-456789abcdef',
