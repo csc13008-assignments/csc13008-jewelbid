@@ -27,7 +27,11 @@ interface AuthState {
         otp: string,
         newPassword: string,
     ) => Promise<void>;
-    changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
+    changePassword: (
+        oldPassword: string,
+        newPassword: string,
+        confirmPassword: string,
+    ) => Promise<void>;
     clearError: () => void;
     hydrate: () => void;
 }
@@ -237,10 +241,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
     },
 
-    changePassword: async (oldPassword, newPassword) => {
+    changePassword: async (oldPassword, newPassword, confirmPassword) => {
         set({ isLoading: true, error: null });
         try {
-            await authApi.changePassword({ oldPassword, newPassword });
+            await authApi.changePassword({
+                oldPassword,
+                newPassword,
+                confirmPassword,
+            });
             set({ isLoading: false });
         } catch (error) {
             const message =
