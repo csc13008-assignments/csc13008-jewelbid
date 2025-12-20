@@ -966,7 +966,7 @@ export default function ProductDetailPage() {
                                     <div className="text-sm text-gray-800 mb-4">
                                         CURRENT BID
                                     </div>
-                                    {auction.currentBid > auction.startBid ? (
+                                    {highestBidder ? (
                                         <div className="text-5xl font-bold text-black">
                                             {formatCurrency(auction.currentBid)}
                                         </div>
