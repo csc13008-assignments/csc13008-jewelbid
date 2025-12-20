@@ -350,7 +350,7 @@ export default function ProductDetailPage() {
             return;
         }
         if (!bidAmount.trim()) {
-            setBidError('Vui lòng nhập giá');
+            setBidError('Please enter a bid amount');
             return;
         }
 
@@ -359,12 +359,12 @@ export default function ProductDetailPage() {
             (auction.currentBid || auction.startBid) + auction.bidIncrement;
 
         if (isNaN(amount) || amount <= 0) {
-            setBidError('Vui lòng nhập số tiền hợp lệ');
+            setBidError('Please enter a valid amount');
             return;
         }
 
         if (amount < minimumBid) {
-            setBidError(`Giá thấp nhất là ${formatCurrency(minimumBid)}`);
+            setBidError(`Minimum bid is ${formatCurrency(minimumBid)}`);
             return;
         }
 
@@ -438,7 +438,7 @@ export default function ProductDetailPage() {
                 (auction.currentBid || auction.startBid) + auction.bidIncrement;
 
             if (!isNaN(amount) && amount > 0 && amount < minimumBid) {
-                setBidError(`Giá thấp nhất là ${formatCurrency(minimumBid)}`);
+                setBidError(`Minimum bid is ${formatCurrency(minimumBid)}`);
             }
         }
     };

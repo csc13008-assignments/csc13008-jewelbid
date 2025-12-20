@@ -50,7 +50,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         setIsLiked(isInWatchlist(auction.id));
     }, [isInWatchlist, auction.id]);
 
-    // Tìm highest bidder
+    // Find highest bidder
     const getHighestBidder = () => {
         if (auction.bids && auction.bids.length > 0) {
             const highestBid = auction.bids.reduce((highest, current) =>
@@ -99,7 +99,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     new CustomEvent('show-toast', {
                         detail: {
                             type: 'success',
-                            message: 'Đã thêm vào danh sách yêu thích',
+                            message: 'Added to favorites',
                         },
                     }),
                 );
@@ -111,7 +111,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     new CustomEvent('show-toast', {
                         detail: {
                             type: 'info',
-                            message: 'Đã xóa khỏi danh sách yêu thích',
+                            message: 'Removed from favorites',
                         },
                     }),
                 );
@@ -126,7 +126,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 new CustomEvent('show-toast', {
                     detail: {
                         type: 'error',
-                        message: 'Cập nhật danh sách yêu thích thất bại',
+                        message: 'Failed to update favorites',
                     },
                 }),
             );
