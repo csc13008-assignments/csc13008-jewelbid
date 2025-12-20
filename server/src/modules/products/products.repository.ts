@@ -390,12 +390,32 @@ export class ProductsRepository {
         bidAmount: number,
     ): Promise<Product> {
         try {
-            const product = await this.findById(productId);
-            product.currentPrice = bidAmount;
-            product.currentBidderId = bidderId;
-            product.bidCount += 1;
+            // Update product directly in database
+            await this.productRepository.update(productId, {
+                currentPrice: bidAmount,
+                currentBidderId: bidderId,
+            });
 
-            return await this.productRepository.save(product);
+            // Increment bid count
+            await this.productRepository.increment(
+                { id: productId },
+                'bidCount',
+                1,
+            );
+
+            // Fresh query with relations to ensure we get updated data
+            const updatedProduct = await this.productRepository.findOne({
+                where: { id: productId },
+                relations: ['seller', 'currentBidder'],
+            });
+
+            if (!updatedProduct) {
+                throw new NotFoundException(
+                    `Product with ID ${productId} not found`,
+                );
+            }
+
+            return updatedProduct;
         } catch (error) {
             throw new InternalServerErrorException(
                 'Failed to update product after bid:' + error,
