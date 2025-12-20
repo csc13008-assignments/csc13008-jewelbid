@@ -57,12 +57,18 @@ apiClient.interceptors.response.use(
                     },
                 );
 
-                const { access_token } = response.data;
-                localStorage.setItem('access_token', access_token);
+                const { accessToken, refreshToken: newRefreshToken } =
+                    response.data;
+                localStorage.setItem('access_token', accessToken);
+
+                // Also save new refresh token if provided (token rotation)
+                if (newRefreshToken) {
+                    localStorage.setItem('refresh_token', newRefreshToken);
+                }
 
                 // Retry original request with new token
                 if (originalRequest.headers) {
-                    originalRequest.headers.Authorization = `Bearer ${access_token}`;
+                    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                 }
                 return apiClient(originalRequest);
             } catch (refreshError) {
