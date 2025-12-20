@@ -1,33 +1,32 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import {
+    Gavel,
+    Clock,
+    CheckCircle,
+    AlertCircle,
+    Package,
+    ArrowRight,
+    Trophy,
+} from 'lucide-react';
 import UserSidebar from '@/modules/shared/components/layout/UserSidebar';
 import { Button } from '@/modules/shared/components/ui';
-import { productsApi } from '@/lib/api/products';
-import { mapProductToAuction } from '@/stores/productsStore';
-import {
-    Clock,
-    TrendingUp,
-    AlertCircle,
-    CheckCircle,
-    ArrowRight,
-    Gavel,
-} from 'lucide-react';
+import { productsApi, BackendProduct } from '@/lib/api/products';
+import Image from 'next/image';
+import Link from 'next/link';
 
-interface BidItem {
-    id: string;
-    product: string;
-    productImage: string;
-    currentBid: string;
-    yourBid: string;
-    timeLeft: string;
-    status: 'winning' | 'outbid' | 'ended';
+interface MyBidItem extends BackendProduct {
+    myBidStatus: '1st_place' | 'outbid' | 'won' | 'lost';
+    formattedEndTime: string;
 }
 
 export default function MyBidsPage() {
-    const [bids, setBids] = useState<BidItem[]>([]);
+    const [activeTab, setActiveTab] = useState<'active' | 'completed'>(
+        'active',
+    );
+    const [activeBids, setActiveBids] = useState<MyBidItem[]>([]);
+    const [completedBids, setCompletedBids] = useState<MyBidItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -35,9 +34,11 @@ export default function MyBidsPage() {
         return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
     };
 
-    const getTimeLeft = (endDate: Date) => {
+    const getTimeLeft = (endDate: string) => {
         const now = new Date();
-        const diff = endDate.getTime() - now.getTime();
+        const end = new Date(endDate);
+        const diff = end.getTime() - now.getTime();
+
         if (diff <= 0) return 'Ended';
 
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -49,36 +50,85 @@ export default function MyBidsPage() {
         return `${hours}h`;
     };
 
+    const getStatusInfo = (status: MyBidItem['myBidStatus']) => {
+        switch (status) {
+            case '1st_place':
+                return {
+                    label: '1st Place',
+                    className: 'bg-green-50 text-green-700 border-green-200',
+                    icon: <Trophy className="w-3 h-3" />,
+                };
+            case 'outbid':
+                return {
+                    label: 'Outbid',
+                    className: 'bg-red-50 text-red-700 border-red-200',
+                    icon: <AlertCircle className="w-3 h-3" />,
+                };
+            case 'won':
+                return {
+                    label: 'Winning',
+                    className: 'bg-green-100 text-green-800 border-green-300',
+                    icon: <CheckCircle className="w-3 h-3" />,
+                };
+            case 'lost':
+                return {
+                    label: 'Lost',
+                    className:
+                        'bg-neutral-100 text-neutral-600 border-neutral-200',
+                    icon: <Package className="w-3 h-3" />,
+                };
+        }
+    };
+
     const fetchBids = useCallback(async () => {
         setIsLoading(true);
         try {
             const products = await productsApi.getProductsUserIsBidding();
             const userId = JSON.parse(localStorage.getItem('user') || '{}').id;
 
-            const bidItems: BidItem[] = products.map((product) => {
-                const auction = mapProductToAuction(product);
+            const processedBids: MyBidItem[] = products.map((product) => {
+                const now = new Date();
+                const endDate = new Date(product.endDate);
+                const isEnded =
+                    endDate.getTime() <= now.getTime() ||
+                    product.status === 'ended';
                 const isWinning = product.currentBidder?.id === userId;
 
+                let status: MyBidItem['myBidStatus'];
+
+                if (isEnded) {
+                    status = isWinning ? 'won' : 'lost';
+                } else {
+                    status = isWinning ? '1st_place' : 'outbid';
+                }
+
                 return {
-                    id: product.id,
-                    product: product.name,
-                    productImage: product.mainImage,
-                    currentBid: formatCurrency(product.currentPrice),
-                    yourBid: formatCurrency(product.currentPrice),
-                    timeLeft: getTimeLeft(new Date(product.endDate)),
-                    status:
-                        auction.status === 'ended'
-                            ? 'ended'
-                            : isWinning
-                              ? 'winning'
-                              : 'outbid',
+                    ...product,
+                    myBidStatus: status,
+                    formattedEndTime: getTimeLeft(product.endDate),
                 };
             });
 
-            setBids(bidItems);
+            // Split into active and completed
+            setActiveBids(
+                processedBids.filter(
+                    (item) =>
+                        item.myBidStatus === '1st_place' ||
+                        item.myBidStatus === 'outbid',
+                ),
+            );
+
+            setCompletedBids(
+                processedBids.filter(
+                    (item) =>
+                        item.myBidStatus === 'won' ||
+                        item.myBidStatus === 'lost',
+                ),
+            );
         } catch (error) {
             console.error('Failed to fetch bids:', error);
-            setBids([]);
+            setActiveBids([]);
+            setCompletedBids([]);
         } finally {
             setIsLoading(false);
             setTimeout(() => setIsVisible(true), 100);
@@ -88,28 +138,6 @@ export default function MyBidsPage() {
     useEffect(() => {
         void fetchBids();
     }, [fetchBids]);
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'winning':
-                return <CheckCircle className="w-4 h-4" />;
-            case 'outbid':
-                return <AlertCircle className="w-4 h-4" />;
-            default:
-                return <Clock className="w-4 h-4" />;
-        }
-    };
-
-    const getStatusStyles = (status: string) => {
-        switch (status) {
-            case 'winning':
-                return 'bg-green-50 text-green-700 border border-green-200';
-            case 'outbid':
-                return 'bg-red-50 text-red-700 border border-red-200';
-            default:
-                return 'bg-neutral-100 text-neutral-600 border border-neutral-200';
-        }
-    };
 
     return (
         <div className="min-h-screen bg-secondary">
@@ -135,12 +163,42 @@ export default function MyBidsPage() {
                                         Track all your active and past bids
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-2 px-4 py-2 bg-primary rounded-xl border border-dark-primary/30">
-                                    <TrendingUp className="w-4 h-4 text-dark-primary" />
-                                    <span className="text-sm font-medium text-neutral-700">
-                                        {bids.length} active bids
+                            </div>
+
+                            {/* Tabs */}
+                            <div className="flex gap-2 mb-8 bg-neutral-100 p-1.5 rounded-xl w-fit border border-neutral-200">
+                                <button
+                                    onClick={() => setActiveTab('active')}
+                                    className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 flex items-center gap-2 ${
+                                        activeTab === 'active'
+                                            ? 'bg-white text-black shadow-sm border border-primary/20'
+                                            : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+                                    }`}
+                                >
+                                    <Gavel className="w-4 h-4" />
+                                    Active Bids
+                                    <span
+                                        className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-primary/30 text-dark-primary' : 'bg-neutral-200 text-neutral-600'}`}
+                                    >
+                                        {activeBids.length}
                                     </span>
-                                </div>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('completed')}
+                                    className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 flex items-center gap-2 ${
+                                        activeTab === 'completed'
+                                            ? 'bg-white text-black shadow-sm border border-primary/20'
+                                            : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+                                    }`}
+                                >
+                                    <Package className="w-4 h-4" />
+                                    Completed Bids
+                                    <span
+                                        className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${activeTab === 'completed' ? 'bg-primary/30 text-dark-primary' : 'bg-neutral-200 text-neutral-600'}`}
+                                    >
+                                        {completedBids.length}
+                                    </span>
+                                </button>
                             </div>
 
                             {isLoading ? (
@@ -150,110 +208,296 @@ export default function MyBidsPage() {
                                         Loading your bids...
                                     </p>
                                 </div>
-                            ) : bids.length === 0 ? (
-                                <div className="text-center py-16 px-4">
-                                    <div className="w-20 h-20 mx-auto mb-6 bg-primary rounded-xl flex items-center justify-center shadow-inner">
-                                        <Gavel className="w-10 h-10 text-dark-primary" />
-                                    </div>
-                                    <h3 className="font-heading text-xl font-medium text-neutral-900 mb-2">
-                                        No bids yet
-                                    </h3>
-                                    <p className="text-neutral-500 max-w-sm mx-auto mb-6">
-                                        Start bidding on items to track them
-                                        here.
-                                    </p>
-                                    <Link href="/search-result">
-                                        <Button variant="muted">
-                                            Browse Auctions
-                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                        </Button>
-                                    </Link>
-                                </div>
                             ) : (
-                                <div className="overflow-hidden rounded-xl border border-primary">
-                                    {/* Table Header */}
-                                    <div className="grid grid-cols-12 bg-primary border-b border-dark-primary/20">
-                                        <div className="col-span-4 px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                                            Product
-                                        </div>
-                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                                            Current Bid
-                                        </div>
-                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                                            Your Bid
-                                        </div>
-                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                                            Time Left
-                                        </div>
-                                        <div className="col-span-2 px-4 py-4 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                                            Status
-                                        </div>
-                                    </div>
-
-                                    {/* Table Body */}
-                                    {bids.map((bid, index) => (
-                                        <div
-                                            key={bid.id}
-                                            className={`grid grid-cols-12 items-center hover:bg-secondary transition-colors ${
-                                                index < bids.length - 1
-                                                    ? 'border-b border-primary'
-                                                    : ''
-                                            }`}
-                                            style={{
-                                                animation: isVisible
-                                                    ? `fadeInUp 0.5s ease-out ${index * 0.1}s both`
-                                                    : 'none',
-                                            }}
-                                        >
-                                            <div className="col-span-4 px-6 py-5">
-                                                <Link
-                                                    href={`/auction/${bid.id}`}
-                                                    className="flex items-center gap-4 group"
-                                                >
-                                                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary flex-shrink-0 group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
-                                                        <Image
-                                                            src={
-                                                                bid.productImage
-                                                            }
-                                                            alt={bid.product}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
+                                <>
+                                    {activeTab === 'active' && (
+                                        <div className="space-y-4">
+                                            {activeBids.length === 0 ? (
+                                                <div className="text-center py-16 px-4 border-2 border-dashed border-primary/30 rounded-xl bg-secondary/20">
+                                                    <div className="w-20 h-20 mx-auto mb-6 bg-white rounded-xl flex items-center justify-center shadow-sm border border-primary/20">
+                                                        <Gavel className="w-10 h-10 text-dark-primary/50" />
                                                     </div>
-                                                    <span className="font-medium text-neutral-900 group-hover:text-dark-primary transition-colors line-clamp-2">
-                                                        {bid.product}
-                                                    </span>
-                                                </Link>
-                                            </div>
-                                            <div className="col-span-2 px-4 py-5 text-center">
-                                                <span className="font-semibold text-neutral-900">
-                                                    {bid.currentBid}
-                                                </span>
-                                            </div>
-                                            <div className="col-span-2 px-4 py-5 text-center">
-                                                <span className="text-neutral-600">
-                                                    {bid.yourBid}
-                                                </span>
-                                            </div>
-                                            <div className="col-span-2 px-4 py-5 text-center">
-                                                <div className="inline-flex items-center gap-1.5 text-neutral-600 bg-primary px-3 py-1.5 rounded-lg">
-                                                    <Clock className="w-4 h-4 text-dark-primary" />
-                                                    <span className="font-medium">
-                                                        {bid.timeLeft}
-                                                    </span>
+                                                    <h3 className="font-heading text-xl font-medium text-neutral-900 mb-2">
+                                                        No active bids
+                                                    </h3>
+                                                    <p className="text-neutral-500 max-w-sm mx-auto mb-6">
+                                                        Start bidding on items
+                                                        to track them here.
+                                                    </p>
+                                                    <Link href="/search-result">
+                                                        <Button variant="muted">
+                                                            Browse Auctions
+                                                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                                        </Button>
+                                                    </Link>
                                                 </div>
-                                            </div>
-                                            <div className="col-span-2 px-4 py-5 text-center">
-                                                <span
-                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full capitalize ${getStatusStyles(bid.status)}`}
-                                                >
-                                                    {getStatusIcon(bid.status)}
-                                                    {bid.status}
-                                                </span>
-                                            </div>
+                                            ) : (
+                                                <div className="overflow-x-auto rounded-xl border border-primary/50 shadow-sm">
+                                                    <div className="min-w-[800px]">
+                                                        <div className="grid grid-cols-12 bg-secondary border-b border-primary/50 text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                                                            <div className="col-span-5 px-6 py-4">
+                                                                Product
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Current Price
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Ends In
+                                                            </div>
+                                                            <div className="col-span-1 px-6 py-4 text-center">
+                                                                Bids
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Status
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="divide-y divide-primary/30 bg-white">
+                                                            {activeBids.map(
+                                                                (
+                                                                    bid,
+                                                                    index,
+                                                                ) => {
+                                                                    const statusInfo =
+                                                                        getStatusInfo(
+                                                                            bid.myBidStatus,
+                                                                        );
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                bid.id
+                                                                            }
+                                                                            className="grid grid-cols-12 items-center hover:bg-secondary/30 transition-colors duration-200"
+                                                                            style={{
+                                                                                animation:
+                                                                                    isVisible
+                                                                                        ? `fadeInUp 0.5s ease-out ${index * 0.05}s both`
+                                                                                        : 'none',
+                                                                            }}
+                                                                        >
+                                                                            <div className="col-span-5 px-6 py-4 flex items-center gap-4">
+                                                                                <Link
+                                                                                    href={`/auction/${bid.id}`}
+                                                                                    className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 shadow-sm flex-shrink-0 group"
+                                                                                >
+                                                                                    <Image
+                                                                                        src={
+                                                                                            bid.mainImage
+                                                                                        }
+                                                                                        alt={
+                                                                                            bid.name
+                                                                                        }
+                                                                                        fill
+                                                                                        className="object-cover group-hover:scale-105 transition-transform"
+                                                                                    />
+                                                                                </Link>
+                                                                                <div>
+                                                                                    <Link
+                                                                                        href={`/auction/${bid.id}`}
+                                                                                    >
+                                                                                        <h3
+                                                                                            className="font-medium text-neutral-900 line-clamp-1 hover:text-dark-primary transition-colors"
+                                                                                            title={
+                                                                                                bid.name
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                bid.name
+                                                                                            }
+                                                                                        </h3>
+                                                                                    </Link>
+                                                                                    <p className="text-xs text-neutral-500 mt-1">
+                                                                                        Category:{' '}
+                                                                                        {
+                                                                                            bid.category
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="col-span-2 px-6 py-4 text-center font-medium text-dark-primary">
+                                                                                {formatCurrency(
+                                                                                    bid.currentPrice,
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200">
+                                                                                    <Clock className="w-3 h-3" />
+                                                                                    {
+                                                                                        bid.formattedEndTime
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="col-span-1 px-6 py-4 text-center text-neutral-600 font-medium">
+                                                                                {
+                                                                                    bid.bidCount
+                                                                                }
+                                                                            </div>
+                                                                            <div className="col-span-2 px-6 py-4 flex justify-center">
+                                                                                <span
+                                                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusInfo.className}`}
+                                                                                >
+                                                                                    {
+                                                                                        statusInfo.icon
+                                                                                    }
+                                                                                    {
+                                                                                        statusInfo.label
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
+                                    )}
+
+                                    {activeTab === 'completed' && (
+                                        <div className="space-y-4">
+                                            {completedBids.length === 0 ? (
+                                                <div className="text-center py-16 px-4 border-2 border-dashed border-primary/30 rounded-xl bg-secondary/20">
+                                                    <div className="w-20 h-20 mx-auto mb-6 bg-white rounded-xl flex items-center justify-center shadow-sm border border-primary/20">
+                                                        <Package className="w-10 h-10 text-dark-primary/50" />
+                                                    </div>
+                                                    <h3 className="font-heading text-xl font-medium text-neutral-900 mb-2">
+                                                        No completed bids
+                                                    </h3>
+                                                    <p className="text-neutral-500 max-w-sm mx-auto mb-6">
+                                                        Past auctions you
+                                                        participated in will
+                                                        appear here.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="overflow-x-auto rounded-xl border border-primary/50 shadow-sm">
+                                                    <div className="min-w-[800px]">
+                                                        <div className="grid grid-cols-12 bg-secondary border-b border-primary/50 text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                                                            <div className="col-span-5 px-6 py-4">
+                                                                Product
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Final Price
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Ended Date
+                                                            </div>
+                                                            <div className="col-span-1 px-6 py-4 text-center">
+                                                                Bids
+                                                            </div>
+                                                            <div className="col-span-2 px-6 py-4 text-center">
+                                                                Result
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="divide-y divide-primary/30 bg-white">
+                                                            {completedBids.map(
+                                                                (
+                                                                    bid,
+                                                                    index,
+                                                                ) => {
+                                                                    const statusInfo =
+                                                                        getStatusInfo(
+                                                                            bid.myBidStatus,
+                                                                        );
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                bid.id
+                                                                            }
+                                                                            className="grid grid-cols-12 items-center hover:bg-secondary/30 transition-colors duration-200"
+                                                                            style={{
+                                                                                animation:
+                                                                                    isVisible
+                                                                                        ? `fadeInUp 0.5s ease-out ${index * 0.05}s both`
+                                                                                        : 'none',
+                                                                            }}
+                                                                        >
+                                                                            <div className="col-span-5 px-6 py-4 flex items-center gap-4">
+                                                                                <Link
+                                                                                    href={`/auction/${bid.id}`}
+                                                                                    className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 shadow-sm flex-shrink-0 group"
+                                                                                >
+                                                                                    <Image
+                                                                                        src={
+                                                                                            bid.mainImage
+                                                                                        }
+                                                                                        alt={
+                                                                                            bid.name
+                                                                                        }
+                                                                                        fill
+                                                                                        className="object-cover group-hover:scale-105 transition-transform"
+                                                                                    />
+                                                                                </Link>
+                                                                                <div>
+                                                                                    <Link
+                                                                                        href={`/auction/${bid.id}`}
+                                                                                    >
+                                                                                        <h3
+                                                                                            className="font-medium text-neutral-900 line-clamp-1 hover:text-dark-primary transition-colors"
+                                                                                            title={
+                                                                                                bid.name
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                bid.name
+                                                                                            }
+                                                                                        </h3>
+                                                                                    </Link>
+                                                                                    <div className="flex flex-col gap-1 mt-1">
+                                                                                        <p className="text-xs text-neutral-500">
+                                                                                            Seller:{' '}
+                                                                                            {
+                                                                                                bid
+                                                                                                    .seller
+                                                                                                    .fullname
+                                                                                            }
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="col-span-2 px-6 py-4 text-center font-bold text-dark-primary">
+                                                                                {formatCurrency(
+                                                                                    bid.currentPrice,
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="col-span-2 px-6 py-4 text-center text-sm text-neutral-600">
+                                                                                {new Date(
+                                                                                    bid.endDate,
+                                                                                ).toLocaleDateString(
+                                                                                    'en-GB',
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="col-span-1 px-6 py-4 text-center text-neutral-600 font-medium">
+                                                                                {
+                                                                                    bid.bidCount
+                                                                                }
+                                                                            </div>
+                                                                            <div className="col-span-2 px-6 py-4 flex justify-center">
+                                                                                <span
+                                                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusInfo.className}`}
+                                                                                >
+                                                                                    {
+                                                                                        statusInfo.icon
+                                                                                    }
+                                                                                    {
+                                                                                        statusInfo.label
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

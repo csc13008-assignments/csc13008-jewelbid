@@ -49,9 +49,39 @@ export default function WonAuctionsPage() {
     const fetchWonAuctions = useCallback(async () => {
         setIsLoading(true);
         try {
-            const products = await productsApi.getProductsUserWon();
+            const userId = JSON.parse(localStorage.getItem('user') || '{}').id;
 
-            const auctions: WonAuction[] = products.map((product) => ({
+            // Fetch both won products and products user is bidding on
+            const [wonProducts, biddingProducts] = await Promise.all([
+                productsApi.getProductsUserWon(),
+                productsApi.getProductsUserIsBidding(),
+            ]);
+
+            // Combine and filter
+            const allWonProductsMap = new Map();
+
+            // 1. Add explicitly won products
+            wonProducts.forEach((product) => {
+                allWonProductsMap.set(product.id, product);
+            });
+
+            // 2. checking bidding products for "Buy Now" wins or completed auctions
+            biddingProducts.forEach((product) => {
+                const now = new Date();
+                const endDate = new Date(product.endDate);
+                const isEnded =
+                    endDate.getTime() <= now.getTime() ||
+                    product.status === 'ended';
+                const isWinning = product.currentBidder?.id === userId;
+
+                if (isEnded && isWinning) {
+                    allWonProductsMap.set(product.id, product);
+                }
+            });
+
+            const mergedProducts = Array.from(allWonProductsMap.values());
+
+            const auctions: WonAuction[] = mergedProducts.map((product) => ({
                 id: product.id,
                 product: product.name,
                 productImage: product.mainImage,
@@ -67,6 +97,13 @@ export default function WonAuctionsPage() {
                 }),
                 action: 'Rate Seller',
             }));
+
+            // Sort by date (newest first)
+            auctions.sort(
+                (a, b) =>
+                    new Date(b.dateWon).getTime() -
+                    new Date(a.dateWon).getTime(),
+            );
 
             setWonAuctions(auctions);
         } catch (error) {

@@ -12,6 +12,7 @@ import {
     Button,
     ProductCard,
 } from '@/modules/shared/components/ui';
+import { cn } from '@/lib/utils';
 import toast from '@/lib/toast';
 import { useWatchlistStore } from '@/stores/watchlistStore';
 
@@ -167,7 +168,8 @@ export default function ProductDetailPage() {
     const canBid =
         currentUser &&
         (currentUser.role.toLowerCase() === 'bidder' ||
-            (currentUser.role.toLowerCase() === 'seller' && !isOwner));
+            (currentUser.role.toLowerCase() === 'seller' && !isOwner)) &&
+        !(auction && new Date() > new Date(auction.endDate));
 
     const highestBidder =
         auction && auction.bids && auction.bids.length > 0
@@ -207,35 +209,21 @@ export default function ProductDetailPage() {
         return () => clearInterval(timer);
     }, [auction]);
 
-    // Check if auction ended and redirect seller/winner to order page
-    useEffect(() => {
-        const checkAuctionEndAndRedirect = async () => {
-            if (!auction || !currentUser) return;
+    // Check if auction ended - logic moved to render for banners
+    const isAuctionEnded = auction && new Date() > new Date(auction.endDate);
 
-            const hasEnded = new Date() > new Date(auction.endDate);
-            const isSeller = currentUser.id === auction.seller.id;
-            const isWinner =
-                auction.bids &&
-                auction.bids.length > 0 &&
-                currentUser.id === auction.bids[0].bidder.id;
+    // Determine winner
+    const isWinner =
+        isAuctionEnded &&
+        auction &&
+        auction.bids &&
+        auction.bids.length > 0 &&
+        currentUser &&
+        currentUser.id === auction.bids[0].bidder.id;
 
-            // If auction ended and user is seller or winner, redirect to order page
-            if (hasEnded && (isSeller || isWinner)) {
-                // TODO: Get actual order ID from backend
-                // For now, use product ID as placeholder
-                router.push(`/order/${auction.id}`);
-            }
-        };
-
-        // Check every 5 seconds
-        const interval = setInterval(
-            () => void checkAuctionEndAndRedirect(),
-            5000,
-        );
-        void checkAuctionEndAndRedirect(); // Check immediately
-
-        return () => clearInterval(interval);
-    }, [auction, currentUser, router]);
+    // Determine if user is the seller
+    const isSellerUser =
+        auction && currentUser && currentUser.id === auction.seller.id;
 
     // Sync isLiked with watchlist - MUST be before early return
     useEffect(() => {
@@ -506,8 +494,77 @@ export default function ProductDetailPage() {
     return (
         <div className="min-h-screen bg-white">
             <div className="max-w-7xl mx-auto px-4 py-16">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    <div className="space-y-6">
+                {isAuctionEnded && (
+                    <div className="mb-8 p-6 rounded-xl border animate-fadeIn">
+                        {isWinner ? (
+                            <div className="bg-green-50 border-green-200 flex flex-col items-center text-center p-4 rounded-lg">
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3 text-2xl">
+                                    🏆
+                                </div>
+                                <h2 className="text-2xl font-bold text-green-800 mb-2">
+                                    Congratulations! You won this auction!
+                                </h2>
+                                <p className="text-green-700 mb-4">
+                                    You are the highest bidder. Please proceed
+                                    to payment to claim your item.
+                                </p>
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    className="bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-green-500/20"
+                                    onClick={() =>
+                                        router.push(`/order/${auction.id}`)
+                                    }
+                                >
+                                    Proceed to Payment
+                                </Button>
+                            </div>
+                        ) : isSellerUser ? (
+                            <div className="bg-blue-50 border-blue-200 flex flex-col items-center text-center p-4 rounded-lg">
+                                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                                    <Clock className="w-8 h-8 text-blue-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-blue-800 mb-2">
+                                    Auction Ended
+                                </h2>
+                                <p className="text-blue-700 mb-4">
+                                    {auction.bids && auction.bids.length > 0
+                                        ? `Winner: ${auction.bids[0].bidder.username}. Waiting for payment.`
+                                        : 'Auction ended with no bids.'}
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.push('/seller-dashboard')
+                                    }
+                                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                                >
+                                    Return to Dashboard
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="bg-gray-50 border-gray-200 flex flex-col items-center text-center p-4 rounded-lg">
+                                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                                    <X className="w-8 h-8 text-gray-500" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-700 mb-1">
+                                    Auction Ended
+                                </h2>
+                                <p className="text-gray-500">
+                                    This auction has ended.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 opacity-100 transition-opacity duration-300">
+                    <div
+                        className={cn(
+                            'space-y-6',
+                            isAuctionEnded &&
+                                'opacity-75 pointer-events-none select-none grayscale-[0.3]',
+                        )}
+                    >
                         <div className="flex items-start justify-between">
                             <h1 className="text-4xl font-bold text-black">
                                 {auction.product.name}

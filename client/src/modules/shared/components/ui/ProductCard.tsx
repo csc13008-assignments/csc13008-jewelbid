@@ -26,6 +26,10 @@ const getTimeRemaining = (endDate: Date): TimeRemaining => {
     return { days, hours, minutes, seconds };
 };
 
+const isAuctionEnded = (endDate: Date): boolean => {
+    return new Date().getTime() >= endDate.getTime();
+};
+
 const formatCurrency = (amount: number): string => {
     // Remove decimal places and format with dot separator, add VND suffix
     return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' VND';
@@ -303,8 +307,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     src={auction.product.image}
                     alt={auction.product.name}
                     fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    className={cn(
+                        'object-cover group-hover:scale-110 transition-transform duration-500',
+                        isAuctionEnded(auction.endDate) && 'grayscale-[0.5]',
+                    )}
                 />
+
+                {isAuctionEnded(auction.endDate) && (
+                    <div className="absolute top-3 right-3 z-20">
+                        <span className="bg-neutral-800/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md border border-white/20">
+                            AUCTION ENDED
+                        </span>
+                    </div>
+                )}
 
                 <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
                     <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm">

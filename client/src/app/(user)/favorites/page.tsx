@@ -167,7 +167,7 @@ export default function FavoritesPage() {
                                     </p>
                                 </div>
                             ) : sortedFavorites.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {sortedFavorites.map((auction, index) => (
                                         <div
                                             key={auction.id}
@@ -181,6 +181,7 @@ export default function FavoritesPage() {
                                             <div className="transform transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl rounded-xl overflow-hidden">
                                                 <ProductCard
                                                     auction={auction}
+                                                    className="w-full"
                                                 />
                                             </div>
                                             <button
