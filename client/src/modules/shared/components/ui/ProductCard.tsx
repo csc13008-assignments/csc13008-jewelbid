@@ -30,6 +30,18 @@ const isAuctionEnded = (endDate: Date): boolean => {
     return new Date().getTime() >= endDate.getTime();
 };
 
+// Threshold for considering an auction "new" (in days remaining)
+// Auctions with more than this many days left are considered new
+const NEW_AUCTION_DAYS_REMAINING = 25;
+
+const isNew = (endDate: Date): boolean => {
+    const now = new Date();
+    const end = new Date(endDate);
+    const daysRemaining =
+        (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    return daysRemaining > NEW_AUCTION_DAYS_REMAINING;
+};
+
 const formatCurrency = (amount: number): string => {
     // Remove decimal places and format with dot separator, add VND suffix
     return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' VND';
@@ -317,6 +329,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     <div className="absolute top-3 right-3 z-20">
                         <span className="bg-neutral-800/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md border border-white/20">
                             AUCTION ENDED
+                        </span>
+                    </div>
+                )}
+
+                {!isAuctionEnded(auction.endDate) && isNew(auction.endDate) && (
+                    <div className="absolute top-3 left-3 z-20">
+                        <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md border border-white/20 animate-pulse">
+                            NEW
                         </span>
                     </div>
                 )}

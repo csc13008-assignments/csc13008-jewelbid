@@ -42,6 +42,16 @@ export interface AuthResponse {
     message: string;
 }
 
+export interface SellerUpgradeRequest {
+    businessName: string;
+    taxId: string;
+    address: string;
+    phone: string;
+    description: string;
+    idCardFront: File;
+    idCardBack: File;
+}
+
 export interface UserData {
     id: string;
     fullname: string;
@@ -123,6 +133,29 @@ export const authApi = {
                 headers: {
                     Authorization: `Bearer ${refreshToken}`,
                 },
+            },
+        );
+        return response.data;
+    },
+
+    // POST /auth/upgrade-seller - Request to upgrade to seller role
+    requestSellerUpgrade: async (
+        data: SellerUpgradeRequest,
+    ): Promise<{ message: string; expiresAt: string }> => {
+        const formData = new FormData();
+        formData.append('businessName', data.businessName);
+        formData.append('taxId', data.taxId);
+        formData.append('address', data.address);
+        formData.append('phone', data.phone);
+        formData.append('description', data.description);
+        formData.append('idCardFront', data.idCardFront);
+        formData.append('idCardBack', data.idCardBack);
+
+        const response = await apiClient.post(
+            '/auth/upgrade-seller',
+            formData,
+            {
+                headers: { 'Content-Type': 'multipart/form-data' },
             },
         );
         return response.data;

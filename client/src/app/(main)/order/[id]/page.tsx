@@ -79,7 +79,7 @@ export default function OrderPage() {
                     order.productId,
                     {
                         paymentProof: updates.paymentProof,
-                        shippingAddress: updates.shippingAddress,
+                        deliveryAddress: updates.shippingAddress,
                     },
                 );
             } else if (updates.shippingInvoice) {

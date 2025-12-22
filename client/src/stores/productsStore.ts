@@ -97,7 +97,9 @@ export const mapProductToAuction = (
         bidCount: product.bidCount,
         likeCount: product.watchlistCount || 0,
         isLiked: isInWatchlist(product.id),
-        startDate: new Date(),
+        startDate: product.createdAt
+            ? new Date(product.createdAt)
+            : new Date(0),
         endDate: new Date(product.endDate),
         status: product.status.toLowerCase() as 'active' | 'ended' | 'upcoming',
         seller: {

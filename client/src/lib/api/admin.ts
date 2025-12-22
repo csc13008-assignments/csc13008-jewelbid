@@ -143,4 +143,15 @@ export const adminApi = {
         );
         return response.data;
     },
+
+    // PATCH /users/:userId/role - Update user role [ADMIN]
+    updateUserRole: async (
+        userId: string,
+        role: 'Bidder' | 'Seller',
+    ): Promise<{ message: string }> => {
+        const response = await apiClient.patch(`/users/${userId}/role`, {
+            role,
+        });
+        return response.data;
+    },
 };

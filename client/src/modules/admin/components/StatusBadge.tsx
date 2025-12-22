@@ -18,6 +18,11 @@ export default function StatusBadge({ status, type }: StatusBadgeProps) {
         type ||
         (() => {
             const lower = status.toLowerCase();
+            // Role-based colors
+            if (lower === 'admin') return 'danger'; // Purple/Red for admin
+            if (lower === 'seller') return 'info'; // Blue for seller
+            if (lower === 'bidder') return 'success'; // Green for bidder
+            // Status-based colors
             if (lower.includes('active') || lower.includes('approved'))
                 return 'success';
             if (lower.includes('pending')) return 'warning';

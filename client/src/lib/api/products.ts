@@ -31,9 +31,11 @@ export interface BackendProduct {
         positiveRatings?: number;
         negativeRatings?: number;
     } | null;
+    createdAt?: string;
 }
 
 export interface BidHistoryItem {
+    bidderId: string;
     bidderName: string;
     bidAmount: number;
     bidTime: string;
@@ -159,6 +161,27 @@ export const productsApi = {
         const response = await apiClient.patch(`/products/${id}/description`, {
             additionalDescription,
         });
+        return response.data;
+    },
+
+    // POST /products/:productId/reject/:bidderId - Reject a bidder from auction [SELLER]
+    rejectBidder: async (
+        productId: string,
+        bidderId: string,
+    ): Promise<BackendProduct> => {
+        const response = await apiClient.post(
+            `/products/${productId}/reject/${bidderId}`,
+        );
+        return response.data;
+    },
+
+    // GET /products/:id/check-rejection - Check if current user is rejected
+    checkRejection: async (
+        productId: string,
+    ): Promise<{ isRejected: boolean }> => {
+        const response = await apiClient.get(
+            `/products/${productId}/check-rejection`,
+        );
         return response.data;
     },
 

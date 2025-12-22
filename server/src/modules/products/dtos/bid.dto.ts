@@ -14,6 +14,12 @@ export class PlaceBidDto {
 
 export class BidHistoryItemDto {
     @ApiProperty({
+        description: 'Bidder ID',
+        example: '01234567-89ab-cdef-0123-456789abcdef',
+    })
+    bidderId: string;
+
+    @ApiProperty({
         description: 'Bidder name (masked)',
         example: '****Khoa',
     })

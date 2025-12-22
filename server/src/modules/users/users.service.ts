@@ -2,6 +2,7 @@ import {
     BadRequestException,
     Injectable,
     InternalServerErrorException,
+    NotFoundException,
 } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { UsersRatingRepository } from './users-rating.repository';
@@ -37,7 +38,7 @@ export class UsersService {
             role: string;
             phone: string;
             address: string;
-            birthdate: string;
+            // birthdate: string;
             image: string;
         }[]
     > {
@@ -51,7 +52,6 @@ export class UsersService {
                 role: user.role,
                 phone: user.phone,
                 address: user.address,
-                birthdate: user.birthdate.toISOString(),
                 image: user.profileImage,
             }));
         } catch (error: any) {
@@ -67,7 +67,7 @@ export class UsersService {
         phone: string;
         address: string;
         image: string;
-        birthdate: string;
+        // birthdate: string;
     }> {
         try {
             const { id } = profileUser;
@@ -85,7 +85,6 @@ export class UsersService {
                 phone: user.phone,
                 address: user.address,
                 image: user.profileImage,
-                birthdate: user.birthdate.toISOString(),
             };
             return newUser;
         } catch (error) {
@@ -212,9 +211,24 @@ The Jewelbid Team
         return { message: 'Upgrade request submitted successfully' };
     }
 
-    async getUpgradeRequests(): Promise<User[]> {
+    async getUpgradeRequests(): Promise<any[]> {
         const users = await this.usersRepository.findAllByRole(Role.BIDDER);
-        return users.filter((user) => user.upgradeRequested);
+        const pendingUsers = users.filter((user) => user.upgradeRequested);
+
+        // Map to expected frontend format
+        return pendingUsers.map((user) => ({
+            id: user.id,
+            userId: user.id,
+            user: {
+                fullname: user.fullname,
+                email: user.email,
+                profileImage: user.profileImage,
+            },
+            status: 'Pending',
+            createdAt:
+                user.upgradeRequestedAt?.toISOString() || user.created_at,
+            updatedAt: user.updated_at,
+        }));
     }
 
     async approveUpgradeRequest(userId: string): Promise<{ message: string }> {
@@ -270,5 +284,17 @@ The Jewelbid Team
         });
 
         return { message: 'Upgrade request rejected' };
+    }
+
+    async updateUserRole(
+        userId: string,
+        newRole: Role,
+    ): Promise<{ message: string }> {
+        const user = await this.usersRepository.findOneById(userId);
+        if (!user) throw new NotFoundException('User not found');
+        if (user.role === newRole)
+            throw new BadRequestException(`User already has ${newRole} role`);
+        await this.usersRepository.updateProfile(userId, { role: newRole });
+        return { message: `User role updated to ${newRole} successfully` };
     }
 }

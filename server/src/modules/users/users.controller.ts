@@ -28,6 +28,7 @@ import { ATAuthGuard } from '../auth/guards/at-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ProfileDto } from '../auth/dtos/cred.dto';
 import { UpdateProfileDto } from './dtos/update-user.dto';
+import { UpdateRoleDto } from './dtos/update-role.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
 import { CreateRatingDto, UpdateRatingDto } from './dtos/rating.dto';
 @Controller('users')
@@ -83,7 +84,6 @@ export class UsersController {
             phone: string;
             address: string;
             image: string;
-            birthdate: string;
         } = await this.usersService.getMyProfile(req.user);
         res.send(foundUser);
     }
@@ -256,5 +256,24 @@ export class UsersController {
     @Roles(Role.ADMIN)
     async rejectUpgradeRequest(@Param('id') id: string) {
         return await this.usersService.rejectUpgradeRequest(id);
+    }
+
+    @ApiOperation({ summary: 'Update user role [ADMIN]' })
+    @ApiBearerAuth('access-token')
+    @Patch(':userId/role')
+    @ApiResponse({
+        status: 200,
+        description: 'User role updated successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async updateUserRole(
+        @Param('userId') userId: string,
+        @Body() updateRoleDto: UpdateRoleDto,
+    ) {
+        return await this.usersService.updateUserRole(
+            userId,
+            updateRoleDto.role,
+        );
     }
 }

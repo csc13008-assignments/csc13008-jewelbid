@@ -1,13 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class UpdateProductDto {
     @ApiProperty({
         description: 'Additional description to append',
-        example: 'Product has been professionally cleaned and certified.',
+        example: 'Updated information about the product',
     })
     @IsString()
-    @MinLength(10)
     additionalDescription: string;
 }
 

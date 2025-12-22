@@ -14,10 +14,18 @@ export const ordersApi = {
         }
     },
 
+    // Create Order (from won auction)
+    async createOrder(productId: string): Promise<Order> {
+        const response = await apiClient.post<Order>('/orders', {
+            productId,
+        });
+        return response.data;
+    },
+
     // Step 1: Submit Payment Info
     async submitPaymentInfo(
         productId: string,
-        data: { paymentProof: string; shippingAddress: string },
+        data: { paymentProof: string; deliveryAddress: string },
     ) {
         const response = await apiClient.post<Order>(
             `/orders/${productId}/submit-payment`,

@@ -91,4 +91,10 @@ export const usersApi = {
         const response = await apiClient.get('/users/user');
         return response.data;
     },
+
+    // POST /users/upgrade-request - request upgrade to seller
+    requestSellerUpgrade: async (): Promise<{ message: string }> => {
+        const response = await apiClient.post('/users/upgrade-request');
+        return response.data;
+    },
 };

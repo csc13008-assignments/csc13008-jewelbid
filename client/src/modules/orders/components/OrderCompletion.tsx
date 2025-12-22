@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Order, OrderStatus, ChatMessage } from '@/types/order';
 import { Button } from '@/modules/shared/components/ui';
 import { Upload, MessageSquare, CheckCircle, X } from 'lucide-react';
+import { compressImage } from '@/lib/utils/imageUtils';
 
 interface OrderCompletionProps {
     order: Order;
@@ -60,11 +61,27 @@ export default function OrderCompletion({
     const handlePaymentSubmit = async () => {
         setLoading(true);
         try {
+            // Strip data URL prefix if present (backend expects pure base64)
+            // Format: "data:image/jpeg;base64,/9j/4AAQ..." -> "/9j/4AAQ..."
+            const base64Data = paymentProof.includes('base64,')
+                ? paymentProof.split('base64,')[1]
+                : paymentProof;
+
             await onUpdateOrder({
-                paymentProof,
+                paymentProof: base64Data,
                 shippingAddress,
                 status: OrderStatus.SHIPPING_PENDING,
             });
+        } catch (error: any) {
+            console.error('Payment submission error:', error);
+            console.error('Error response:', error?.response?.data);
+
+            // Show the backend error message if available
+            const errorMessage =
+                error?.response?.data?.message ||
+                error?.response?.data?.error ||
+                'Failed to submit payment info';
+            alert(`Error: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
@@ -235,13 +252,30 @@ export default function OrderCompletion({
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => {
-                                                    setPaymentProof(
-                                                        reader.result as string,
-                                                    );
-                                                };
-                                                reader.readAsDataURL(file);
+                                                void (async () => {
+                                                    try {
+                                                        setLoading(true);
+                                                        const compressed =
+                                                            await compressImage(
+                                                                file,
+                                                                0.15,
+                                                                1024,
+                                                            );
+                                                        setPaymentProof(
+                                                            compressed,
+                                                        );
+                                                    } catch (error) {
+                                                        console.error(
+                                                            'Failed to compress image:',
+                                                            error,
+                                                        );
+                                                        alert(
+                                                            'Failed to process image. Please try a different file.',
+                                                        );
+                                                    } finally {
+                                                        setLoading(false);
+                                                    }
+                                                })();
                                             }
                                         }}
                                         className="w-full border border-gray-300 rounded-lg px-4 py-2 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-dark-primary file:text-white file:cursor-pointer hover:file:bg-[hover:bg-dark-primary]"

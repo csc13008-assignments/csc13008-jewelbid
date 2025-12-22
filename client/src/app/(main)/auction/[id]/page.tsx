@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Heart, Calendar, Clock, X, Edit } from 'lucide-react';
 import { productsApi } from '@/lib/api/products';
+import { ordersApi } from '@/lib/api/orders';
 import { mapProductToAuction } from '@/stores/productsStore';
 import { Auction } from '@/types';
 import {
@@ -73,8 +74,14 @@ export default function ProductDetailPage() {
     // Fetch auction data from API
     const [auction, setAuction] = useState<Auction | null>(null);
     const [relatedAuctions, setRelatedAuctions] = useState<Auction[]>([]);
+    const [isRejected, setIsRejected] = useState(false);
     const [bidHistory, setBidHistory] = useState<
-        { bidderName: string; bidAmount: number; bidTime: Date }[]
+        {
+            bidderId: string;
+            bidderName: string;
+            bidAmount: number;
+            bidTime: Date;
+        }[]
     >([]);
     const [questions, setQuestions] = useState<
         {
@@ -133,6 +140,7 @@ export default function ProductDetailPage() {
                     params.id as string,
                 );
                 const mappedBids = bids.map((b) => ({
+                    bidderId: b.bidderId || '',
                     bidderName: b.bidderName,
                     bidAmount: b.bidAmount,
                     bidTime: new Date(b.bidTime),
@@ -149,6 +157,38 @@ export default function ProductDetailPage() {
             setIsAuctionLoading(false);
         }
     }, [params.id]);
+
+    // Separate useEffect to check rejection status when user is loaded
+    useEffect(() => {
+        const checkRejectionStatus = async () => {
+            if (!currentUser || !params.id) {
+                console.log(
+                    '⚠️ Cannot check rejection: no user or no product ID',
+                );
+                setIsRejected(false);
+                return;
+            }
+
+            try {
+                console.log(
+                    '🔍 Checking rejection for user:',
+                    currentUser.id,
+                    'product:',
+                    params.id,
+                );
+                const { isRejected } = await productsApi.checkRejection(
+                    params.id as string,
+                );
+                console.log('✅ Rejection check result:', isRejected);
+                setIsRejected(isRejected);
+            } catch (error) {
+                console.error('❌ Failed to check rejection:', error);
+                setIsRejected(false);
+            }
+        };
+
+        void checkRejectionStatus();
+    }, [currentUser, params.id]);
 
     useEffect(() => {
         void fetchAuctionData();
@@ -483,13 +523,79 @@ export default function ProductDetailPage() {
             setAdditionalDescription('');
             // Refresh auction data
             await fetchAuctionData();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update description:', error);
-            toast.error('Failed to update description');
+            const errorMessage = error?.response?.data?.message;
+            if (Array.isArray(errorMessage)) {
+                toast.error(errorMessage.join(', '));
+            } else {
+                toast.error(errorMessage || 'Failed to update description');
+            }
         }
     };
 
     // Order handlers
+    const handleProceedToPayment = async () => {
+        if (!auction) return;
+
+        try {
+            // Try to create order (may not be needed if backend auto-creates)
+            await ordersApi.createOrder(auction.id);
+            router.push(`/order/${auction.id}`);
+        } catch (error: any) {
+            console.error('Failed to create order:', error);
+
+            // If 404, the endpoint doesn't exist - order likely auto-created by backend
+            // If 409 or similar, order already exists
+            // In both cases, proceed to order page
+            const status = error?.response?.status;
+            if (status === 404 || status === 409) {
+                console.log(
+                    'Order endpoint not available or order exists, proceeding anyway...',
+                );
+                router.push(`/order/${auction.id}`);
+            } else {
+                toast.error('Failed to initialize order. Please try again.');
+            }
+        }
+    };
+
+    const handleRejectBidder = async (bidderId: string, bidderName: string) => {
+        if (!auction) return;
+
+        const Swal = (await import('sweetalert2')).default;
+        const result = await Swal.fire({
+            title: 'Reject Bidder?',
+            html: `
+                <p style="margin-bottom: 16px;">Reject bidder <strong>"${bidderName}"</strong> from this auction?</p>
+                <ul style="text-align: left; color: #666; padding-left: 20px; margin: 0;">
+                    <li style="margin-bottom: 8px;">They will not be able to bid anymore</li>
+                    <li>If they're the highest bidder, the product will go to the second-highest bidder</li>
+                </ul>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, reject',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await productsApi.rejectBidder(auction.id, bidderId);
+            toast.success(`Bidder "${bidderName}" has been rejected`);
+            // Refresh auction data to show updated bids
+            await fetchAuctionData();
+        } catch (error: any) {
+            console.error('Failed to reject bidder:', error);
+            const errorMessage =
+                error?.response?.data?.message || 'Failed to reject bidder';
+            toast.error(errorMessage);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-white">
@@ -513,7 +619,7 @@ export default function ProductDetailPage() {
                                     size="lg"
                                     className="bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-green-500/20"
                                     onClick={() =>
-                                        router.push(`/order/${auction.id}`)
+                                        void handleProceedToPayment()
                                     }
                                 >
                                     Proceed to Payment
@@ -1090,7 +1196,34 @@ export default function ProductDetailPage() {
                                 />
                             </div>
 
-                            {canBid && (
+                            {isRejected && canBid && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                    <div className="flex items-start">
+                                        <svg
+                                            className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-red-800 mb-1">
+                                                Bidding Not Allowed
+                                            </h3>
+                                            <p className="text-sm text-red-700">
+                                                The seller has rejected your
+                                                access to bid on this product.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {canBid && !isRejected && (
                                 <>
                                     <div className="mb-4">
                                         <div className="flex space-x-3">
@@ -1202,6 +1335,20 @@ export default function ProductDetailPage() {
                                                                 bid.bidAmount,
                                                             )}
                                                         </span>
+                                                        {isOwner && (
+                                                            <button
+                                                                onClick={() =>
+                                                                    void handleRejectBidder(
+                                                                        bid.bidderId,
+                                                                        bid.bidderName,
+                                                                    )
+                                                                }
+                                                                className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                                                title="Reject this bidder"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))

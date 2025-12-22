@@ -181,6 +181,22 @@ export class ProductsController {
         return await this.productsService.getBidHistory(id);
     }
 
+    @ApiOperation({ summary: 'Check if current user is rejected from bidding' })
+    @ApiBearerAuth('access-token')
+    @Get(':id/check-rejection')
+    @UseGuards(ATAuthGuard)
+    @ApiResponse({
+        status: 200,
+        description: 'Rejection status checked successfully',
+    })
+    async checkRejection(@Param('id') id: string, @Request() req: any) {
+        const isRejected = await this.productsService.checkRejection(
+            id,
+            req.user.id,
+        );
+        return { isRejected };
+    }
+
     @ApiOperation({ summary: 'Create a new product [SELLER]' })
     @ApiBearerAuth('access-token')
     @Post()

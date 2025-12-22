@@ -502,6 +502,7 @@ export class ProductsService {
         const bids = await this.productsRepository.getBidHistory(productId);
 
         return bids.map((bid) => ({
+            bidderId: bid.bidderId,
             bidderName: this.maskName(bid.bidder.fullname),
             bidAmount: Number(bid.bidAmount),
             bidTime: bid.created_at,
@@ -515,6 +516,13 @@ export class ProductsService {
         }
         const lastName = parts[parts.length - 1];
         return '****' + lastName;
+    }
+
+    async checkRejection(productId: string, userId: string): Promise<boolean> {
+        return await this.productsRepository.isRejectedBidder(
+            productId,
+            userId,
+        );
     }
 
     async addToWatchlist(

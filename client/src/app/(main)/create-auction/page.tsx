@@ -15,6 +15,7 @@ import {
     Link,
 } from 'lucide-react';
 import { productsApi } from '@/lib/api/products';
+import toast from '@/lib/toast';
 
 export default function CreateAuctionPage() {
     const router = useRouter();
@@ -155,15 +156,15 @@ export default function CreateAuctionPage() {
 
             const createdProduct = await productsApi.createProduct(productData);
 
-            // Success - show alert and redirect
-            alert('Product created successfully!');
+            // Success - show toast and redirect
+            toast.success('Product created successfully!');
             router.push(`/auction/${createdProduct.id}`);
         } catch (error: any) {
             console.error('Error creating product:', error);
             const errorMessage =
                 error.response?.data?.message ||
                 'Failed to create product. Please try again.';
-            alert(`Error: ${errorMessage}`);
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

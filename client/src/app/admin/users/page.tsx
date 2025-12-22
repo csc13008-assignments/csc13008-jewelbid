@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Users, UserCog, Check, X, Loader2 } from 'lucide-react';
+import toast from '@/lib/toast';
 import Image from 'next/image';
 import DataTable from '@/modules/admin/components/DataTable';
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
@@ -48,11 +49,14 @@ export default function UsersPage() {
                 ? requestsResponse
                 : (requestsResponse as any).data || [];
 
+            console.log('🔍 Upgrade Requests Response:', requestsResponse);
+            console.log('🔍 Mapped Requests Data:', requestsData);
+
             setUsers(usersData);
             setUpgradeRequests(requestsData);
         } catch (error) {
             console.error('Error fetching data:', error);
-            alert('Failed to load data');
+            toast.error('Failed to load data');
         } finally {
             setLoading(false);
         }
@@ -70,7 +74,7 @@ export default function UsersPage() {
         {
             key: 'profileImage',
             label: 'Avatar',
-            render: (_: any, user: AdminUser) => (
+            render: (_: unknown, user: AdminUser) => (
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-neutral-200">
                     <Image
                         src={user.profileImage || '/avatars/default.jpg'}
@@ -92,7 +96,7 @@ export default function UsersPage() {
         {
             key: 'ratings',
             label: 'Rating',
-            render: (_: any, user: AdminUser) => (
+            render: (_: unknown, user: AdminUser) => (
                 <div className="flex items-center gap-2">
                     <span className="text-green-600 font-medium">
                         +{user.positiveRatings}
@@ -114,13 +118,26 @@ export default function UsersPage() {
                     day: 'numeric',
                 }),
         },
+        {
+            key: 'actions',
+            label: 'Actions',
+            render: (_: unknown, user: AdminUser) => (
+                <button
+                    onClick={() => void handleChangeRole(user)}
+                    className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title={`Change to ${user.role === 'Seller' ? 'Bidder' : 'Seller'}`}
+                >
+                    → {user.role === 'Seller' ? 'Bidder' : 'Seller'}
+                </button>
+            ),
+        },
     ];
 
     const requestColumns = [
         {
             key: 'user',
             label: 'User',
-            render: (_: any, request: UpgradeRequest) => (
+            render: (_: unknown, request: UpgradeRequest) => (
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden border border-neutral-200">
                         <Image
@@ -163,7 +180,7 @@ export default function UsersPage() {
         {
             key: 'actions',
             label: 'Actions',
-            render: (_: any, request: UpgradeRequest) => (
+            render: (_: unknown, request: UpgradeRequest) => (
                 <div className="flex items-center gap-2">
                     {request.status === 'Pending' && (
                         <>
@@ -202,6 +219,29 @@ export default function UsersPage() {
         setShowDetailModal(true);
     };
 
+    const handleChangeRole = async (user: AdminUser) => {
+        const newRole = user.role === 'Seller' ? 'Bidder' : 'Seller';
+        const confirmed = window.confirm(
+            `Change ${user.fullname}'s role from ${user.role} to ${newRole}?`,
+        );
+        if (!confirmed) return;
+
+        try {
+            setSubmitting(true);
+            await adminApi.updateUserRole(user.id, newRole);
+            toast.success(`User role updated to ${newRole}`);
+            await fetchData();
+        } catch (error: unknown) {
+            console.error('Failed to update role:', error);
+            toast.error(
+                (error as { response?: { data?: { message?: string } } })
+                    ?.response?.data?.message || 'Failed to update role',
+            );
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const handleApprove = (request: UpgradeRequest) => {
         setSelectedRequest(request);
         setConfirmAction('approve');
@@ -221,18 +261,21 @@ export default function UsersPage() {
             setSubmitting(true);
             if (confirmAction === 'approve') {
                 await adminApi.approveUpgradeRequest(selectedRequest.id);
-                alert('Upgrade request approved!');
+                toast.success('Upgrade request approved!');
             } else {
                 await adminApi.rejectUpgradeRequest(selectedRequest.id);
-                alert('Upgrade request rejected!');
+                toast.success('Upgrade request rejected!');
             }
             setShowConfirmDialog(false);
             setSelectedRequest(null);
             setConfirmAction(null);
             await fetchData();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error processing upgrade request:', error);
-            alert(error.response?.data?.message || 'Failed to process request');
+            toast.error(
+                (error as { response?: { data?: { message?: string } } })
+                    ?.response?.data?.message || 'Failed to process request',
+            );
         } finally {
             setSubmitting(false);
         }
