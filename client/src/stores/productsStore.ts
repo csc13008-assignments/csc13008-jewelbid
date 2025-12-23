@@ -30,6 +30,7 @@ interface ProductsState {
             targetAudience?: string;
             auctionStatus?: string;
         },
+        sortBy?: string,
     ) => Promise<void>;
     searchProducts: (params: {
         q?: string;
@@ -84,9 +85,19 @@ export const mapProductToAuction = (
             name: product.name,
             image: product.mainImage,
             category: product.category,
-            material: '',
-            brand: '',
+            material: product.material || '',
+            brand: product.brand || '',
             description: product.description,
+            // New fields from backend
+            era: product.era,
+            fineness: product.fineness,
+            condition: product.condition,
+            totalWeight: product.totalWeight,
+            size: product.size,
+            mainStoneCaratWeight: product.mainStoneCaratWeight,
+            surroundingStonesCaratWeight: product.surroundingStonesCaratWeight,
+            targetAudience: product.targetAudience,
+            origin: product.origin,
         },
         startBid: Number(product.startingPrice),
         currentBid: Number(product.currentPrice),
@@ -97,9 +108,14 @@ export const mapProductToAuction = (
         bidCount: product.bidCount,
         likeCount: product.watchlistCount || 0,
         isLiked: isInWatchlist(product.id),
-        startDate: product.createdAt
-            ? new Date(product.createdAt)
-            : new Date(0),
+        startDate:
+            product.created_at || product.createdAt
+                ? new Date(product.created_at || product.createdAt!)
+                : new Date(0),
+        createdAt:
+            product.created_at || product.createdAt
+                ? new Date(product.created_at || product.createdAt!)
+                : undefined,
         endDate: new Date(product.endDate),
         status: product.status.toLowerCase() as 'active' | 'ended' | 'upcoming',
         seller: {
@@ -168,6 +184,7 @@ export const useProductsStore = create<ProductsState>((set) => ({
             targetAudience?: string;
             auctionStatus?: string;
         },
+        sortBy?: string,
     ) => {
         set({ isLoading: true, error: null });
         try {
@@ -175,6 +192,7 @@ export const useProductsStore = create<ProductsState>((set) => ({
                 page,
                 limit,
                 filters,
+                sortBy,
             );
             const { isInWatchlist } = useWatchlistStore.getState();
             set({

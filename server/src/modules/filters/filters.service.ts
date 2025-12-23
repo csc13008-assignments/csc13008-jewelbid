@@ -7,6 +7,9 @@ export interface AllFiltersResponse {
     materials: FilterOption[];
     targetAudiences: FilterOption[];
     auctionStatuses: FilterOption[];
+    eras: FilterOption[];
+    finenesses: FilterOption[];
+    conditions: FilterOption[];
 }
 
 @Injectable()
@@ -29,20 +32,45 @@ export class FiltersService {
         return this.filtersRepository.findByType(FilterType.AUCTION_STATUS);
     }
 
+    async getEras(): Promise<FilterOption[]> {
+        return this.filtersRepository.findByType(FilterType.ERA);
+    }
+
+    async getFineness(): Promise<FilterOption[]> {
+        return this.filtersRepository.findByType(FilterType.FINENESS);
+    }
+
+    async getConditions(): Promise<FilterOption[]> {
+        return this.filtersRepository.findByType(FilterType.CONDITION);
+    }
+
     async getAllFilters(): Promise<AllFiltersResponse> {
-        const [brands, materials, targetAudiences, auctionStatuses] =
-            await Promise.all([
-                this.getBrands(),
-                this.getMaterials(),
-                this.getTargetAudiences(),
-                this.getAuctionStatuses(),
-            ]);
+        const [
+            brands,
+            materials,
+            targetAudiences,
+            auctionStatuses,
+            eras,
+            finenesses,
+            conditions,
+        ] = await Promise.all([
+            this.getBrands(),
+            this.getMaterials(),
+            this.getTargetAudiences(),
+            this.getAuctionStatuses(),
+            this.getEras(),
+            this.getFineness(),
+            this.getConditions(),
+        ]);
 
         return {
             brands,
             materials,
             targetAudiences,
             auctionStatuses,
+            eras,
+            finenesses,
+            conditions,
         };
     }
 }

@@ -52,13 +52,7 @@ function SearchResultContent() {
     const searchQuery = searchParams.get('q') || '';
 
     const [openFilters, setOpenFilters] = useState<Set<string>>(
-        new Set([
-            'category',
-            'brand',
-            'material',
-            'targetAudience',
-            'auctionStatus',
-        ]),
+        new Set(['category', 'brand', 'material', 'targetAudience']),
     );
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 9; // Increased for better grid layout
@@ -68,7 +62,7 @@ function SearchResultContent() {
         void fetchAllFilters();
     }, [fetchAllFilters]);
 
-    // Fetch products when filters, search query or page changes
+    // Fetch products when filters, search query, page, or sort changes
     const fetchData = useCallback(() => {
         if (searchQuery) {
             // Search by query with optional filters
@@ -107,7 +101,8 @@ function SearchResultContent() {
                 apiFilters.auctionStatus = filters.auctionStatus;
             }
 
-            void fetchProducts(currentPage, itemsPerPage, apiFilters);
+            // Pass sortBy to API for server-side sorting before pagination
+            void fetchProducts(currentPage, itemsPerPage, apiFilters, sortBy);
         }
     }, [
         searchQuery,
@@ -117,6 +112,7 @@ function SearchResultContent() {
         filters.targetAudience,
         filters.auctionStatus,
         currentPage,
+        sortBy,
         fetchProducts,
         searchProducts,
     ]);
@@ -130,38 +126,10 @@ function SearchResultContent() {
         void fetchCategories();
     }, [fetchCategories]);
 
-    const getSortedAuctions = () => {
-        const sorted = [...searchResults];
-
-        switch (sortBy) {
-            case 'newest':
-                return sorted.sort(
-                    (a, b) =>
-                        new Date(b.endDate).getTime() -
-                        new Date(a.endDate).getTime(),
-                );
-            case 'oldest':
-                return sorted.sort(
-                    (a, b) =>
-                        new Date(a.endDate).getTime() -
-                        new Date(b.endDate).getTime(),
-                );
-            case 'price-asc':
-                return sorted.sort((a, b) => a.currentBid - b.currentBid);
-            case 'price-desc':
-                return sorted.sort((a, b) => b.currentBid - a.currentBid);
-            case 'popular':
-                return sorted.sort((a, b) => b.bidCount - a.bidCount);
-            default:
-                return sorted;
-        }
-    };
-
-    const sortedAuctions = getSortedAuctions();
-
-    const totalItems = searchTotal || sortedAuctions.length;
+    // Server now handles sorting - no need for client-side sort
+    const totalItems = searchTotal || searchResults.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const currentItems = sortedAuctions;
+    const currentItems = searchResults;
 
     const getPageNumbers = () => {
         const pages: (number | string)[] = [];
@@ -269,7 +237,7 @@ function SearchResultContent() {
 
     const sortOptions = [
         { label: 'Newest Arrivals', value: 'newest' },
-        { label: 'Ending Soonest', value: 'oldest' },
+        { label: 'Ending Soonest', value: 'ending-soon' },
         { label: 'Price: Low to High', value: 'price-asc' },
         { label: 'Price: High to Low', value: 'price-desc' },
         { label: 'Most Popular', value: 'popular' },
@@ -427,11 +395,6 @@ function SearchResultContent() {
                                         id: 'targetAudience',
                                         label: 'Target Audience',
                                         options: filterOptions.targetAudience,
-                                    },
-                                    {
-                                        id: 'auctionStatus',
-                                        label: 'Auction Status',
-                                        options: filterOptions.auctionStatus,
                                     },
                                 ].map((section) => (
                                     <div

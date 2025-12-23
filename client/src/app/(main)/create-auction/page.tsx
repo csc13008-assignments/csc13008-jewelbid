@@ -1,21 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Input, Button } from '@/modules/shared/components/ui';
-import {
-    X,
-    Image as ImageIcon,
-    Bold,
-    Italic,
-    Underline,
-    List,
-    ListOrdered,
-    Link,
-} from 'lucide-react';
+import { X, Image as ImageIcon } from 'lucide-react';
 import { productsApi } from '@/lib/api/products';
+import { categoriesApi, Category } from '@/lib/api/categories';
+import { filtersApi, FilterOption } from '@/lib/api/filters';
 import toast from '@/lib/toast';
+import RichTextEditor from '@/components/RichTextEditor';
 
 export default function CreateAuctionPage() {
     const router = useRouter();
@@ -39,12 +33,18 @@ export default function CreateAuctionPage() {
         surroundingStonesCaratWeight: '',
         size: '',
         endDate: '',
+        origin: '',
         allowNewBidders: true,
     });
 
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-    const [editorRef, setEditorRef] = useState<HTMLDivElement | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [materials, setMaterials] = useState<FilterOption[]>([]);
+    const [eras, setEras] = useState<FilterOption[]>([]);
+    const [finenesses, setFinenesses] = useState<FilterOption[]>([]);
+    const [conditions, setConditions] = useState<FilterOption[]>([]);
+    const [genders, setGenders] = useState<FilterOption[]>([]);
 
     const handleInputChange = (
         e: React.ChangeEvent<
@@ -59,26 +59,37 @@ export default function CreateAuctionPage() {
         }));
     };
 
-    const handleEditorChange = (content: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            description: content,
-        }));
-    };
-
-    const executeCommand = (command: string, value?: string) => {
-        document.execCommand(command, false, value);
-        if (editorRef) {
-            handleEditorChange(editorRef.innerHTML);
-        }
-    };
-
-    const addLink = () => {
-        const url = prompt('Enter URL:');
-        if (url) {
-            executeCommand('createLink', url);
-        }
-    };
+    // Fetch categories and filters on mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [
+                    categoriesData,
+                    materialsData,
+                    erasData,
+                    finenessesData,
+                    conditionsData,
+                    gendersData,
+                ] = await Promise.all([
+                    categoriesApi.getAll(),
+                    filtersApi.getMaterials(),
+                    filtersApi.getEras(),
+                    filtersApi.getFinenesses(),
+                    filtersApi.getConditions(),
+                    filtersApi.getTargetAudiences(),
+                ]);
+                setCategories(categoriesData);
+                setMaterials(materialsData);
+                setEras(erasData);
+                setFinenesses(finenessesData);
+                setConditions(conditionsData);
+                setGenders(gendersData);
+            } catch (error) {
+                console.error('Failed to fetch filter data:', error);
+            }
+        };
+        void fetchData();
+    }, []);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -118,19 +129,6 @@ export default function CreateAuctionPage() {
         setIsSubmitting(true);
 
         try {
-            // Map frontend form fields to backend DTO structure
-            const categoryMap: Record<string, string> = {
-                ring: 'Ring',
-                necklace: 'Necklace',
-                earring: 'Earring',
-                bracelet: 'Bracelet',
-                watch: 'Watch',
-                pendant: 'Pendant',
-                brooch: 'Brooch',
-                cufflink: 'Cufflink',
-                other: 'Other',
-            };
-
             // For now, use placeholder URLs for images
             // TODO: Implement proper image upload to cloud storage
             const imageUrls = formData.images.map(
@@ -141,7 +139,7 @@ export default function CreateAuctionPage() {
             const productData = {
                 name: formData.productName,
                 description: formData.description,
-                category: categoryMap[formData.category] || formData.category,
+                category: formData.category, // Now using category name from API
                 startingPrice: parseFloat(formData.startingPrice),
                 stepPrice: parseFloat(formData.bidIncrement),
                 buyNowPrice: formData.buyNowPrice
@@ -152,6 +150,20 @@ export default function CreateAuctionPage() {
                 mainImage: imageUrls[0] || '',
                 additionalImages: imageUrls.slice(1),
                 allowNewBidders: formData.allowNewBidders,
+                // Product details
+                brand: formData.brand || undefined,
+                material: formData.material || undefined,
+                targetAudience: formData.gender || undefined,
+                era: formData.era || undefined,
+                fineness: formData.fineness || undefined,
+                condition: formData.condition || undefined,
+                totalWeight: formData.totalWeight || undefined,
+                size: formData.size || undefined,
+                mainStoneCaratWeight:
+                    formData.mainStoneCaratWeight || undefined,
+                surroundingStonesCaratWeight:
+                    formData.surroundingStonesCaratWeight || undefined,
+                origin: formData.origin || undefined,
             };
 
             const createdProduct = await productsApi.createProduct(productData);
@@ -304,21 +316,14 @@ export default function CreateAuctionPage() {
                                         <option value="">
                                             Select Category
                                         </option>
-                                        <option value="ring">Ring</option>
-                                        <option value="necklace">
-                                            Necklace
-                                        </option>
-                                        <option value="earring">Earring</option>
-                                        <option value="bracelet">
-                                            Bracelet
-                                        </option>
-                                        <option value="watch">Watch</option>
-                                        <option value="pendant">Pendant</option>
-                                        <option value="brooch">Brooch</option>
-                                        <option value="cufflink">
-                                            Cufflink
-                                        </option>
-                                        <option value="other">Other</option>
+                                        {categories.map((cat) => (
+                                            <option
+                                                key={cat.id}
+                                                value={cat.name}
+                                            >
+                                                {cat.name}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
 
@@ -346,27 +351,34 @@ export default function CreateAuctionPage() {
                                         className="w-full border border-neutral-200 bg-neutral-50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
                                     >
                                         <option value="">Select Era</option>
-                                        <option value="vintage">
-                                            Vintage (1920-1980)
-                                        </option>
-                                        <option value="antique">
-                                            Antique (before 1920)
-                                        </option>
-                                        <option value="modern">
-                                            Modern (1980-present)
-                                        </option>
-                                        <option value="contemporary">
-                                            Contemporary (2000-present)
-                                        </option>
-                                        <option value="art-deco">
-                                            Art Deco (1920-1940)
-                                        </option>
-                                        <option value="victorian">
-                                            Victorian (1837-1901)
-                                        </option>
-                                        <option value="edwardian">
-                                            Edwardian (1901-1915)
-                                        </option>
+                                        {eras.length > 0 ? (
+                                            eras.map((era) => (
+                                                <option
+                                                    key={era.id}
+                                                    value={era.name}
+                                                >
+                                                    {era.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="Vintage">
+                                                    Vintage (1920-1980)
+                                                </option>
+                                                <option value="Antique">
+                                                    Antique (before 1920)
+                                                </option>
+                                                <option value="Modern">
+                                                    Modern (1980-present)
+                                                </option>
+                                                <option value="Art Deco">
+                                                    Art Deco (1920-1940)
+                                                </option>
+                                                <option value="Victorian">
+                                                    Victorian (1837-1901)
+                                                </option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
 
@@ -383,20 +395,31 @@ export default function CreateAuctionPage() {
                                         <option value="">
                                             Select Material
                                         </option>
-                                        <option value="gold">Gold</option>
-                                        <option value="silver">Silver</option>
-                                        <option value="platinum">
-                                            Platinum
-                                        </option>
-                                        <option value="titanium">
-                                            Titanium
-                                        </option>
-                                        <option value="stainless-steel">
-                                            Stainless Steel
-                                        </option>
-                                        <option value="leather">Leather</option>
-                                        <option value="fabric">Fabric</option>
-                                        <option value="other">Other</option>
+                                        {materials.length > 0 ? (
+                                            materials.map((mat) => (
+                                                <option
+                                                    key={mat.id}
+                                                    value={mat.name}
+                                                >
+                                                    {mat.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="Gold">
+                                                    Gold
+                                                </option>
+                                                <option value="Silver">
+                                                    Silver
+                                                </option>
+                                                <option value="Platinum">
+                                                    Platinum
+                                                </option>
+                                                <option value="Other">
+                                                    Other
+                                                </option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
 
@@ -413,21 +436,31 @@ export default function CreateAuctionPage() {
                                         <option value="">
                                             Select Fineness
                                         </option>
-                                        <option value="24k">24K Gold</option>
-                                        <option value="22k">22K Gold</option>
-                                        <option value="18k">18K Gold</option>
-                                        <option value="14k">14K Gold</option>
-                                        <option value="10k">10K Gold</option>
-                                        <option value="925">
-                                            925 Sterling Silver
-                                        </option>
-                                        <option value="950">
-                                            950 Platinum
-                                        </option>
-                                        <option value="999">
-                                            999 Fine Silver
-                                        </option>
-                                        <option value="other">Other</option>
+                                        {finenesses.length > 0 ? (
+                                            finenesses.map((fin) => (
+                                                <option
+                                                    key={fin.id}
+                                                    value={fin.name}
+                                                >
+                                                    {fin.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="24K">
+                                                    24K Gold
+                                                </option>
+                                                <option value="18K">
+                                                    18K Gold
+                                                </option>
+                                                <option value="925">
+                                                    925 Sterling Silver
+                                                </option>
+                                                <option value="Other">
+                                                    Other
+                                                </option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
 
@@ -444,19 +477,29 @@ export default function CreateAuctionPage() {
                                         <option value="">
                                             Select Condition
                                         </option>
-                                        <option value="new">New</option>
-                                        <option value="like-new">
-                                            Like New
-                                        </option>
-                                        <option value="excellent">
-                                            Excellent
-                                        </option>
-                                        <option value="very-good">
-                                            Very Good
-                                        </option>
-                                        <option value="good">Good</option>
-                                        <option value="fair">Fair</option>
-                                        <option value="poor">Poor</option>
+                                        {conditions.length > 0 ? (
+                                            conditions.map((cond) => (
+                                                <option
+                                                    key={cond.id}
+                                                    value={cond.name}
+                                                >
+                                                    {cond.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="New">New</option>
+                                                <option value="Like New">
+                                                    Like New
+                                                </option>
+                                                <option value="Good">
+                                                    Good
+                                                </option>
+                                                <option value="Fair">
+                                                    Fair
+                                                </option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
 
@@ -471,12 +514,26 @@ export default function CreateAuctionPage() {
                                         className="w-full border border-neutral-200 bg-neutral-50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
                                     >
                                         <option value="">Select Gender</option>
-                                        <option value="unisex">Unisex</option>
-                                        <option value="men">Men</option>
-                                        <option value="women">Women</option>
-                                        <option value="children">
-                                            Children
-                                        </option>
+                                        {genders.length > 0 ? (
+                                            genders.map((gen) => (
+                                                <option
+                                                    key={gen.id}
+                                                    value={gen.name}
+                                                >
+                                                    {gen.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="Unisex">
+                                                    Unisex
+                                                </option>
+                                                <option value="Men">Men</option>
+                                                <option value="Women">
+                                                    Women
+                                                </option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
 
@@ -530,6 +587,19 @@ export default function CreateAuctionPage() {
                                         }
                                         onChange={handleInputChange}
                                         placeholder="e.g. 0.75ct"
+                                        className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-600 mb-2">
+                                        Origin
+                                    </label>
+                                    <Input
+                                        name="origin"
+                                        value={formData.origin}
+                                        onChange={handleInputChange}
+                                        placeholder="e.g. Vietnam, Italy, France"
                                         className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
                                     />
                                 </div>
@@ -604,119 +674,16 @@ export default function CreateAuctionPage() {
                             <label className="block text-sm font-bold text-neutral-700 mb-2">
                                 Product Description
                             </label>
-
-                            <div className="border border-neutral-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-dark-primary/20 focus-within:border-dark-primary transition-all">
-                                <div className="flex items-center gap-1 flex-wrap bg-neutral-50 p-2 border-b border-neutral-200">
-                                    <button
-                                        type="button"
-                                        onClick={() => executeCommand('bold')}
-                                        className="p-2 hover:bg-white rounded-lg text-neutral-600 hover:text-dark-primary transition-colors"
-                                        title="Bold"
-                                    >
-                                        <Bold className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => executeCommand('italic')}
-                                        className="p-2 hover:bg-white rounded-lg text-neutral-600 hover:text-dark-primary transition-colors"
-                                        title="Italic"
-                                    >
-                                        <Italic className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            executeCommand('underline')
-                                        }
-                                        className="p-2 hover:bg-white rounded-lg text-neutral-600 hover:text-dark-primary transition-colors"
-                                        title="Underline"
-                                    >
-                                        <Underline className="w-4 h-4" />
-                                    </button>
-
-                                    <div className="w-px h-6 bg-neutral-300 mx-1" />
-
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            executeCommand(
-                                                'insertUnorderedList',
-                                            )
-                                        }
-                                        className="p-2 hover:bg-white rounded-lg text-neutral-600 hover:text-dark-primary transition-colors"
-                                        title="Bullet List"
-                                    >
-                                        <List className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            executeCommand('insertOrderedList')
-                                        }
-                                        className="p-2 hover:bg-white rounded-lg text-neutral-600 hover:text-dark-primary transition-colors"
-                                        title="Numbered List"
-                                    >
-                                        <ListOrdered className="w-4 h-4" />
-                                    </button>
-
-                                    <div className="w-px h-6 bg-neutral-300 mx-1" />
-
-                                    <button
-                                        type="button"
-                                        onClick={addLink}
-                                        className="p-2 hover:bg-white rounded-lg text-neutral-600 hover:text-dark-primary transition-colors"
-                                        title="Add Link"
-                                    >
-                                        <Link className="w-4 h-4" />
-                                    </button>
-
-                                    <select
-                                        onChange={(e) =>
-                                            executeCommand(
-                                                'fontSize',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="ml-2 text-sm border border-neutral-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-dark-primary"
-                                        defaultValue="3"
-                                    >
-                                        <option value="1">10px</option>
-                                        <option value="2">12px</option>
-                                        <option value="3">14px</option>
-                                        <option value="4">16px</option>
-                                        <option value="5">18px</option>
-                                        <option value="6">20px</option>
-                                        <option value="7">24px</option>
-                                    </select>
-                                </div>
-
-                                <div
-                                    ref={setEditorRef}
-                                    contentEditable
-                                    className="w-full min-h-[200px] p-4 focus:outline-none bg-white"
-                                    style={{
-                                        fontSize: '14px',
-                                        lineHeight: '1.6',
-                                    }}
-                                    onInput={(e) =>
-                                        handleEditorChange(
-                                            e.currentTarget.innerHTML,
-                                        )
-                                    }
-                                    dangerouslySetInnerHTML={{
-                                        __html: formData.description,
-                                    }}
-                                    data-placeholder="Describe your product in detail..."
-                                />
-
-                                <style jsx>{`
-                                    [contenteditable]:empty:before {
-                                        content: attr(data-placeholder);
-                                        color: #9ca3af;
-                                        pointer-events: none;
-                                    }
-                                `}</style>
-                            </div>
+                            <RichTextEditor
+                                value={formData.description}
+                                onChange={(value) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        description: value,
+                                    }))
+                                }
+                                placeholder="Describe your product in detail..."
+                            />
                         </div>
 
                         <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-6">

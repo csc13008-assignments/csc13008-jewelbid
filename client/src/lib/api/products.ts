@@ -16,6 +16,18 @@ export interface BackendProduct {
     watchlistCount: number;
     mainImage: string;
     additionalImages: string[];
+    // Product detail fields
+    brand?: string;
+    material?: string;
+    targetAudience?: string;
+    era?: string;
+    fineness?: string;
+    condition?: string;
+    totalWeight?: string;
+    size?: string;
+    mainStoneCaratWeight?: string;
+    surroundingStonesCaratWeight?: string;
+    origin?: string;
     seller: {
         id: string;
         fullname: string;
@@ -32,6 +44,7 @@ export interface BackendProduct {
         negativeRatings?: number;
     } | null;
     createdAt?: string;
+    created_at?: string;
 }
 
 export interface BidHistoryItem {
@@ -196,6 +209,7 @@ export const productsApi = {
             targetAudience?: string;
             auctionStatus?: string;
         },
+        sortBy?: string,
     ): Promise<{
         products: BackendProduct[];
         total: number;
@@ -206,6 +220,7 @@ export const productsApi = {
             params: {
                 page,
                 limit,
+                sortBy,
                 ...filters,
             },
         });

@@ -34,7 +34,6 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
         brandOptions,
         materialOptions,
         targetAudienceOptions,
-        auctionStatusOptions,
         fetchAllFilters,
     } = useFiltersStore();
     const [activeItem, setActiveItem] = useState('Home');
@@ -85,10 +84,6 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
             targetAudienceOptions.length > 0
                 ? targetAudienceOptions.map((t) => t.label)
                 : [],
-        'Ongoing Auction':
-            auctionStatusOptions.length > 0
-                ? auctionStatusOptions.map((a) => a.label)
-                : [],
     };
 
     const navItems = [
@@ -98,7 +93,6 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
         'Brand',
         'Material',
         'Target Audience',
-        'Ongoing Auction',
         'Contact Us',
     ];
 
@@ -147,9 +141,6 @@ const Header = ({ showNavigation = true }: HeaderProps) => {
                 break;
             case 'Target Audience':
                 filters.targetAudience = value;
-                break;
-            case 'Ongoing Auction':
-                filters.auctionStatus = value;
                 break;
         }
 

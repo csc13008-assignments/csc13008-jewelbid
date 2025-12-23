@@ -85,6 +85,14 @@ export class ProductsController {
         type: String,
         example: 'ending-soon',
     })
+    @ApiQuery({
+        name: 'sortBy',
+        required: false,
+        type: String,
+        example: 'newest',
+        description:
+            'Sort by: newest, oldest, price-asc, price-desc, popular, ending-soon',
+    })
     @ApiResponse({
         status: 200,
         description: 'Products fetched successfully',
@@ -97,14 +105,20 @@ export class ProductsController {
         @Query('material') material?: string,
         @Query('targetAudience') targetAudience?: string,
         @Query('auctionStatus') auctionStatus?: string,
+        @Query('sortBy') sortBy?: string,
     ) {
-        return await this.productsService.getAllProducts(page, limit, {
-            category,
-            brand,
-            material,
-            targetAudience,
-            auctionStatus,
-        });
+        return await this.productsService.getAllProducts(
+            page,
+            limit,
+            {
+                category,
+                brand,
+                material,
+                targetAudience,
+                auctionStatus,
+            },
+            sortBy,
+        );
     }
 
     @ApiOperation({ summary: 'Get products by category' })

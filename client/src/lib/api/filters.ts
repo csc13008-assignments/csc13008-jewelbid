@@ -5,7 +5,14 @@ export interface FilterOption {
     id: string;
     name: string;
     slug: string;
-    filterType: 'brand' | 'material' | 'target_audience' | 'auction_status';
+    filterType:
+        | 'brand'
+        | 'material'
+        | 'target_audience'
+        | 'auction_status'
+        | 'era'
+        | 'fineness'
+        | 'condition';
     order: number;
     isActive: boolean;
     created_at: string;
@@ -17,6 +24,9 @@ export interface AllFiltersResponse {
     materials: FilterOption[];
     targetAudiences: FilterOption[];
     auctionStatuses: FilterOption[];
+    eras: FilterOption[];
+    finenesses: FilterOption[];
+    conditions: FilterOption[];
 }
 
 export const filtersApi = {
@@ -47,6 +57,24 @@ export const filtersApi = {
     // GET /filters/auction-statuses - Get all auction status options
     getAuctionStatuses: async (): Promise<FilterOption[]> => {
         const response = await apiClient.get('/filters/auction-statuses');
+        return response.data;
+    },
+
+    // GET /filters/eras - Get all era options
+    getEras: async (): Promise<FilterOption[]> => {
+        const response = await apiClient.get('/filters/eras');
+        return response.data;
+    },
+
+    // GET /filters/finenesses - Get all fineness options
+    getFinenesses: async (): Promise<FilterOption[]> => {
+        const response = await apiClient.get('/filters/finenesses');
+        return response.data;
+    },
+
+    // GET /filters/conditions - Get all condition options
+    getConditions: async (): Promise<FilterOption[]> => {
+        const response = await apiClient.get('/filters/conditions');
         return response.data;
     },
 };

@@ -63,6 +63,7 @@ export class ProductsService {
             targetAudience?: string;
             auctionStatus?: string;
         },
+        sortBy?: string,
     ): Promise<{
         products: Product[];
         total: number;
@@ -74,6 +75,7 @@ export class ProductsService {
             limit,
             offset,
             filters,
+            sortBy,
         );
 
         return {

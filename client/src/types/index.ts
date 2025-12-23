@@ -6,6 +6,16 @@ export interface Product {
     brand?: string;
     material?: string;
     description: string;
+    // New product detail fields
+    era?: string;
+    fineness?: string;
+    condition?: string;
+    totalWeight?: string;
+    size?: string;
+    mainStoneCaratWeight?: string;
+    surroundingStonesCaratWeight?: string;
+    targetAudience?: string;
+    origin?: string;
     specifications?: {
         year?: string;
         totalCaratWeightMainStone?: string;
@@ -43,6 +53,7 @@ export interface Auction {
     likeCount: number;
     isLiked?: boolean;
     startDate: Date;
+    createdAt?: Date;
     endDate: Date;
     status: 'active' | 'ended' | 'upcoming';
     seller: {

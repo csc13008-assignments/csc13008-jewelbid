@@ -116,7 +116,11 @@ export const useFiltersStore = create<FiltersState>((set, get) => ({
                 const category = useCategoriesStore
                     .getState()
                     .getCategoryBySlug(slug);
-                return category?.name || slug;
+                // Capitalize fallback to avoid hydration mismatch
+                return (
+                    category?.name ||
+                    (slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : slug)
+                );
             }
             case 'brand':
                 return state.brandLabels[slug] || slug;

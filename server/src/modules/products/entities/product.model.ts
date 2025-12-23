@@ -92,6 +92,102 @@ export class Product extends BaseEntity {
     targetAudience?: string;
 
     @ApiProperty({
+        description: 'Product era/period',
+        example: 'Art Deco',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 100,
+        nullable: true,
+    })
+    era?: string;
+
+    @ApiProperty({
+        description: 'Metal fineness/purity',
+        example: '18K',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 50,
+        nullable: true,
+    })
+    fineness?: string;
+
+    @ApiProperty({
+        description: 'Product condition',
+        example: 'Like New',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 50,
+        nullable: true,
+    })
+    condition?: string;
+
+    @ApiProperty({
+        description: 'Total weight',
+        example: '15.5g',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 50,
+        nullable: true,
+    })
+    totalWeight?: string;
+
+    @ApiProperty({
+        description: 'Size specifications',
+        example: 'Ring size 7, 18mm width',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 100,
+        nullable: true,
+    })
+    size?: string;
+
+    @ApiProperty({
+        description: 'Main stone carat weight',
+        example: '2.5ct',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 50,
+        nullable: true,
+    })
+    mainStoneCaratWeight?: string;
+
+    @ApiProperty({
+        description: 'Surrounding stones carat weight',
+        example: '0.75ct',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 50,
+        nullable: true,
+    })
+    surroundingStonesCaratWeight?: string;
+
+    @ApiProperty({
+        description: 'Product origin/country',
+        example: 'Vietnam',
+        required: false,
+    })
+    @Column({
+        type: 'varchar',
+        length: 100,
+        nullable: true,
+    })
+    origin?: string;
+
+    @ApiProperty({
         description: 'Starting price',
         example: 5000000,
     })

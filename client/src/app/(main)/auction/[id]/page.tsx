@@ -733,19 +733,29 @@ export default function ProductDetailPage() {
                                 )}
                             </div>
 
-                            <p className="text-gray-700 text-md mb-8">
-                                {auction.product.description}
-                            </p>
+                            <div
+                                className="text-gray-700 text-md mb-8 prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{
+                                    __html: auction.product.description,
+                                }}
+                            />
 
                             <div className="grid grid-cols-2 gap-32">
                                 <div className="space-y-6">
                                     <div>
                                         <p className="text-xs font-bold text-dark-primary uppercase tracking-wider mb-2">
-                                            YEAR
+                                            CATEGORY
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.year || 'N/A'}
+                                            {auction.product.category || 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-dark-primary uppercase tracking-wider mb-2">
+                                            ERA
+                                        </p>
+                                        <p className="text-md">
+                                            {auction.product.era || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -753,9 +763,8 @@ export default function ProductDetailPage() {
                                             TOTAL CARAT WEIGHT OF MAIN STONE
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.totalCaratWeightMainStone ||
-                                                'N/A'}
+                                            {auction.product
+                                                .mainStoneCaratWeight || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -763,8 +772,7 @@ export default function ProductDetailPage() {
                                             FINENESS
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.fineness || 'N/A'}
+                                            {auction.product.fineness || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -772,8 +780,7 @@ export default function ProductDetailPage() {
                                             CONDITION
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.condition || 'N/A'}
+                                            {auction.product.condition || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -781,12 +788,20 @@ export default function ProductDetailPage() {
                                             SIZE
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.size || 'N/A'}
+                                            {auction.product.size || 'N/A'}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="space-y-6">
+                                    <div>
+                                        <p className="text-xs font-bold text-dark-primary uppercase tracking-wider mb-2">
+                                            TARGET AUDIENCE
+                                        </p>
+                                        <p className="text-md">
+                                            {auction.product.targetAudience ||
+                                                'N/A'}
+                                        </p>
+                                    </div>
                                     <div>
                                         <p className="text-xs font-bold text-dark-primary uppercase tracking-wider mb-2">
                                             MATERIAL
@@ -801,8 +816,8 @@ export default function ProductDetailPage() {
                                             STONES
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.totalCaratWeightSurroundingStones ||
+                                            {auction.product
+                                                .surroundingStonesCaratWeight ||
                                                 'N/A'}
                                         </p>
                                     </div>
@@ -811,8 +826,8 @@ export default function ProductDetailPage() {
                                             TOTAL WEIGHT
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.totalWeight || 'N/A'}
+                                            {auction.product.totalWeight ||
+                                                'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -828,8 +843,7 @@ export default function ProductDetailPage() {
                                             ORIGIN
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.specifications
-                                                ?.origin || 'N/A'}
+                                            {auction.product.origin || 'N/A'}
                                         </p>
                                     </div>
                                 </div>
@@ -1428,9 +1442,12 @@ export default function ProductDetailPage() {
                                 Current Description:
                             </label>
                             <div className="p-4 bg-gray-100 border rounded-xl max-h-32 overflow-y-auto">
-                                <p className="text-black">
-                                    {auction.product.description}
-                                </p>
+                                <div
+                                    className="text-black prose prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{
+                                        __html: auction.product.description,
+                                    }}
+                                />
                             </div>
                         </div>
 

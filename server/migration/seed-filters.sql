@@ -82,3 +82,53 @@ ON CONFLICT (id) DO UPDATE SET
     "order" = EXCLUDED."order",
     "isActive" = EXCLUDED."isActive",
     updated_at = CURRENT_TIMESTAMP;
+
+-- Insert Era options
+INSERT INTO filter_options (id, name, slug, "filterType", "order", "isActive", created_at, updated_at) VALUES
+('f0000005-0001-0000-0000-000000000001', 'Vintage (1920-1980)', 'vintage', 'era', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000005-0002-0000-0000-000000000002', 'Antique (before 1920)', 'antique', 'era', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000005-0003-0000-0000-000000000003', 'Modern (1980-present)', 'modern', 'era', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000005-0004-0000-0000-000000000004', 'Contemporary (2000-present)', 'contemporary', 'era', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000005-0005-0000-0000-000000000005', 'Art Deco (1920-1940)', 'art-deco', 'era', 5, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000005-0006-0000-0000-000000000006', 'Victorian (1837-1901)', 'victorian', 'era', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000005-0007-0000-0000-000000000007', 'Edwardian (1901-1915)', 'edwardian', 'era', 7, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    slug = EXCLUDED.slug,
+    "order" = EXCLUDED."order",
+    "isActive" = EXCLUDED."isActive",
+    updated_at = CURRENT_TIMESTAMP;
+
+-- Insert Fineness options
+INSERT INTO filter_options (id, name, slug, "filterType", "order", "isActive", created_at, updated_at) VALUES
+('f0000006-0001-0000-0000-000000000001', '24K Gold', '24k', 'fineness', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0002-0000-0000-000000000002', '22K Gold', '22k', 'fineness', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0003-0000-0000-000000000003', '18K Gold', '18k', 'fineness', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0004-0000-0000-000000000004', '14K Gold', '14k', 'fineness', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0005-0000-0000-000000000005', '10K Gold', '10k', 'fineness', 5, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0006-0000-0000-000000000006', '925 Sterling Silver', '925', 'fineness', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0007-0000-0000-000000000007', '950 Platinum', '950', 'fineness', 7, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0008-0000-0000-000000000008', '999 Fine Silver', '999', 'fineness', 8, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000006-0009-0000-0000-000000000009', 'Other', 'other-fineness', 'fineness', 9, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    slug = EXCLUDED.slug,
+    "order" = EXCLUDED."order",
+    "isActive" = EXCLUDED."isActive",
+    updated_at = CURRENT_TIMESTAMP;
+
+-- Insert Condition options
+INSERT INTO filter_options (id, name, slug, "filterType", "order", "isActive", created_at, updated_at) VALUES
+('f0000007-0001-0000-0000-000000000001', 'New', 'new', 'condition', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000007-0002-0000-0000-000000000002', 'Like New', 'like-new', 'condition', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000007-0003-0000-0000-000000000003', 'Excellent', 'excellent', 'condition', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000007-0004-0000-0000-000000000004', 'Very Good', 'very-good', 'condition', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000007-0005-0000-0000-000000000005', 'Good', 'good', 'condition', 5, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000007-0006-0000-0000-000000000006', 'Fair', 'fair', 'condition', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('f0000007-0007-0000-0000-000000000007', 'Poor', 'poor', 'condition', 7, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    slug = EXCLUDED.slug,
+    "order" = EXCLUDED."order",
+    "isActive" = EXCLUDED."isActive",
+    updated_at = CURRENT_TIMESTAMP;

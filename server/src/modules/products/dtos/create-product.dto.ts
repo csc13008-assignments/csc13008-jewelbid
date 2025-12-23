@@ -26,7 +26,7 @@ export class CreateProductDto {
         example: 'Authentic Cartier Love bracelet crafted in 18K white gold...',
     })
     @IsString()
-    @MinLength(20)
+    @MinLength(5)
     description: string;
 
     @ApiProperty({
@@ -36,6 +36,105 @@ export class CreateProductDto {
     })
     @IsEnum(JewelryCategory)
     category: JewelryCategory;
+
+    @ApiProperty({
+        description: 'Product brand',
+        example: 'Cartier',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    brand?: string;
+
+    @ApiProperty({
+        description: 'Product material',
+        example: 'Gold',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    material?: string;
+
+    @ApiProperty({
+        description: 'Target audience/gender',
+        example: 'Women',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    targetAudience?: string;
+
+    @ApiProperty({
+        description: 'Product era/period',
+        example: 'Art Deco',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    era?: string;
+
+    @ApiProperty({
+        description: 'Metal fineness/purity',
+        example: '18K',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    fineness?: string;
+
+    @ApiProperty({
+        description: 'Product condition',
+        example: 'Like New',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    condition?: string;
+
+    @ApiProperty({
+        description: 'Total weight',
+        example: '15.5g',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    totalWeight?: string;
+
+    @ApiProperty({
+        description: 'Size specifications',
+        example: 'Ring size 7',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    size?: string;
+
+    @ApiProperty({
+        description: 'Main stone carat weight',
+        example: '2.5ct',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    mainStoneCaratWeight?: string;
+
+    @ApiProperty({
+        description: 'Surrounding stones carat weight',
+        example: '0.75ct',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    surroundingStonesCaratWeight?: string;
+
+    @ApiProperty({
+        description: 'Product origin/country',
+        example: 'Vietnam',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    origin?: string;
 
     @ApiProperty({
         description: 'Starting price',

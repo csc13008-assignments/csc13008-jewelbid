@@ -7,6 +7,9 @@ export enum FilterType {
     MATERIAL = 'material',
     TARGET_AUDIENCE = 'target_audience',
     AUCTION_STATUS = 'auction_status',
+    ERA = 'era',
+    FINENESS = 'fineness',
+    CONDITION = 'condition',
 }
 
 @Entity('filter_options')

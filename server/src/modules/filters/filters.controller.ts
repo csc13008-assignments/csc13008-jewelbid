@@ -61,4 +61,37 @@ export class FiltersController {
     async getAuctionStatuses(): Promise<FilterOption[]> {
         return this.filtersService.getAuctionStatuses();
     }
+
+    @ApiOperation({ summary: 'Get all era options' })
+    @Get('eras')
+    @ApiResponse({
+        status: 200,
+        description: 'Era options fetched successfully',
+        type: [FilterOption],
+    })
+    async getEras(): Promise<FilterOption[]> {
+        return this.filtersService.getEras();
+    }
+
+    @ApiOperation({ summary: 'Get all fineness options' })
+    @Get('finenesses')
+    @ApiResponse({
+        status: 200,
+        description: 'Fineness options fetched successfully',
+        type: [FilterOption],
+    })
+    async getFineness(): Promise<FilterOption[]> {
+        return this.filtersService.getFineness();
+    }
+
+    @ApiOperation({ summary: 'Get all condition options' })
+    @Get('conditions')
+    @ApiResponse({
+        status: 200,
+        description: 'Condition options fetched successfully',
+        type: [FilterOption],
+    })
+    async getConditions(): Promise<FilterOption[]> {
+        return this.filtersService.getConditions();
+    }
 }

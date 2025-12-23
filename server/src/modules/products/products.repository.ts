@@ -64,6 +64,8 @@ export class ProductsRepository {
             targetAudience?: string;
             auctionStatus?: string;
         },
+        sortBy?: string,
+        sortOrder?: 'ASC' | 'DESC',
     ): Promise<[Product[], number]> {
         try {
             const query = this.productRepository
@@ -95,10 +97,15 @@ export class ProductsRepository {
             }
 
             if (filters?.targetAudience) {
+                // Convert slug format (for-men) to display format (for men)
+                const targetAudienceValue = filters.targetAudience.replace(
+                    /-/g,
+                    ' ',
+                );
                 query.andWhere(
                     'LOWER(product.targetAudience) = LOWER(:targetAudience)',
                     {
-                        targetAudience: filters.targetAudience,
+                        targetAudience: targetAudienceValue,
                     },
                 );
             }
@@ -119,6 +126,38 @@ export class ProductsRepository {
                         newArrivals: last7Days,
                     });
                 }
+            }
+
+            // Apply sorting BEFORE pagination
+            if (sortBy) {
+                const order = sortOrder || 'DESC';
+                switch (sortBy) {
+                    case 'newest':
+                        query.orderBy('product.created_at', order);
+                        break;
+                    case 'oldest':
+                        query.orderBy(
+                            'product.created_at',
+                            order === 'DESC' ? 'ASC' : 'DESC',
+                        );
+                        break;
+                    case 'price-asc':
+                        query.orderBy('product.currentPrice', 'ASC');
+                        break;
+                    case 'price-desc':
+                        query.orderBy('product.currentPrice', 'DESC');
+                        break;
+                    case 'popular':
+                        query.orderBy('product.bidCount', 'DESC');
+                        break;
+                    case 'ending-soon':
+                        query.orderBy('product.endDate', 'ASC');
+                        break;
+                    default:
+                        query.orderBy('product.created_at', 'DESC');
+                }
+            } else {
+                query.orderBy('product.created_at', 'DESC');
             }
 
             if (limit) {

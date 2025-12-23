@@ -32,14 +32,15 @@ const isAuctionEnded = (endDate: Date): boolean => {
 
 // Threshold for considering an auction "new" (in days remaining)
 // Auctions with more than this many days left are considered new
-const NEW_AUCTION_DAYS_REMAINING = 25;
+const NEW_AUCTION_DAYS = 3;
 
-const isNew = (endDate: Date): boolean => {
+const isNew = (createdAt?: Date): boolean => {
+    if (!createdAt) return false;
     const now = new Date();
-    const end = new Date(endDate);
-    const daysRemaining =
-        (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    return daysRemaining > NEW_AUCTION_DAYS_REMAINING;
+    const created = new Date(createdAt);
+    const daysSinceCreation =
+        (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceCreation <= NEW_AUCTION_DAYS;
 };
 
 const formatCurrency = (amount: number): string => {
@@ -333,13 +334,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     </div>
                 )}
 
-                {!isAuctionEnded(auction.endDate) && isNew(auction.endDate) && (
-                    <div className="absolute top-3 left-3 z-20">
-                        <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md border border-white/20 animate-pulse">
-                            NEW
-                        </span>
-                    </div>
-                )}
+                {!isAuctionEnded(auction.endDate) &&
+                    isNew(auction.createdAt) && (
+                        <div className="absolute top-3 left-3 z-20">
+                            <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md border border-white/20 animate-pulse">
+                                NEW
+                            </span>
+                        </div>
+                    )}
 
                 <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
                     <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm">
