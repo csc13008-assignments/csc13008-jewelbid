@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, UserCog, Check, X, Loader2 } from 'lucide-react';
+import { Users, UserCog, Check, X, Loader2, Trash2, Eye } from 'lucide-react';
 import toast from '@/lib/toast';
 import Image from 'next/image';
 import DataTable from '@/modules/admin/components/DataTable';
@@ -26,6 +26,7 @@ export default function UsersPage() {
         useState<UpgradeRequest | null>(null);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [confirmAction, setConfirmAction] = useState<
         'approve' | 'reject' | null
     >(null);
@@ -42,12 +43,26 @@ export default function UsersPage() {
                 adminApi.getUpgradeRequests(),
             ]);
             // Handle response - may be array or object with data property
-            const usersData = Array.isArray(usersResponse)
+            const rawUsersData = Array.isArray(usersResponse)
                 ? usersResponse
                 : (usersResponse as any).data || [];
             const requestsData = Array.isArray(requestsResponse)
                 ? requestsResponse
                 : (requestsResponse as any).data || [];
+
+            // Map backend field names to frontend interface
+            const usersData = rawUsersData.map((u: any) => ({
+                id: u.id,
+                fullname: u.fullname || u.username || '',
+                email: u.email,
+                role: u.role,
+                profileImage: u.profileImage || u.image,
+                phone: u.phone,
+                address: u.address,
+                positiveRatings: u.positiveRatings || 0,
+                negativeRatings: u.negativeRatings || 0,
+                created_at: u.created_at || u.createdAt,
+            }));
 
             console.log('🔍 Upgrade Requests Response:', requestsResponse);
             console.log('🔍 Mapped Requests Data:', requestsData);
@@ -122,13 +137,33 @@ export default function UsersPage() {
             key: 'actions',
             label: 'Actions',
             render: (_: unknown, user: AdminUser) => (
-                <button
-                    onClick={() => void handleChangeRole(user)}
-                    className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title={`Change to ${user.role === 'Seller' ? 'Bidder' : 'Seller'}`}
-                >
-                    → {user.role === 'Seller' ? 'Bidder' : 'Seller'}
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => handleView(user)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="View details"
+                    >
+                        <Eye className="w-4 h-4" />
+                    </button>
+                    {user.role !== 'Admin' && (
+                        <>
+                            <button
+                                onClick={() => void handleChangeRole(user)}
+                                className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title={`Change to ${user.role === 'Seller' ? 'Bidder' : 'Seller'}`}
+                            >
+                                → {user.role === 'Seller' ? 'Bidder' : 'Seller'}
+                            </button>
+                            <button
+                                onClick={() => handleDeleteUser(user)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete user"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </>
+                    )}
+                </div>
             ),
         },
     ];
@@ -236,6 +271,36 @@ export default function UsersPage() {
             toast.error(
                 (error as { response?: { data?: { message?: string } } })
                     ?.response?.data?.message || 'Failed to update role',
+            );
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteUser = (user: AdminUser) => {
+        if (user.role === 'Admin') {
+            toast.error('Cannot delete admin user');
+            return;
+        }
+        setSelectedUser(user);
+        setShowDeleteDialog(true);
+    };
+
+    const confirmDeleteUser = async () => {
+        if (!selectedUser) return;
+
+        try {
+            setSubmitting(true);
+            await adminApi.deleteUser(selectedUser.id);
+            toast.success('User deleted successfully!');
+            setShowDeleteDialog(false);
+            setSelectedUser(null);
+            await fetchData();
+        } catch (error: unknown) {
+            console.error('Failed to delete user:', error);
+            toast.error(
+                (error as { response?: { data?: { message?: string } } })
+                    ?.response?.data?.message || 'Failed to delete user',
             );
         } finally {
             setSubmitting(false);
@@ -369,7 +434,6 @@ export default function UsersPage() {
                     <DataTable
                         columns={userColumns}
                         data={filteredUsers}
-                        onView={handleView}
                         searchable
                         emptyMessage={`No ${roleFilter.toLowerCase()} users found`}
                     />
@@ -568,6 +632,20 @@ export default function UsersPage() {
                           ? 'Approve'
                           : 'Reject'
                 }
+            />
+
+            {/* Delete User Confirmation */}
+            <ConfirmDialog
+                isOpen={showDeleteDialog}
+                title="Delete User?"
+                message={`Are you sure you want to delete "${selectedUser?.fullname}"? This action cannot be undone.`}
+                onConfirm={() => void confirmDeleteUser()}
+                onCancel={() => {
+                    setShowDeleteDialog(false);
+                    setSelectedUser(null);
+                }}
+                type="danger"
+                confirmText={submitting ? 'Deleting...' : 'Delete'}
             />
         </div>
     );

@@ -154,4 +154,10 @@ export const adminApi = {
         });
         return response.data;
     },
+
+    // DELETE /users/:userId - Delete user [ADMIN]
+    deleteUser: async (userId: string): Promise<{ message: string }> => {
+        const response = await apiClient.delete(`/users/${userId}`);
+        return response.data;
+    },
 };

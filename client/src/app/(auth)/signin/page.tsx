@@ -7,12 +7,13 @@ import { useRouter } from 'next/navigation';
 import { Input, Button } from '@/modules/shared/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import toast from '@/lib/toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function SignInPage() {
     const router = useRouter();
     const { signIn, isLoading, error, clearError } = useAuthStore();
     const [isVisible, setIsVisible] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 100);
@@ -188,15 +189,38 @@ export default function SignInPage() {
                                 />
 
                                 <div>
-                                    <Input
-                                        label="Password"
-                                        type="password"
-                                        placeholder="Enter your password"
-                                        value={formData.password}
-                                        onChange={handleInputChange('password')}
-                                        required
-                                        className="h-12 rounded-xl"
-                                    />
+                                    <label className="block font-body text-base font-medium text-black mb-2">
+                                        Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={
+                                                showPassword
+                                                    ? 'text'
+                                                    : 'password'
+                                            }
+                                            placeholder="Enter your password"
+                                            value={formData.password}
+                                            onChange={handleInputChange(
+                                                'password',
+                                            )}
+                                            required
+                                            className="w-full h-12 px-4 bg-secondary border border-dark-primary rounded-xl font-body text-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:border-dark-primary transition-colors pr-12"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(!showPassword)
+                                            }
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="w-5 h-5" />
+                                            ) : (
+                                                <Eye className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    </div>
                                     <div className="flex justify-end mt-2">
                                         <Link
                                             href="/forgot-password"

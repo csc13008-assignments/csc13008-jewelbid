@@ -33,13 +33,15 @@ export class UsersService {
     async getProfiles(role?: Role): Promise<
         {
             email: string;
-            username: string;
+            fullname: string;
             id: string;
             role: string;
             phone: string;
             address: string;
-            // birthdate: string;
-            image: string;
+            profileImage: string;
+            positiveRatings: number;
+            negativeRatings: number;
+            created_at: Date;
         }[]
     > {
         try {
@@ -47,12 +49,15 @@ export class UsersService {
 
             return users.map((user) => ({
                 email: user.email,
-                username: user.fullname,
+                fullname: user.fullname,
                 id: user.id,
                 role: user.role,
                 phone: user.phone,
                 address: user.address,
-                image: user.profileImage,
+                profileImage: user.profileImage,
+                positiveRatings: user.positiveRatings || 0,
+                negativeRatings: user.negativeRatings || 0,
+                created_at: user.created_at,
             }));
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
@@ -296,5 +301,14 @@ The Jewelbid Team
             throw new BadRequestException(`User already has ${newRole} role`);
         await this.usersRepository.updateProfile(userId, { role: newRole });
         return { message: `User role updated to ${newRole} successfully` };
+    }
+
+    async deleteUser(userId: string): Promise<{ message: string }> {
+        const user = await this.usersRepository.findOneById(userId);
+        if (!user) throw new NotFoundException('User not found');
+        if (user.role === Role.ADMIN)
+            throw new BadRequestException('Cannot delete admin user');
+        await this.usersRepository.deleteUser(userId);
+        return { message: 'User deleted successfully' };
     }
 }

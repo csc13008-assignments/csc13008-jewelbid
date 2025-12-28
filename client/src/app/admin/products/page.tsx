@@ -7,6 +7,7 @@ import DataTable from '@/modules/admin/components/DataTable';
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 import StatusBadge from '@/modules/admin/components/StatusBadge';
 import { adminApi } from '@/lib/api/admin';
+import toast from '@/lib/toast';
 
 interface AdminProduct {
     id: string;
@@ -24,9 +25,7 @@ export default function ProductsPage() {
     const [products, setProducts] = useState<AdminProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [filter, setFilter] = useState<
-        'All' | 'Active' | 'Ended' | 'Cancelled'
-    >('All');
+    const [filter, setFilter] = useState<'All' | 'Active' | 'Ended'>('All');
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(
         null,
@@ -62,7 +61,7 @@ export default function ProductsPage() {
             setProducts(mapped);
         } catch (error) {
             console.error('Error fetching products:', error);
-            alert('Failed to load products');
+            toast.error('Failed to load products');
         } finally {
             setLoading(false);
         }
@@ -75,7 +74,13 @@ export default function ProductsPage() {
     const filteredProducts =
         filter === 'All'
             ? products
-            : products.filter((p) => p.status === filter);
+            : filter === 'Ended'
+              ? products.filter((p) => new Date(p.endDate) < new Date())
+              : products.filter(
+                    (p) =>
+                        p.status === filter &&
+                        new Date(p.endDate) >= new Date(),
+                );
 
     const columns = [
         {
@@ -142,13 +147,15 @@ export default function ProductsPage() {
         try {
             setSubmitting(true);
             await adminApi.deleteProduct(selectedProduct.id);
-            alert('Product removed successfully!');
+            toast.success('Product removed successfully!');
             setShowDeleteDialog(false);
             setSelectedProduct(null);
             await fetchProducts();
         } catch (error: any) {
             console.error('Error deleting product:', error);
-            alert(error.response?.data?.message || 'Failed to remove product');
+            toast.error(
+                error.response?.data?.message || 'Failed to remove product',
+            );
             setSubmitting(false);
         }
     };
@@ -182,30 +189,27 @@ export default function ProductsPage() {
 
             {/* Filter Tabs */}
             <div className="flex gap-2 mb-6 bg-neutral-100 p-1.5 rounded-xl w-fit border border-neutral-200">
-                {(['All', 'Active', 'Ended', 'Cancelled'] as const).map(
-                    (status) => (
-                        <button
-                            key={status}
-                            onClick={() => setFilter(status)}
-                            className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
-                                filter === status
-                                    ? 'bg-white text-black shadow-sm border border-primary/20'
-                                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
-                            }`}
+                {(['All', 'Active', 'Ended'] as const).map((status) => (
+                    <button
+                        key={status}
+                        onClick={() => setFilter(status)}
+                        className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
+                            filter === status
+                                ? 'bg-white text-black shadow-sm border border-primary/20'
+                                : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+                        }`}
+                    >
+                        {status}
+                        <span
+                            className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${filter === status ? 'bg-primary/30 text-dark-primary' : 'bg-neutral-200 text-neutral-600'}`}
                         >
-                            {status}
-                            <span
-                                className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${filter === status ? 'bg-primary/30 text-dark-primary' : 'bg-neutral-200 text-neutral-600'}`}
-                            >
-                                {status === 'All'
-                                    ? products.length
-                                    : products.filter(
-                                          (p) => p.status === status,
-                                      ).length}
-                            </span>
-                        </button>
-                    ),
-                )}
+                            {status === 'All'
+                                ? products.length
+                                : products.filter((p) => p.status === status)
+                                      .length}
+                        </span>
+                    </button>
+                ))}
             </div>
 
             {/* Table */}

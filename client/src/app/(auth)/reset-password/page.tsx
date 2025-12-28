@@ -4,16 +4,18 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Input, Button } from '@/modules/shared/components/ui';
+import { Button } from '@/modules/shared/components/ui';
 import { OTPInput } from '@/components/OTPInput';
 import { useAuthStore } from '@/stores/authStore';
 import { validatePassword } from '@/lib/validation';
-import { ArrowLeft, LockKeyhole } from 'lucide-react';
+import { ArrowLeft, LockKeyhole, Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPasswordPage() {
     const router = useRouter();
     const { resetPassword, isLoading, error, clearError } = useAuthStore();
     const [isVisible, setIsVisible] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 100);
@@ -66,7 +68,7 @@ export default function ResetPasswordPage() {
 
         try {
             clearError();
-            await resetPassword(email, otp, newPassword);
+            await resetPassword(email, otp, newPassword, confirmPassword);
             router.push('/signin');
         } catch (err) {
             console.error('Reset password error:', err);
@@ -186,29 +188,95 @@ export default function ResetPasswordPage() {
                                 )}
                             </div>
 
-                            <Input
-                                label="New Password"
-                                type="password"
-                                placeholder="Min 8 chars, 1 uppercase, 1 number"
-                                value={newPassword}
-                                onChange={handlePasswordChange('newPassword')}
-                                required
-                                error={validationErrors.password}
-                                className="rounded-xl"
-                            />
-
-                            <Input
-                                label="Confirm Password"
-                                type="password"
-                                placeholder="Re-enter your new password"
-                                value={confirmPassword}
-                                onChange={handlePasswordChange(
-                                    'confirmPassword',
+                            <div>
+                                <label className="block font-body text-base font-medium text-black mb-2">
+                                    New Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={
+                                            showNewPassword
+                                                ? 'text'
+                                                : 'password'
+                                        }
+                                        placeholder="Min 8 chars, 1 uppercase, 1 number"
+                                        value={newPassword}
+                                        onChange={handlePasswordChange(
+                                            'newPassword',
+                                        )}
+                                        required
+                                        className={`w-full px-4 py-2 bg-secondary border rounded-xl font-body text-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:border-dark-primary transition-colors pr-12 ${
+                                            validationErrors.password
+                                                ? 'border-red-500'
+                                                : 'border-dark-primary'
+                                        }`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowNewPassword(!showNewPassword)
+                                        }
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                                    >
+                                        {showNewPassword ? (
+                                            <EyeOff className="w-5 h-5" />
+                                        ) : (
+                                            <Eye className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </div>
+                                {validationErrors.password && (
+                                    <p className="text-sm text-red-600 font-body mt-2">
+                                        {validationErrors.password}
+                                    </p>
                                 )}
-                                required
-                                error={validationErrors.confirmPassword}
-                                className="rounded-xl"
-                            />
+                            </div>
+
+                            <div>
+                                <label className="block font-body text-base font-medium text-black mb-2">
+                                    Confirm Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={
+                                            showConfirmPassword
+                                                ? 'text'
+                                                : 'password'
+                                        }
+                                        placeholder="Re-enter your new password"
+                                        value={confirmPassword}
+                                        onChange={handlePasswordChange(
+                                            'confirmPassword',
+                                        )}
+                                        required
+                                        className={`w-full px-4 py-2 bg-secondary border rounded-xl font-body text-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:border-dark-primary transition-colors pr-12 ${
+                                            validationErrors.confirmPassword
+                                                ? 'border-red-500'
+                                                : 'border-dark-primary'
+                                        }`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowConfirmPassword(
+                                                !showConfirmPassword,
+                                            )
+                                        }
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff className="w-5 h-5" />
+                                        ) : (
+                                            <Eye className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </div>
+                                {validationErrors.confirmPassword && (
+                                    <p className="text-sm text-red-600 font-body mt-2">
+                                        {validationErrors.confirmPassword}
+                                    </p>
+                                )}
+                            </div>
 
                             <Button
                                 type="submit"

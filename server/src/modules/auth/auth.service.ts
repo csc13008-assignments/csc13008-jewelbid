@@ -53,36 +53,43 @@ export class AuthService {
         return user;
     }
 
+    private async generateTokens(user: any): Promise<TokensDto> {
+        const payloadAccessToken = {
+            id: user.id,
+            email: user.email,
+            fullname: user.fullname,
+            role: user.role,
+        };
+
+        const accessToken = await this.jwtService.signAsync(
+            payloadAccessToken,
+            {
+                expiresIn: '1h',
+                secret: this.configService.get('AT_SECRET'),
+            },
+        );
+
+        const payloadRefreshToken = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+        };
+
+        const refreshToken = await this.jwtService.signAsync(
+            payloadRefreshToken,
+            {
+                expiresIn: '7d',
+                secret: this.configService.get('RT_SECRET'),
+            },
+        );
+
+        return { accessToken, refreshToken };
+    }
+
     public async signIn(user: UserLoginDto): Promise<TokensDto> {
         try {
-            const payloadAccessToken = {
-                id: user.id,
-                email: user.email,
-                fullname: user.fullname,
-                role: user.role,
-            };
-
-            const accessToken = await this.jwtService.signAsync(
-                payloadAccessToken,
-                {
-                    expiresIn: '1h',
-                    secret: this.configService.get('AT_SECRET'),
-                },
-            );
-
-            const payloadRefreshToken = {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-            };
-
-            const refreshToken = await this.jwtService.signAsync(
-                payloadRefreshToken,
-                {
-                    expiresIn: '7d',
-                    secret: this.configService.get('RT_SECRET'),
-                },
-            );
+            const { accessToken, refreshToken } =
+                await this.generateTokens(user);
 
             await this.usersRepository.updateRefreshToken(
                 user.id,
@@ -295,7 +302,7 @@ export class AuthService {
 
     async verifyEmail(
         verifyEmailDto: VerifyEmailDto,
-    ): Promise<{ message: string }> {
+    ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
         try {
             const { email, otp } = verifyEmailDto;
 
@@ -319,7 +326,23 @@ export class AuthService {
 
             await this.usersRepository.verifyEmail(email);
 
-            return { message: 'Email verified successfully' };
+            // Generate tokens upon successful verification
+            const { accessToken, refreshToken } =
+                await this.generateTokens(user);
+
+            await this.usersRepository.updateRefreshToken(
+                user.id,
+                refreshToken,
+            );
+
+            // Store access token in Redis
+            await this.redisTokenService.storeAccessToken(user.id, accessToken);
+
+            return {
+                message: 'Email verified successfully',
+                accessToken,
+                refreshToken,
+            };
         } catch (error) {
             throw new InternalServerErrorException((error as Error).message);
         }

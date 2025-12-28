@@ -78,10 +78,11 @@ export class UsersRepository {
         return savedUser;
     }
 
-    async findAllByRole(role: Role): Promise<User[]> {
+    async findAllByRole(role?: Role): Promise<User[]> {
         try {
+            const whereClause = role ? { role } : {};
             const users = await this.userRepository.find({
-                where: { role },
+                where: whereClause,
             });
             return users;
         } catch (error: any) {
@@ -214,6 +215,19 @@ export class UsersRepository {
                 { email },
                 { isEmailVerified: true },
             );
+        } catch (error: any) {
+            throw new InternalServerErrorException((error as Error).message);
+        }
+    }
+
+    async deleteUser(id: string): Promise<void> {
+        try {
+            const deleteResult = await this.userRepository.delete({ id });
+            if (deleteResult.affected === 0) {
+                throw new NotFoundException(`User with id ${id} not found`);
+            }
+            // Also clean up refresh token
+            await this.redisClient.del(`refreshToken:${id}`);
         } catch (error: any) {
             throw new InternalServerErrorException((error as Error).message);
         }

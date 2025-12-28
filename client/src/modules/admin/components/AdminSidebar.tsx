@@ -63,9 +63,15 @@ export default function AdminSidebar() {
             const usersData = Array.isArray(users)
                 ? users
                 : (users as any).data || [];
-            const productsData = Array.isArray(products)
-                ? products
-                : (products as any).data || [];
+            // Handle products response - can be array or object with products/data
+            let productsData: any[] = [];
+            if (Array.isArray(products)) {
+                productsData = products;
+            } else if ((products as any).products) {
+                productsData = (products as any).products;
+            } else if ((products as any).data) {
+                productsData = (products as any).data;
+            }
             const categoriesData = Array.isArray(categories)
                 ? categories
                 : (categories as any).data || [];
@@ -85,7 +91,7 @@ export default function AdminSidebar() {
     };
 
     const handleLogout = () => {
-        signOut();
+        void signOut();
         router.push('/signin');
     };
 

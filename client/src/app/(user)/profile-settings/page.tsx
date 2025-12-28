@@ -42,8 +42,42 @@ export default function ProfileSettingsPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
-        const loadUserData = () => {
+        const loadUserData = async () => {
             try {
+                // Fetch full profile from API
+                const profile = await usersApi.getProfile();
+                // API returns username (for fullname) and image (for profileImage)
+                const fullname = profile.username || profile.fullname || '';
+                const avatar =
+                    profile.image ||
+                    profile.profileImage ||
+                    '/avatars/default.jpg';
+
+                setProfileData({
+                    fullName: fullname,
+                    phoneNumber: profile.phone || '',
+                    email: profile.email || '',
+                    address: profile.address || '',
+                    avatar: avatar,
+                });
+
+                // Update localStorage with full data
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    const updatedUser = {
+                        ...user,
+                        fullname: fullname,
+                        phone: profile.phone,
+                        email: profile.email,
+                        address: profile.address,
+                        profileImage: avatar,
+                    };
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                }
+            } catch (error) {
+                console.error('Failed to load user data from API:', error);
+                // Fallback to localStorage
                 const userStr = localStorage.getItem('user');
                 if (userStr) {
                     const user = JSON.parse(userStr);
@@ -55,15 +89,13 @@ export default function ProfileSettingsPage() {
                         avatar: user.profileImage || '/avatars/default.jpg',
                     });
                 }
-            } catch (error) {
-                console.error('Failed to load user data:', error);
             } finally {
                 setIsLoading(false);
                 setTimeout(() => setIsVisible(true), 100);
             }
         };
 
-        loadUserData();
+        void loadUserData();
     }, []);
 
     const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

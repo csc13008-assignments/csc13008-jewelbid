@@ -276,4 +276,17 @@ export class UsersController {
             updateRoleDto.role,
         );
     }
+
+    @ApiOperation({ summary: 'Delete user [ADMIN]' })
+    @ApiBearerAuth('access-token')
+    @Delete(':userId')
+    @ApiResponse({
+        status: 200,
+        description: 'User deleted successfully',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async deleteUser(@Param('userId') userId: string) {
+        return await this.usersService.deleteUser(userId);
+    }
 }

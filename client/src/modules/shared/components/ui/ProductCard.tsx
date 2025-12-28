@@ -135,7 +135,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
             }
 
             setIsLiked(newLikedState);
-            setLikeCount((prev) => (newLikedState ? prev + 1 : prev - 1));
             onLike?.(auction.id);
         } catch (error) {
             console.error('Failed to update watchlist:', error);

@@ -11,15 +11,16 @@ import {
     validatePassword,
     isValidPhone,
     normalizePhone,
-    isValidBirthdate,
 } from '@/lib/validation';
 import toast from '@/lib/toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function SignUpPage() {
     const router = useRouter();
     const { signUp, isLoading, error, clearError } = useAuthStore();
     const [isVisible, setIsVisible] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 100);
@@ -33,7 +34,6 @@ export default function SignUpPage() {
         confirmPassword: '',
         phone: '',
         address: '',
-        birthdate: '',
     });
 
     const [validationErrors, setValidationErrors] = useState<
@@ -84,11 +84,6 @@ export default function SignUpPage() {
             errors.address = 'Address is required';
         }
 
-        const birthdateValidation = isValidBirthdate(formData.birthdate);
-        if (!birthdateValidation.isValid) {
-            errors.birthdate = birthdateValidation.message!;
-        }
-
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -108,7 +103,7 @@ export default function SignUpPage() {
                 password: formData.password,
                 phone: normalizePhone(formData.phone),
                 address: formData.address,
-                birthdate: formData.birthdate,
+                birthdate: '',
             });
 
             toast.success('Account created! Please verify your email.');
@@ -214,27 +209,16 @@ export default function SignUpPage() {
                                 className="rounded-xl"
                             />
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <Input
-                                    label="Phone Number"
-                                    type="tel"
-                                    placeholder="0901234567"
-                                    value={formData.phone}
-                                    onChange={handleInputChange('phone')}
-                                    required
-                                    error={validationErrors.phone}
-                                    className="rounded-xl"
-                                />
-                                <Input
-                                    label="Birthdate"
-                                    type="date"
-                                    value={formData.birthdate}
-                                    onChange={handleInputChange('birthdate')}
-                                    required
-                                    error={validationErrors.birthdate}
-                                    className="rounded-xl"
-                                />
-                            </div>
+                            <Input
+                                label="Phone Number"
+                                type="tel"
+                                placeholder="0901234567"
+                                value={formData.phone}
+                                onChange={handleInputChange('phone')}
+                                required
+                                error={validationErrors.phone}
+                                className="rounded-xl"
+                            />
 
                             <Input
                                 label="Address"
@@ -247,28 +231,94 @@ export default function SignUpPage() {
                             />
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input
-                                    label="Password"
-                                    type="password"
-                                    placeholder="Min 8 chars"
-                                    value={formData.password}
-                                    onChange={handleInputChange('password')}
-                                    required
-                                    error={validationErrors.password}
-                                    className="rounded-xl"
-                                />
-                                <Input
-                                    label="Confirm Password"
-                                    type="password"
-                                    placeholder="Re-enter password"
-                                    value={formData.confirmPassword}
-                                    onChange={handleInputChange(
-                                        'confirmPassword',
+                                <div>
+                                    <label className="block font-body text-base font-medium text-black mb-2">
+                                        Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={
+                                                showPassword
+                                                    ? 'text'
+                                                    : 'password'
+                                            }
+                                            placeholder="Min 8 chars"
+                                            value={formData.password}
+                                            onChange={handleInputChange(
+                                                'password',
+                                            )}
+                                            required
+                                            className={`w-full px-4 py-2 bg-secondary border rounded-xl font-body text-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:border-dark-primary transition-colors pr-12 ${
+                                                validationErrors.password
+                                                    ? 'border-red-500'
+                                                    : 'border-dark-primary'
+                                            }`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(!showPassword)
+                                            }
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="w-5 h-5" />
+                                            ) : (
+                                                <Eye className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    </div>
+                                    {validationErrors.password && (
+                                        <p className="text-sm text-red-600 mt-1">
+                                            {validationErrors.password}
+                                        </p>
                                     )}
-                                    required
-                                    error={validationErrors.confirmPassword}
-                                    className="rounded-xl"
-                                />
+                                </div>
+                                <div>
+                                    <label className="block font-body text-base font-medium text-black mb-2">
+                                        Confirm Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={
+                                                showConfirmPassword
+                                                    ? 'text'
+                                                    : 'password'
+                                            }
+                                            placeholder="Re-enter password"
+                                            value={formData.confirmPassword}
+                                            onChange={handleInputChange(
+                                                'confirmPassword',
+                                            )}
+                                            required
+                                            className={`w-full px-4 py-2 bg-secondary border rounded-xl font-body text-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:border-dark-primary transition-colors pr-12 ${
+                                                validationErrors.confirmPassword
+                                                    ? 'border-red-500'
+                                                    : 'border-dark-primary'
+                                            }`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowConfirmPassword(
+                                                    !showConfirmPassword,
+                                                )
+                                            }
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                                        >
+                                            {showConfirmPassword ? (
+                                                <EyeOff className="w-5 h-5" />
+                                            ) : (
+                                                <Eye className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    </div>
+                                    {validationErrors.confirmPassword && (
+                                        <p className="text-sm text-red-600 mt-1">
+                                            {validationErrors.confirmPassword}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             <Button

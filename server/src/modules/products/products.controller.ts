@@ -464,6 +464,10 @@ export class ProductsController {
         description: 'Product deleted successfully',
     })
     async deleteProduct(@Param('id') id: string, @Request() req: any) {
-        return await this.productsService.deleteProduct(id, req.user.id);
+        return await this.productsService.deleteProduct(
+            id,
+            req.user.id,
+            req.user.role,
+        );
     }
 }

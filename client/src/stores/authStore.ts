@@ -26,6 +26,7 @@ interface AuthState {
         email: string,
         otp: string,
         newPassword: string,
+        confirmPassword: string,
     ) => Promise<void>;
     changePassword: (
         oldPassword: string,
@@ -77,6 +78,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
             // Decode JWT to get user info (token payload contains id, email, fullname, role)
             try {
+                if (!accessToken || !accessToken.includes('.')) {
+                    throw new Error('Invalid token received from server');
+                }
                 const tokenPayload = JSON.parse(
                     atob(accessToken.split('.')[1]),
                 );
@@ -154,6 +158,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
             // Decode JWT to get user info
             try {
+                if (!accessToken || !accessToken.includes('.')) {
+                    throw new Error('Invalid token received from server');
+                }
                 const tokenPayload = JSON.parse(
                     atob(accessToken.split('.')[1]),
                 );
@@ -226,10 +233,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
     },
 
-    resetPassword: async (email, otp, newPassword) => {
+    resetPassword: async (email, otp, newPassword, confirmPassword) => {
         set({ isLoading: true, error: null });
         try {
-            await authApi.resetPassword({ email, otp, newPassword });
+            await authApi.resetPassword({
+                email,
+                otp,
+                newPassword,
+                confirmPassword,
+            });
             localStorage.removeItem('passwordResetEmail');
             set({ isLoading: false });
         } catch (error) {

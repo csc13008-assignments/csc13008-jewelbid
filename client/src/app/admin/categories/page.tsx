@@ -7,6 +7,7 @@ import DataTable from '@/modules/admin/components/DataTable';
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 import Input from '@/modules/shared/components/ui/Input';
 import { adminApi, type Category } from '@/lib/api/admin';
+import toast from '@/lib/toast';
 
 export default function CategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
@@ -32,7 +33,7 @@ export default function CategoriesPage() {
             setCategories(data);
         } catch (error) {
             console.error('Error fetching categories:', error);
-            alert('Failed to load categories');
+            toast.error('Failed to load categories');
         } finally {
             setLoading(false);
         }
@@ -69,13 +70,15 @@ export default function CategoriesPage() {
                 description: formData.description,
                 slug: slug,
             });
-            alert('Category created successfully!');
+            toast.success('Category created successfully!');
             setFormData({ name: '', description: '' });
             setShowAddModal(false);
             await fetchCategories();
         } catch (error: any) {
             console.error('Error creating category:', error);
-            alert(error.response?.data?.message || 'Failed to create category');
+            toast.error(
+                error.response?.data?.message || 'Failed to create category',
+            );
         } finally {
             setSubmitting(false);
         }
@@ -96,14 +99,16 @@ export default function CategoriesPage() {
                 name: formData.name,
                 description: formData.description,
             });
-            alert('Category updated successfully!');
+            toast.success('Category updated successfully!');
             setFormData({ name: '', description: '' });
             setShowEditModal(false);
             setSelectedCategory(null);
             await fetchCategories();
         } catch (error: any) {
             console.error('Error updating category:', error);
-            alert(error.response?.data?.message || 'Failed to update category');
+            toast.error(
+                error.response?.data?.message || 'Failed to update category',
+            );
         } finally {
             setSubmitting(false);
         }
@@ -120,13 +125,13 @@ export default function CategoriesPage() {
         try {
             setSubmitting(true);
             await adminApi.deleteCategory(selectedCategory.id);
-            alert('Category deleted successfully!');
+            toast.success('Category deleted successfully!');
             setShowDeleteDialog(false);
             setSelectedCategory(null);
             await fetchCategories();
         } catch (error: any) {
             console.error('Error deleting category:', error);
-            alert(
+            toast.error(
                 error.response?.data?.message ||
                     'Failed to delete category. It may contain products.',
             );
@@ -217,7 +222,7 @@ export default function CategoriesPage() {
                                         })
                                     }
                                     placeholder="Enter description"
-                                    className="w-full border border-primary rounded-lg p-3 focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none"
+                                    className="w-full bg-secondary border border-dark-primary p-3 font-body text-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:border-dark-primary"
                                     rows={3}
                                     disabled={submitting}
                                 />
@@ -287,7 +292,7 @@ export default function CategoriesPage() {
                                         })
                                     }
                                     placeholder="Enter description"
-                                    className="w-full border border-primary rounded-lg p-3 focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none"
+                                    className="w-full bg-secondary border border-dark-primary p-3 font-body text-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:border-dark-primary"
                                     rows={3}
                                     disabled={submitting}
                                 />

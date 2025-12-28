@@ -683,10 +683,12 @@ export class ProductsService {
     async deleteProduct(
         productId: string,
         userId: string,
+        userRole: string,
     ): Promise<{ message: string }> {
         const product = await this.productsRepository.findById(productId);
 
-        if (product.sellerId !== userId) {
+        // Admin can delete any product, seller can only delete their own
+        if (userRole !== 'admin' && product.sellerId !== userId) {
             throw new ForbiddenException(
                 'Only the seller or admin can delete this product',
             );

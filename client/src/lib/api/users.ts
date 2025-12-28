@@ -39,15 +39,17 @@ export interface UpdateProfileData {
 
 export interface UserProfile {
     id: string;
-    fullname: string;
+    fullname?: string; // from localStorage fallback
+    username?: string; // from API (contains fullname value)
     email: string;
     phone: string;
     address: string;
-    birthdate: string;
-    profileImage?: string;
+    birthdate?: string;
+    profileImage?: string; // from localStorage fallback
+    image?: string; // from API (contains profileImage value)
     role: string;
-    positiveRatings: number;
-    negativeRatings: number;
+    positiveRatings?: number;
+    negativeRatings?: number;
 }
 
 export const usersApi = {

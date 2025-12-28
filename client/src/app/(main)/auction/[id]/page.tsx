@@ -37,6 +37,7 @@ export default function ProductDetailPage() {
         seconds: 0,
     });
     const [bidError, setBidError] = useState('');
+    const [isBidding, setIsBidding] = useState(false);
     const [showAllBids, setShowAllBids] = useState(false);
     const [showAllComments, setShowAllComments] = useState(false);
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -377,6 +378,9 @@ export default function ProductDetailPage() {
             toast.warning('Please login to place a bid');
             return;
         }
+
+        if (!auction) return;
+
         if (!bidAmount.trim()) {
             setBidError('Please enter a bid amount');
             return;
@@ -396,11 +400,14 @@ export default function ProductDetailPage() {
             return;
         }
 
+        setIsBidding(true);
         try {
             await productsApi.placeBid(auction.id, amount);
             toast.success(`Bid placed successfully: ${formatCurrency(amount)}`);
             setBidAmount('');
             setBidError('');
+            // Small delay to ensure backend has processed the bid
+            await new Promise((resolve) => setTimeout(resolve, 300));
             // Refresh auction data to get updated price
             await fetchAuctionData();
         } catch (error: unknown) {
@@ -409,6 +416,8 @@ export default function ProductDetailPage() {
                 err.response?.data?.message || 'Failed to place bid';
             toast.error(message);
             setBidError(message);
+        } finally {
+            setIsBidding(false);
         }
     };
 
@@ -428,6 +437,9 @@ export default function ProductDetailPage() {
     const handleCancelReply = () => {
         setReplyingTo(null);
         setReplyText('');
+    };
+    const signIn = () => {
+        router.push('/signin');
     };
 
     const handleSubmitReply = async (questionId: string) => {
@@ -1262,8 +1274,16 @@ export default function ProductDetailPage() {
                                                     void handleSetMaxBid()
                                                 }
                                                 className="font-bold"
+                                                disabled={isBidding}
                                             >
-                                                Set max bid
+                                                {isBidding ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                        Placing...
+                                                    </div>
+                                                ) : (
+                                                    'Set max bid'
+                                                )}
                                             </Button>
                                         </div>
                                         {bidError && (
@@ -1295,6 +1315,26 @@ export default function ProductDetailPage() {
                                         </>
                                     )}
                                 </>
+                            )}
+
+                            {!currentUser && !isAuctionEnded && (
+                                <div className="bg-primary border border-primary p-6 rounded-xl text-center">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                                        Want to place a bid?
+                                    </h3>
+                                    <p className="text-gray-600 mb-4">
+                                        Sign in to your account to start bidding
+                                        on this auction.
+                                    </p>
+                                    <Button
+                                        variant="muted"
+                                        size="lg"
+                                        className="w-full font-bold"
+                                        onClick={() => void signIn()}
+                                    >
+                                        Sign In
+                                    </Button>
+                                </div>
                             )}
 
                             {isOwner && (
