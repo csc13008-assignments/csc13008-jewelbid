@@ -15,7 +15,13 @@ import {
 import { adminApi } from '@/lib/api/admin';
 import { useAuthStore } from '@/stores/authStore';
 
-const navItems = [
+const navItems: {
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    description: string;
+    badge?: number;
+}[] = [
     {
         href: '/admin/categories',
         icon: Grid3X3,
@@ -33,7 +39,6 @@ const navItems = [
         icon: Users,
         label: 'Users',
         description: 'Manage users & upgrades',
-        badge: 3,
     },
 ];
 
@@ -45,6 +50,7 @@ export default function AdminSidebar() {
         totalUsers: 0,
         activeProducts: 0,
         totalCategories: 0,
+        upgradeRequests: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -54,10 +60,11 @@ export default function AdminSidebar() {
 
     const fetchStats = async () => {
         try {
-            const [users, products, categories] = await Promise.all([
+            const [users, products, categories, upgrades] = await Promise.all([
                 adminApi.getUsers().catch(() => []),
                 adminApi.getProducts().catch(() => []),
                 adminApi.getCategories().catch(() => []),
+                adminApi.getUpgradeRequests().catch(() => []),
             ]);
 
             const usersData = Array.isArray(users)
@@ -76,12 +83,15 @@ export default function AdminSidebar() {
                 ? categories
                 : (categories as any).data || [];
 
+            const upgradesData = Array.isArray(upgrades) ? upgrades : [];
+
             setStats({
                 totalUsers: usersData.length,
                 activeProducts: productsData.filter(
                     (p: any) => p.status === 'Active',
                 ).length,
                 totalCategories: categoriesData.length,
+                upgradeRequests: upgradesData.length,
             });
         } catch (error) {
             console.error('Error fetching stats:', error);
@@ -89,6 +99,19 @@ export default function AdminSidebar() {
             setLoading(false);
         }
     };
+
+    const dynamicNavItems = navItems.map((item) => {
+        if (item.label === 'Users') {
+            return {
+                ...item,
+                badge:
+                    stats.upgradeRequests > 0
+                        ? stats.upgradeRequests
+                        : undefined,
+            };
+        }
+        return item;
+    });
 
     const handleLogout = () => {
         void signOut();
@@ -114,7 +137,7 @@ export default function AdminSidebar() {
             </div>
 
             <nav className="space-y-2">
-                {navItems.map((item) => {
+                {dynamicNavItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
 
@@ -191,6 +214,14 @@ export default function AdminSidebar() {
                             <span className="text-neutral-600">Categories</span>
                             <span className="font-bold text-dark-primary">
                                 {stats.totalCategories}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-neutral-600">
+                                Upgrade Requests
+                            </span>
+                            <span className="font-bold text-red-500">
+                                {stats.upgradeRequests}
                             </span>
                         </div>
                     </div>
