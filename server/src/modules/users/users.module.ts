@@ -10,10 +10,11 @@ import { ConfigModule } from '@nestjs/config';
 
 import { UploadModule } from '../upload/upload.module';
 import { AccessControlModule } from '../ac/ac.module';
+import { Product } from '../products/entities/product.model';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User, Rating]),
+        TypeOrmModule.forFeature([User, Rating, Product]),
         ConfigModule,
         UploadModule,
         AccessControlModule,

@@ -298,10 +298,12 @@ export default function UsersPage() {
             await fetchData();
         } catch (error: unknown) {
             console.error('Failed to delete user:', error);
-            toast.error(
+            const errorMessage =
                 (error as { response?: { data?: { message?: string } } })
-                    ?.response?.data?.message || 'Failed to delete user',
-            );
+                    ?.response?.data?.message ||
+                'Failed to delete user. Please try again.';
+            toast.error(errorMessage);
+            setShowDeleteDialog(false);
         } finally {
             setSubmitting(false);
         }

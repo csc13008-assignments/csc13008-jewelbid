@@ -4,6 +4,8 @@ import {
     InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UsersRepository } from './users.repository';
 import { UsersRatingRepository } from './users-rating.repository';
 import { User } from './entities/user.model';
@@ -15,6 +17,7 @@ import { CreateRatingDto, UpdateRatingDto } from './dtos/rating.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { ImageKitService } from '../upload/imagekit.service';
+import { Product } from '../products/entities/product.model';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +27,8 @@ export class UsersService {
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
         private readonly imageKitService: ImageKitService,
+        @InjectRepository(Product)
+        private readonly productRepository: Repository<Product>,
     ) {}
 
     async updateProfile(
@@ -334,6 +339,18 @@ The Jewelbid Team
         if (!user) throw new NotFoundException('User not found');
         if (user.role === Role.ADMIN)
             throw new BadRequestException('Cannot delete admin user');
+
+        // Check if user has any products
+        const productCount = await this.productRepository.count({
+            where: { sellerId: userId },
+        });
+
+        if (productCount > 0) {
+            throw new BadRequestException(
+                `Cannot delete user. This user owns ${productCount} product(s). Please delete or transfer their products first.`,
+            );
+        }
+
         await this.usersRepository.deleteUser(userId);
         return { message: 'User deleted successfully' };
     }
