@@ -90,9 +90,20 @@ export interface CreateProductRequest {
     buyNowPrice?: number;
     endDate: string;
     autoRenewal?: boolean;
-    mainImage: string;
-    additionalImages: string[];
+    mainImage: File | string;
+    additionalImages: (File | string)[];
     allowNewBidders?: boolean;
+    brand?: string;
+    material?: string;
+    targetAudience?: string;
+    era?: string;
+    fineness?: string;
+    condition?: string;
+    totalWeight?: string;
+    size?: string;
+    mainStoneCaratWeight?: string;
+    surroundingStonesCaratWeight?: string;
+    origin?: string;
 }
 
 export const productsApi = {
@@ -292,10 +303,79 @@ export const productsApi = {
     },
 
     // POST /products [SELLER] - create a new product
+    // POST /products [SELLER] - create a new product
     createProduct: async (
         productData: CreateProductRequest,
     ): Promise<BackendProduct> => {
-        const response = await apiClient.post('/products', productData);
+        const formData = new FormData();
+        formData.append('name', productData.name);
+        formData.append('description', productData.description);
+        formData.append('category', productData.category);
+        formData.append('startingPrice', productData.startingPrice.toString());
+        formData.append('stepPrice', productData.stepPrice.toString());
+        formData.append('endDate', productData.endDate);
+
+        if (productData.buyNowPrice) {
+            formData.append('buyNowPrice', productData.buyNowPrice.toString());
+        }
+        if (productData.autoRenewal !== undefined) {
+            formData.append('autoRenewal', productData.autoRenewal.toString());
+        }
+        if (productData.allowNewBidders !== undefined) {
+            formData.append(
+                'allowNewBidders',
+                productData.allowNewBidders.toString(),
+            );
+        }
+
+        // Optional fields
+        if (productData.brand) formData.append('brand', productData.brand);
+        if (productData.material)
+            formData.append('material', productData.material);
+        if (productData.targetAudience)
+            formData.append('targetAudience', productData.targetAudience);
+        if (productData.era) formData.append('era', productData.era);
+        if (productData.fineness)
+            formData.append('fineness', productData.fineness);
+        if (productData.condition)
+            formData.append('condition', productData.condition);
+        if (productData.totalWeight)
+            formData.append('totalWeight', productData.totalWeight);
+        if (productData.size) formData.append('size', productData.size);
+        if (productData.mainStoneCaratWeight)
+            formData.append(
+                'mainStoneCaratWeight',
+                productData.mainStoneCaratWeight,
+            );
+        if (productData.surroundingStonesCaratWeight)
+            formData.append(
+                'surroundingStonesCaratWeight',
+                productData.surroundingStonesCaratWeight,
+            );
+        if (productData.origin) formData.append('origin', productData.origin);
+
+        // Images
+        if (productData.mainImage instanceof File) {
+            formData.append('mainImage', productData.mainImage);
+        } else if (typeof productData.mainImage === 'string') {
+            formData.append('mainImage', productData.mainImage);
+        }
+
+        if (Array.isArray(productData.additionalImages)) {
+            productData.additionalImages.forEach((image) => {
+                if (image instanceof File) {
+                    formData.append('additionalImages', image);
+                } else if (typeof image === 'string') {
+                    formData.append('additionalImages', image);
+                }
+            });
+        }
+
+        const response = await apiClient.post('/products', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     },
 };

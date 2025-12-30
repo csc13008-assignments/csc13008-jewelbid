@@ -12,6 +12,8 @@ import {
     Request,
     Res,
     UseGuards,
+    UseInterceptors,
+    UploadedFile,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { UsersService } from './users.service';
@@ -21,6 +23,7 @@ import {
     ApiResponse,
     ApiQuery,
     ApiBody,
+    ApiConsumes,
 } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/roles.enum';
@@ -31,6 +34,8 @@ import { UpdateProfileDto } from './dtos/update-user.dto';
 import { UpdateRoleDto } from './dtos/update-role.dto';
 import { FeedbackDto } from './dtos/feedback.dto';
 import { CreateRatingDto, UpdateRatingDto } from './dtos/rating.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
@@ -102,6 +107,8 @@ export class UsersController {
     @ApiOperation({ summary: 'Update profile [BIDDER, SELLER, ADMIN]' })
     @ApiBearerAuth('access-token')
     @Patch('user')
+    @UseInterceptors(FileInterceptor('image'))
+    @ApiConsumes('multipart/form-data')
     @ApiResponse({
         status: 200,
         description: 'Update profile successfully',
@@ -111,8 +118,13 @@ export class UsersController {
     async updateProfile(
         @Request() req: any,
         @Body() updateProfileDto: UpdateProfileDto,
+        @UploadedFile() file: Express.Multer.File,
     ) {
-        return this.usersService.updateProfile(req.user.id, updateProfileDto);
+        return this.usersService.updateProfile(
+            req.user.id,
+            updateProfileDto,
+            file,
+        );
     }
 
     @ApiOperation({

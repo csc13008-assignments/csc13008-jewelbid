@@ -12,6 +12,8 @@ import { FiltersModule } from './modules/filters/filters.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { MailerModule } from '@nestjs-modules/mailer';
 
+import { UploadModule } from './modules/upload/upload.module';
+
 @Module({
     imports: [
         ConfigModule.forRoot({
@@ -70,6 +72,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         ChatModule,
         SettingsModule,
         FiltersModule,
+        UploadModule,
     ],
 })
 export class AppModule {}

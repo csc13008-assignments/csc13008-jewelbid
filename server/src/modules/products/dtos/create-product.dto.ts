@@ -11,6 +11,7 @@ import {
     Min,
 } from 'class-validator';
 import { JewelryCategory } from '../entities/product.model';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateProductDto {
     @ApiProperty({
@@ -140,6 +141,7 @@ export class CreateProductDto {
         description: 'Starting price',
         example: 5000000,
     })
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     startingPrice: number;
@@ -148,6 +150,7 @@ export class CreateProductDto {
         description: 'Step price for bidding',
         example: 100000,
     })
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     stepPrice: number;
@@ -158,6 +161,7 @@ export class CreateProductDto {
         required: false,
     })
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     buyNowPrice?: number;
@@ -175,13 +179,16 @@ export class CreateProductDto {
         required: false,
     })
     @IsOptional()
+    @Transform(({ value }) => value === 'true' || value === true)
     @IsBoolean()
     autoRenewal?: boolean;
 
     @ApiProperty({
         description: 'Main product image URL',
         example: 'https://example.com/images/product1.jpg',
+        required: false,
     })
+    @IsOptional()
     @IsString()
     mainImage: string;
 
@@ -192,7 +199,9 @@ export class CreateProductDto {
             'https://example.com/images/product1-3.jpg',
             'https://example.com/images/product1-4.jpg',
         ],
+        required: false,
     })
+    @IsOptional()
     @IsArray()
     @IsString({ each: true })
     additionalImages: string[];
@@ -203,6 +212,7 @@ export class CreateProductDto {
         required: false,
     })
     @IsOptional()
+    @Transform(({ value }) => value === 'true' || value === true)
     @IsBoolean()
     allowNewBidders?: boolean;
 }

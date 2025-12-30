@@ -129,13 +129,6 @@ export default function CreateAuctionPage() {
         setIsSubmitting(true);
 
         try {
-            // For now, use placeholder URLs for images
-            // TODO: Implement proper image upload to cloud storage
-            const imageUrls = formData.images.map(
-                (_, index) =>
-                    `https://via.placeholder.com/800x600?text=Product+Image+${index + 1}`,
-            );
-
             const productData = {
                 name: formData.productName,
                 description: formData.description,
@@ -147,8 +140,8 @@ export default function CreateAuctionPage() {
                     : undefined,
                 endDate: formData.endDate,
                 autoRenewal: formData.enableAutoExtension,
-                mainImage: imageUrls[0] || '',
-                additionalImages: imageUrls.slice(1),
+                mainImage: formData.images[0],
+                additionalImages: formData.images.slice(1),
                 allowNewBidders: formData.allowNewBidders,
                 // Product details
                 brand: formData.brand || undefined,

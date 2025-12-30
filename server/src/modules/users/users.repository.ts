@@ -67,6 +67,8 @@ export class UsersRepository {
             password: hashedPassword,
             isEmailVerified: false,
             role: Role.BIDDER,
+            profileImage:
+                this.configService.get('DEFAULT_PROFILE_IMAGE') || null,
         });
 
         const savedUser = await this.userRepository.save(user);

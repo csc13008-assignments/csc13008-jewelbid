@@ -14,6 +14,8 @@ import { FeedbackDto } from './dtos/feedback.dto';
 import { CreateRatingDto, UpdateRatingDto } from './dtos/rating.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
+import { ImageKitService } from '../upload/imagekit.service';
+
 @Injectable()
 export class UsersService {
     constructor(
@@ -21,12 +23,21 @@ export class UsersService {
         private readonly usersRatingRepository: UsersRatingRepository,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
+        private readonly imageKitService: ImageKitService,
     ) {}
 
     async updateProfile(
         id: string,
         updateProfileDto: Partial<UpdateProfileDto>,
+        file?: Express.Multer.File,
     ): Promise<User> {
+        if (file) {
+            const imageUrl = await this.imageKitService.uploadImage(
+                file,
+                'accounts',
+            );
+            updateProfileDto.image = imageUrl;
+        }
         return this.usersRepository.updateProfile(id, updateProfileDto);
     }
 

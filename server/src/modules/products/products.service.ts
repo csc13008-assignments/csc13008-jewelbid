@@ -32,7 +32,14 @@ export class ProductsService {
         createProductDto: CreateProductDto,
         sellerId: string,
     ): Promise<Product> {
-        if (createProductDto.additionalImages.length < 3) {
+        if (!createProductDto.mainImage) {
+            throw new BadRequestException('Main image is required');
+        }
+
+        if (
+            !createProductDto.additionalImages ||
+            createProductDto.additionalImages.length < 3
+        ) {
             throw new BadRequestException(
                 'At least 3 additional images are required',
             );

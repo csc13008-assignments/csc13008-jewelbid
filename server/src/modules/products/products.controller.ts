@@ -31,10 +31,18 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/roles.enum';
 import { JewelryCategory } from './entities/product.model';
 
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { ApiConsumes } from '@nestjs/swagger';
+import { ImageKitService } from '../upload/imagekit.service';
+
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-    constructor(private readonly productsService: ProductsService) {}
+    constructor(
+        private readonly productsService: ProductsService,
+        private readonly imageKitService: ImageKitService,
+    ) {}
 
     @ApiOperation({
         summary:
@@ -216,6 +224,13 @@ export class ProductsController {
     @Post()
     @UseGuards(ATAuthGuard, RolesGuard)
     @Roles(Role.SELLER)
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'mainImage', maxCount: 1 },
+            { name: 'additionalImages', maxCount: 5 },
+        ]),
+    )
     @ApiBody({ type: CreateProductDto })
     @ApiResponse({
         status: 201,
@@ -223,8 +238,30 @@ export class ProductsController {
     })
     async createProduct(
         @Body() createProductDto: CreateProductDto,
+        @UploadedFiles()
+        files: {
+            mainImage?: Express.Multer.File[];
+            additionalImages?: Express.Multer.File[];
+        },
         @Request() req: any,
     ) {
+        if (files?.mainImage?.[0]) {
+            const mainImageUrl = await this.imageKitService.uploadImage(
+                files.mainImage[0],
+                'products',
+            );
+            createProductDto.mainImage = mainImageUrl;
+        }
+
+        if (files?.additionalImages) {
+            const additionalImageUrls = await Promise.all(
+                files.additionalImages.map((file) =>
+                    this.imageKitService.uploadImage(file, 'products'),
+                ),
+            );
+            createProductDto.additionalImages = additionalImageUrls;
+        }
+
         return await this.productsService.createProduct(
             createProductDto,
             req.user.id,
