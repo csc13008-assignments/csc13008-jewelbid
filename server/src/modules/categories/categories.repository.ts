@@ -51,10 +51,20 @@ export class CategoriesRepository extends Repository<Category> {
         });
     }
 
-    async hasProducts(): Promise<boolean> {
-        // Will be implemented when we migrate products to use categories
-        // For now, return false to allow deletion
-        return false;
+    async hasProducts(categoryId: string): Promise<boolean> {
+        const count = await this.dataSource.query(
+            `SELECT COUNT(*) as count FROM products WHERE "categoryId" = $1 AND "deleted_at" IS NULL`,
+            [categoryId],
+        );
+        return parseInt(count[0].count, 10) > 0;
+    }
+
+    async countProductsByCategoryId(categoryId: string): Promise<number> {
+        const result = await this.dataSource.query(
+            `SELECT COUNT(*) as count FROM products WHERE "categoryId" = $1 AND "deleted_at" IS NULL`,
+            [categoryId],
+        );
+        return parseInt(result[0].count, 10);
     }
 
     async countByParentId(parentId: string | null): Promise<number> {

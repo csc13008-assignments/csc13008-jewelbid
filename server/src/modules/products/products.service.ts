@@ -118,7 +118,7 @@ export class ProductsService {
     }
 
     async getProductsByCategory(
-        category: JewelryCategory,
+        categoryId: string,
         page: number = 1,
         limit: number = 20,
     ): Promise<{
@@ -129,7 +129,7 @@ export class ProductsService {
     }> {
         const offset = (page - 1) * limit;
         const [products, total] = await this.productsRepository.findByCategory(
-            category,
+            categoryId,
             limit,
             offset,
         );
@@ -204,7 +204,7 @@ export class ProductsService {
         const product = await this.productsRepository.findById(productId);
         const relatedProducts =
             await this.productsRepository.getRelatedProducts(
-                product.category,
+                product.categoryId,
                 productId,
                 5,
             );

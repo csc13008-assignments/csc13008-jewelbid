@@ -75,13 +75,16 @@ export class ProductsRepository {
                 })
                 .andWhere('product.endDate > :now', { now: new Date() })
                 .leftJoinAndSelect('product.seller', 'seller')
-                .leftJoinAndSelect('product.currentBidder', 'currentBidder');
+                .leftJoinAndSelect('product.currentBidder', 'currentBidder')
+                .leftJoinAndSelect('product.category', 'category');
 
             // Apply filters
             if (filters?.category) {
-                query.andWhere('product.category = :category', {
-                    category: filters.category,
-                });
+                // Filter by category slug or category ID
+                query.andWhere(
+                    '(category.slug = :category OR product.categoryId = :category)',
+                    { category: filters.category },
+                );
             }
 
             if (filters?.brand) {
@@ -203,18 +206,18 @@ export class ProductsRepository {
     }
 
     async findByCategory(
-        category: JewelryCategory,
+        categoryId: string,
         limit?: number,
         offset?: number,
     ): Promise<[Product[], number]> {
         try {
             return await this.productRepository.findAndCount({
                 where: {
-                    category,
+                    categoryId,
                     status: ProductStatus.ACTIVE,
                     endDate: MoreThan(new Date()),
                 },
-                relations: ['seller', 'currentBidder'],
+                relations: ['seller', 'currentBidder', 'category'],
                 take: limit,
                 skip: offset,
                 order: { created_at: 'DESC' },
@@ -737,19 +740,19 @@ export class ProductsRepository {
     }
 
     async getRelatedProducts(
-        category: JewelryCategory,
+        categoryId: string,
         excludeId: string,
         limit: number = 5,
     ): Promise<Product[]> {
         try {
             return await this.productRepository.find({
                 where: {
-                    category,
+                    categoryId,
                     status: ProductStatus.ACTIVE,
                     id: Not(excludeId),
                     endDate: MoreThan(new Date()),
                 },
-                relations: ['seller', 'currentBidder'],
+                relations: ['seller', 'currentBidder', 'category'],
                 take: limit,
                 order: { created_at: 'DESC' },
             });

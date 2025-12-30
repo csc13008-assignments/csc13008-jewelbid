@@ -46,7 +46,8 @@ export default function ProductsPage() {
             const mapped = data.map((p: any) => ({
                 id: p.id,
                 name: p.name,
-                categoryName: p.categoryName || p.category || 'Uncategorized',
+                categoryName:
+                    p.category?.name || p.categoryName || 'Uncategorized',
                 mainImage: p.mainImage || p.images?.[0] || '/placeholder.jpg',
                 currentPrice: p.currentPrice || p.startingPrice || 0,
                 buyNowPrice: p.buyNowPrice,

@@ -150,10 +150,11 @@ export class CategoriesService {
         }
 
         // Check if category has products
-        const hasProducts = await this.categoriesRepository.hasProducts();
-        if (hasProducts) {
+        const productCount =
+            await this.categoriesRepository.countProductsByCategoryId(id);
+        if (productCount > 0) {
             throw new BadRequestException(
-                'Cannot delete category with products',
+                `Cannot delete category. ${productCount} product(s) are using this category. Delete all products in this category first.`,
             );
         }
 

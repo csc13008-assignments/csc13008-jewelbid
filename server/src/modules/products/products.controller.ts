@@ -149,8 +149,8 @@ export class ProductsController {
         );
     }
 
-    @ApiOperation({ summary: 'Get products by category' })
-    @Get('category/:category')
+    @ApiOperation({ summary: 'Get products by category ID or slug' })
+    @Get('category/:categoryId')
     @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
     @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
     @ApiResponse({
@@ -158,12 +158,12 @@ export class ProductsController {
         description: 'Products fetched successfully',
     })
     async getProductsByCategory(
-        @Param('category') category: JewelryCategory,
+        @Param('categoryId') categoryId: string,
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 20,
     ) {
         return await this.productsService.getProductsByCategory(
-            category,
+            categoryId,
             page,
             limit,
         );

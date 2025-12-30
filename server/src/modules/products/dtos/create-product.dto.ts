@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsString,
-    IsEnum,
     IsNumber,
     IsOptional,
     IsDateString,
@@ -9,8 +8,8 @@ import {
     IsArray,
     MinLength,
     Min,
+    IsUUID,
 } from 'class-validator';
-import { JewelryCategory } from '../entities/product.model';
 import { Type, Transform } from 'class-transformer';
 
 export class CreateProductDto {
@@ -31,12 +30,11 @@ export class CreateProductDto {
     description: string;
 
     @ApiProperty({
-        description: 'Product category',
-        enum: JewelryCategory,
-        example: JewelryCategory.BRACELET,
+        description: 'Category ID',
+        example: 'c0000001-0000-0000-0000-000000000001',
     })
-    @IsEnum(JewelryCategory)
-    category: JewelryCategory;
+    @IsUUID()
+    categoryId: string;
 
     @ApiProperty({
         description: 'Product brand',

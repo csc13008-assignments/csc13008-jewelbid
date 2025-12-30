@@ -2,6 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.model';
 import { User } from '../../users/entities/user.model';
+import { Category } from '../../categories/entities/category.model';
 
 export enum ProductStatus {
     ACTIVE = 'Active',
@@ -9,6 +10,7 @@ export enum ProductStatus {
     CANCELLED = 'Cancelled',
 }
 
+// Keeping enum for backward compatibility - will be deprecated
 export enum JewelryCategory {
     NECKLACE = 'Necklace',
     RING = 'Ring',
@@ -45,15 +47,18 @@ export class Product extends BaseEntity {
     description: string;
 
     @ApiProperty({
-        description: 'Product category',
-        enum: JewelryCategory,
-        example: JewelryCategory.BRACELET,
+        description: 'Category ID',
+        example: 'c0000001-0000-0000-0000-000000000001',
     })
     @Column({
-        type: 'enum',
-        enum: JewelryCategory,
+        type: 'uuid',
+        nullable: false,
     })
-    category: JewelryCategory;
+    categoryId: string;
+
+    @ManyToOne(() => Category, { eager: false })
+    @JoinColumn({ name: 'categoryId' })
+    category: Category;
 
     @ApiProperty({
         description: 'Product brand',
