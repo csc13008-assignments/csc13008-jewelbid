@@ -1373,12 +1373,18 @@ export default function ProductDetailPage() {
                                                         <span className="text-gray-600">
                                                             {bid.bidTime.toLocaleDateString(
                                                                 'en-US',
+                                                                {
+                                                                    timeZone:
+                                                                        'Asia/Bangkok',
+                                                                },
                                                             )}{' '}
                                                             {bid.bidTime.toLocaleTimeString(
                                                                 'en-US',
                                                                 {
                                                                     hour: '2-digit',
                                                                     minute: '2-digit',
+                                                                    timeZone:
+                                                                        'Asia/Bangkok',
                                                                 },
                                                             )}
                                                         </span>
