@@ -296,6 +296,7 @@ export default function UsersPage() {
             setShowDeleteDialog(false);
             setSelectedUser(null);
             await fetchData();
+            window.dispatchEvent(new CustomEvent('admin-data-changed'));
         } catch (error: unknown) {
             console.error('Failed to delete user:', error);
             const errorMessage =

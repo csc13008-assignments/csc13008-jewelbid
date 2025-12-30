@@ -56,6 +56,16 @@ export default function AdminSidebar() {
 
     useEffect(() => {
         void fetchStats();
+
+        // Listen for data changes from other admin pages
+        const handleDataChange = () => {
+            void fetchStats();
+        };
+        window.addEventListener('admin-data-changed', handleDataChange);
+
+        return () => {
+            window.removeEventListener('admin-data-changed', handleDataChange);
+        };
     }, []);
 
     const fetchStats = async () => {
