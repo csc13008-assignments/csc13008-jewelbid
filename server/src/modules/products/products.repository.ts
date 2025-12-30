@@ -381,6 +381,7 @@ export class ProductsRepository {
                 bidderId,
                 bidAmount,
                 maxBid: maxBid || bidAmount,
+                created_at: new Date(),
             });
 
             return await this.bidRepository.save(bid);
