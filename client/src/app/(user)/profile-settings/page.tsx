@@ -40,6 +40,7 @@ export default function ProfileSettingsPage() {
     const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
     useEffect(() => {
         const loadUserData = async () => {
@@ -117,6 +118,28 @@ export default function ProfileSettingsPage() {
     const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Validate file type and size
+            const validTypes = [
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+                'image/webp',
+            ];
+            if (!validTypes.includes(file.type)) {
+                toast.error(
+                    'Please upload a valid image file (JPG, PNG, GIF, WebP)',
+                );
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image file size must be less than 5MB');
+                return;
+            }
+
+            // Save file for upload
+            setAvatarFile(file);
+
+            // Show preview
             const reader = new FileReader();
             reader.onload = (event) => {
                 const imageUrl = event.target?.result as string;
@@ -133,32 +156,49 @@ export default function ProfileSettingsPage() {
         if (isEditingProfile) {
             setIsSavingProfile(true);
             try {
-                const updateData: Record<string, string> = {};
-                if (profileData.fullName)
-                    updateData.fullname = profileData.fullName;
-                if (profileData.email) updateData.email = profileData.email;
-                if (profileData.address)
-                    updateData.address = profileData.address;
+                // Use FormData to support file upload
+                const formData = new FormData();
+
+                if (profileData.fullName) {
+                    formData.append('fullname', profileData.fullName);
+                }
+                if (profileData.email) {
+                    formData.append('email', profileData.email);
+                }
+                if (profileData.address) {
+                    formData.append('address', profileData.address);
+                }
                 if (
                     profileData.phoneNumber &&
                     profileData.phoneNumber.match(/^(\+84|0)\d{9,10}$/)
                 ) {
-                    updateData.phone = profileData.phoneNumber;
+                    formData.append('phone', profileData.phoneNumber);
                 }
 
-                const updatedUser = await usersApi.updateProfile(updateData);
+                // Add avatar file if selected
+                if (avatarFile) {
+                    formData.append('image', avatarFile);
+                }
+
+                const updatedUser = await usersApi.updateProfile(formData);
+
+                // Get the new image URL from response
+                const newImageUrl =
+                    updatedUser.image || updatedUser.profileImage;
 
                 const userStr = localStorage.getItem('user');
                 if (userStr) {
                     const user = JSON.parse(userStr);
                     const updatedUserData = {
                         ...user,
-                        fullname: updatedUser.fullname || profileData.fullName,
+                        fullname:
+                            updatedUser.username ||
+                            updatedUser.fullname ||
+                            profileData.fullName,
                         phone: updatedUser.phone || profileData.phoneNumber,
                         email: updatedUser.email || profileData.email,
                         address: updatedUser.address || profileData.address,
-                        profileImage:
-                            updatedUser.profileImage || profileData.avatar,
+                        profileImage: newImageUrl || profileData.avatar,
                     };
                     localStorage.setItem(
                         'user',
@@ -166,8 +206,17 @@ export default function ProfileSettingsPage() {
                     );
                 }
 
+                // Update avatar in state if new image was uploaded
+                if (newImageUrl) {
+                    setProfileData((prev) => ({
+                        ...prev,
+                        avatar: newImageUrl,
+                    }));
+                }
+
                 toast.success('Profile updated successfully!');
                 setIsEditingProfile(false);
+                setAvatarFile(null); // Clear the file after successful upload
             } catch (error) {
                 console.error('Failed to update profile:', error);
                 toast.error('Failed to update profile');
@@ -339,13 +388,15 @@ export default function ProfileSettingsPage() {
                                                     Choose Photo
                                                 </label>
                                                 <p className="text-xs text-neutral-500">
-                                                    JPG, PNG up to 5MB.
-                                                    Recommended: 400x400px
+                                                    JPG, PNG, GIF, WebP up to
+                                                    5MB. Recommended: 400x400px
                                                 </p>
-                                                <p className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block">
-                                                    ⚠️ Avatar upload will be
-                                                    available soon
-                                                </p>
+                                                {avatarFile && (
+                                                    <p className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded inline-block">
+                                                        ✓ New avatar selected:{' '}
+                                                        {avatarFile.name}
+                                                    </p>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="text-sm text-neutral-500">

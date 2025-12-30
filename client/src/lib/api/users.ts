@@ -83,8 +83,16 @@ export const usersApi = {
     },
 
     // PATCH /users/user - update current user's profile
-    updateProfile: async (data: UpdateProfileData): Promise<UserProfile> => {
-        const response = await apiClient.patch('/users/user', data);
+    updateProfile: async (
+        data: UpdateProfileData | FormData,
+    ): Promise<UserProfile> => {
+        // Check if data is FormData (for file uploads)
+        const isFormData = data instanceof FormData;
+        const response = await apiClient.patch('/users/user', data, {
+            headers: isFormData
+                ? { 'Content-Type': 'multipart/form-data' }
+                : undefined,
+        });
         return response.data;
     },
 

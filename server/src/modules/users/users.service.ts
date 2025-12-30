@@ -31,14 +31,29 @@ export class UsersService {
         updateProfileDto: Partial<UpdateProfileDto>,
         file?: Express.Multer.File,
     ): Promise<User> {
+        // Create a copy to avoid mutating the original DTO
+        const updateData: Partial<User> = {};
+
+        // Map DTO fields to entity fields
+        if (updateProfileDto.fullname)
+            updateData.fullname = updateProfileDto.fullname;
+        if (updateProfileDto.email) updateData.email = updateProfileDto.email;
+        if (updateProfileDto.phone) updateData.phone = updateProfileDto.phone;
+        if (updateProfileDto.address)
+            updateData.address = updateProfileDto.address;
+        if (updateProfileDto.birthdate)
+            updateData.birthdate = new Date(updateProfileDto.birthdate);
+
+        // Handle file upload
         if (file) {
             const imageUrl = await this.imageKitService.uploadImage(
                 file,
                 'accounts',
             );
-            updateProfileDto.image = imageUrl;
+            updateData.profileImage = imageUrl;
         }
-        return this.usersRepository.updateProfile(id, updateProfileDto);
+
+        return this.usersRepository.updateProfile(id, updateData);
     }
 
     async getProfiles(role?: Role): Promise<
