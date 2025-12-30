@@ -38,6 +38,7 @@ export default function ProductDetailPage() {
     });
     const [bidError, setBidError] = useState('');
     const [isBidding, setIsBidding] = useState(false);
+    const [isPostingComment, setIsPostingComment] = useState(false);
     const [showAllBids, setShowAllBids] = useState(false);
     const [showAllComments, setShowAllComments] = useState(false);
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -365,6 +366,7 @@ export default function ProductDetailPage() {
             toast.warning('Question must be at least 10 characters long');
             return;
         }
+        setIsPostingComment(true);
         try {
             await productsApi.askQuestion(auction.id, newQuestion);
             toast.success('Question submitted successfully!');
@@ -373,6 +375,8 @@ export default function ProductDetailPage() {
         } catch (error) {
             console.error('Failed to submit question:', error);
             toast.error('Failed to submit question');
+        } finally {
+            setIsPostingComment(false);
         }
     };
 
@@ -908,8 +912,11 @@ export default function ProductDetailPage() {
                                         onClick={() =>
                                             void handleQuestionSubmit()
                                         }
+                                        disabled={isPostingComment}
                                     >
-                                        Post
+                                        {isPostingComment
+                                            ? 'Posting...'
+                                            : 'Post'}
                                     </Button>
                                 </div>
                             )}
