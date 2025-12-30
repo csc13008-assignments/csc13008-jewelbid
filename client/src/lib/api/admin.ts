@@ -92,11 +92,14 @@ export const adminApi = {
 
     // ===== PRODUCTS =====
 
-    // GET /products - List products with pagination
-    getProducts: async (params?: {
-        status?: string;
-    }): Promise<{ products?: any[]; data?: any[] } | any[]> => {
-        const response = await apiClient.get('/products', { params });
+    // GET /products/admin/all - List all products for admin (including ended)
+    getProducts: async (): Promise<{
+        products: any[];
+        total: number;
+        page: number;
+        totalPages: number;
+    }> => {
+        const response = await apiClient.get('/products/admin/all');
         return response.data;
     },
 

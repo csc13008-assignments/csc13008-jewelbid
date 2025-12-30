@@ -40,10 +40,8 @@ export default function ProductsPage() {
         try {
             setLoading(true);
             const response = await adminApi.getProducts();
-            // Handle response - may be array or object with data property
-            const data = Array.isArray(response)
-                ? response
-                : response?.products || (response as any)?.data || [];
+            // Handle response from new admin endpoint
+            const data = response?.products || [];
             // Map backend products to admin format
             const mapped = data.map((p: any) => ({
                 id: p.id,
@@ -189,27 +187,39 @@ export default function ProductsPage() {
 
             {/* Filter Tabs */}
             <div className="flex gap-2 mb-6 bg-neutral-100 p-1.5 rounded-xl w-fit border border-neutral-200">
-                {(['All', 'Active', 'Ended'] as const).map((status) => (
-                    <button
-                        key={status}
-                        onClick={() => setFilter(status)}
-                        className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
-                            filter === status
-                                ? 'bg-white text-black shadow-sm border border-primary/20'
-                                : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
-                        }`}
-                    >
-                        {status}
-                        <span
-                            className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${filter === status ? 'bg-primary/30 text-dark-primary' : 'bg-neutral-200 text-neutral-600'}`}
+                {(['All', 'Active', 'Ended'] as const).map((status) => {
+                    const now = new Date();
+                    const count =
+                        status === 'All'
+                            ? products.length
+                            : status === 'Active'
+                              ? products.filter(
+                                    (p) =>
+                                        p.status === 'Active' &&
+                                        new Date(p.endDate) >= now,
+                                ).length
+                              : products.filter(
+                                    (p) => new Date(p.endDate) < now,
+                                ).length;
+                    return (
+                        <button
+                            key={status}
+                            onClick={() => setFilter(status)}
+                            className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
+                                filter === status
+                                    ? 'bg-white text-black shadow-sm border border-primary/20'
+                                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+                            }`}
                         >
-                            {status === 'All'
-                                ? products.length
-                                : products.filter((p) => p.status === status)
-                                      .length}
-                        </span>
-                    </button>
-                ))}
+                            {status}
+                            <span
+                                className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${filter === status ? 'bg-primary/30 text-dark-primary' : 'bg-neutral-200 text-neutral-600'}`}
+                            >
+                                {count}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Table */}

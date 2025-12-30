@@ -58,6 +58,26 @@ export class ProductsController {
     }
 
     @ApiOperation({
+        summary: 'Get all products for admin (including ended) [ADMIN]',
+    })
+    @ApiBearerAuth('access-token')
+    @Get('admin/all')
+    @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+    @ApiQuery({ name: 'limit', required: false, type: Number, example: 100 })
+    @ApiResponse({
+        status: 200,
+        description: 'All products fetched successfully for admin',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async getAllProductsForAdmin(
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 100,
+    ) {
+        return await this.productsService.getAllProductsForAdmin(page, limit);
+    }
+
+    @ApiOperation({
         summary: 'Get all active products with pagination and filters',
     })
     @Get()

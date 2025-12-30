@@ -93,6 +93,30 @@ export class ProductsService {
         };
     }
 
+    // For admin panel - get all products including ended ones
+    async getAllProductsForAdmin(
+        page: number = 1,
+        limit: number = 100,
+    ): Promise<{
+        products: Product[];
+        total: number;
+        page: number;
+        totalPages: number;
+    }> {
+        const offset = (page - 1) * limit;
+        const [products, total] = await this.productsRepository.findAllForAdmin(
+            limit,
+            offset,
+        );
+
+        return {
+            products,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+
     async getProductsByCategory(
         category: JewelryCategory,
         page: number = 1,

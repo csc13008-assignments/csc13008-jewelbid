@@ -175,6 +175,33 @@ export class ProductsRepository {
         }
     }
 
+    // For admin panel - get all products including ended ones
+    async findAllForAdmin(
+        limit?: number,
+        offset?: number,
+    ): Promise<[Product[], number]> {
+        try {
+            const query = this.productRepository
+                .createQueryBuilder('product')
+                .leftJoinAndSelect('product.seller', 'seller')
+                .leftJoinAndSelect('product.currentBidder', 'currentBidder')
+                .orderBy('product.created_at', 'DESC');
+
+            if (limit) {
+                query.take(limit);
+            }
+            if (offset) {
+                query.skip(offset);
+            }
+
+            return await query.getManyAndCount();
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to fetch all products for admin:' + error,
+            );
+        }
+    }
+
     async findByCategory(
         category: JewelryCategory,
         limit?: number,
