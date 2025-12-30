@@ -29,7 +29,6 @@ import { ATAuthGuard } from '../auth/guards/at-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/roles.enum';
-import { JewelryCategory } from './entities/product.model';
 
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFiles } from '@nestjs/common';
@@ -172,7 +171,7 @@ export class ProductsController {
     @ApiOperation({ summary: 'Search products by name or description' })
     @Get('search')
     @ApiQuery({ name: 'q', required: true, type: String, example: 'diamond' })
-    @ApiQuery({ name: 'category', required: false, enum: JewelryCategory })
+    @ApiQuery({ name: 'category', required: false, type: String })
     @ApiQuery({
         name: 'sortBy',
         required: false,
@@ -187,7 +186,7 @@ export class ProductsController {
     })
     async searchProducts(
         @Query('q') searchTerm: string,
-        @Query('category') category?: JewelryCategory,
+        @Query('category') category?: string,
         @Query('sortBy') sortBy: 'endDate' | 'price' = 'endDate',
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 20,

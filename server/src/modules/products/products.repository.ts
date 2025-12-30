@@ -6,11 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, MoreThan } from 'typeorm';
-import {
-    Product,
-    ProductStatus,
-    JewelryCategory,
-} from './entities/product.model';
+import { Product, ProductStatus } from './entities/product.model';
 import { Bid } from './entities/bid.model';
 import { Watchlist } from './entities/watchlist.model';
 import { Question } from './entities/question.model';
@@ -305,7 +301,7 @@ export class ProductsRepository {
 
     async searchProducts(
         searchTerm: string,
-        category?: JewelryCategory,
+        category?: string,
         limit?: number,
         offset?: number,
     ): Promise<[Product[], number]> {

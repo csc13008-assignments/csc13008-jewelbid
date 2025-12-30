@@ -10,20 +10,6 @@ export enum ProductStatus {
     CANCELLED = 'Cancelled',
 }
 
-// Keeping enum for backward compatibility - will be deprecated
-export enum JewelryCategory {
-    NECKLACE = 'Necklace',
-    RING = 'Ring',
-    BRACELET = 'Bracelet',
-    EARRING = 'Earring',
-    BROOCH = 'Brooch',
-    PENDANT = 'Pendant',
-    WATCH = 'Watch',
-    GEMSTONE = 'Gemstone',
-    GOLD_BAR = 'Gold Bar',
-    DIAMOND = 'Diamond',
-}
-
 @Entity('products')
 export class Product extends BaseEntity {
     @ApiProperty({

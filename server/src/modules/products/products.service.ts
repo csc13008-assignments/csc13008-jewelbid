@@ -6,11 +6,7 @@ import {
 } from '@nestjs/common';
 import { ProductsRepository } from './products.repository';
 import { UsersRepository } from '../users/users.repository';
-import {
-    Product,
-    JewelryCategory,
-    ProductStatus,
-} from './entities/product.model';
+import { Product, ProductStatus } from './entities/product.model';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { PlaceBidDto, BidHistoryItemDto } from './dtos/bid.dto';
 import { AskQuestionDto, AnswerQuestionDto } from './dtos/question.dto';
@@ -162,7 +158,7 @@ export class ProductsService {
 
     async searchProducts(
         searchTerm: string,
-        category?: JewelryCategory,
+        category?: string,
         sortBy: 'endDate' | 'price' = 'endDate',
         page: number = 1,
         limit: number = 20,
