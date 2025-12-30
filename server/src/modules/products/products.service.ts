@@ -609,6 +609,14 @@ export class ProductsService {
         const seller = await this.usersRepository.findOneById(product.sellerId);
         const asker = await this.usersRepository.findOneById(userId);
 
+        // Save question to database
+        await this.productsRepository.askQuestion(
+            askQuestionDto.productId,
+            userId,
+            askQuestionDto.question,
+        );
+
+        // Send email to seller
         await this.mailerService.sendMail({
             to: seller.email,
             subject: `New question on your product: ${product.name}`,

@@ -45,6 +45,7 @@ export default function ProductDetailPage() {
     const [currentUser, setCurrentUser] = useState<{
         id: string;
         role: string;
+        profileImage?: string;
     } | null>(null);
     const [isUserLoading, setIsUserLoading] = useState(true);
     const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -56,7 +57,11 @@ export default function ProductDetailPage() {
                 const userStr = localStorage.getItem('user');
                 if (userStr) {
                     const user = JSON.parse(userStr);
-                    setCurrentUser({ id: user.id, role: user.role });
+                    setCurrentUser({
+                        id: user.id,
+                        role: user.role,
+                        profileImage: user.profileImage,
+                    });
                 } else {
                     // No user logged in
                     setCurrentUser(null);
@@ -201,10 +206,11 @@ export default function ProductDetailPage() {
         currentUser.role.toLowerCase() === 'seller' &&
         currentUser.id === auction.seller.id;
 
+    // Anyone logged in can comment (ask questions), except guests
     const canComment =
         currentUser &&
         (currentUser.role.toLowerCase() === 'bidder' ||
-            (currentUser.role.toLowerCase() === 'seller' && !isOwner));
+            currentUser.role.toLowerCase() === 'seller');
 
     const canBid =
         currentUser &&
@@ -867,14 +873,23 @@ export default function ProductDetailPage() {
 
                             {canComment && (
                                 <div className="flex items-start space-x-3 mb-8">
-                                    <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
-                                        <Image
-                                            src="/avatars/user1.jpg"
-                                            alt="User"
-                                            width={40}
-                                            height={40}
-                                            className="object-cover"
-                                        />
+                                    <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center">
+                                        {currentUser?.profileImage &&
+                                        currentUser.profileImage.startsWith(
+                                            'http',
+                                        ) ? (
+                                            <Image
+                                                src={currentUser.profileImage}
+                                                alt="User"
+                                                width={40}
+                                                height={40}
+                                                className="object-cover w-full h-full"
+                                            />
+                                        ) : (
+                                            <span className="text-gray-500 text-sm font-medium">
+                                                ?
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex-1">
                                         <input
@@ -913,20 +928,31 @@ export default function ProductDetailPage() {
                                                 key={question.id}
                                                 className="flex items-start space-x-3"
                                             >
-                                                <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
-                                                    <Image
-                                                        src={
-                                                            question.author
-                                                                .avatar
-                                                        }
-                                                        alt={
-                                                            question.author
-                                                                .username
-                                                        }
-                                                        width={40}
-                                                        height={40}
-                                                        className="object-cover"
-                                                    />
+                                                <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center">
+                                                    {question.author.avatar &&
+                                                    question.author.avatar.startsWith(
+                                                        'http',
+                                                    ) ? (
+                                                        <Image
+                                                            src={
+                                                                question.author
+                                                                    .avatar
+                                                            }
+                                                            alt={
+                                                                question.author
+                                                                    .username
+                                                            }
+                                                            width={40}
+                                                            height={40}
+                                                            className="object-cover w-full h-full"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-gray-500 text-sm font-medium">
+                                                            {question.author.username
+                                                                .charAt(0)
+                                                                .toUpperCase()}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex items-center space-x-2 mb-2">
