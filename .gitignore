@@ -45,3 +45,5 @@ bkb-service-account-key.json
 
 # TypeScript
 *.tsbuildinfo
+
+.agent

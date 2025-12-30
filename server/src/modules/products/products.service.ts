@@ -221,16 +221,32 @@ export class ProductsService {
         }
 
         const user = await this.usersRepository.findOneById(userId);
-        if (!user.isEmailVerified && !product.allowNewBidders) {
+
+        if (!user.isEmailVerified) {
             throw new ForbiddenException(
                 'Email verification required to bid on this product',
             );
+        }
+        const totalRatings = user.positiveRatings + user.negativeRatings;
+
+        if (totalRatings > 0) {
+            const ratingScore = user.positiveRatings / totalRatings;
+            if (ratingScore < 0.8) {
+                throw new ForbiddenException(
+                    'Your rating score is too low to bid on this product (min 80%)',
+                );
+            }
+        } else {
+            if (!product.allowNewBidders) {
+                throw new ForbiddenException(
+                    'This product does not accept bids from users with no rating history',
+                );
+            }
         }
 
         const minBidAmount =
             Number(product.currentPrice) + Number(product.stepPrice);
 
-        // AUTO-BIDDING LOGIC
         return await this.handleAutoBid(
             product,
             userId,
