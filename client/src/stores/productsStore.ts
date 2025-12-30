@@ -84,6 +84,7 @@ export const mapProductToAuction = (
             id: product.id,
             name: product.name,
             image: product.mainImage,
+            additionalImages: product.additionalImages || [],
             category: product.category,
             material: product.material || '',
             brand: product.brand || '',

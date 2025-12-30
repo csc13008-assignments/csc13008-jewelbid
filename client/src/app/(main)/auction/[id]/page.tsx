@@ -305,12 +305,10 @@ export default function ProductDetailPage() {
         );
     }
 
-    const mockImages = [
+    const images = [
         auction.product.image,
-        auction.product.image,
-        auction.product.image,
-        auction.product.image,
-    ];
+        ...(auction.product.additionalImages || []),
+    ].filter((img) => img && img.trim() !== '');
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('vi-VN').format(amount) + 'VND';
@@ -700,33 +698,35 @@ export default function ProductDetailPage() {
 
                         <div className="relative rounded-xl aspect-square bg-gray-100 overflow-hidden">
                             <Image
-                                src={mockImages[selectedImage]}
+                                src={images[selectedImage] || images[0]}
                                 alt="Product"
                                 fill
                                 className="object-cover"
                             />
                         </div>
 
-                        <div className="flex space-x-2">
-                            {mockImages.map((image, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setSelectedImage(index)}
-                                    className={`relative rounded-xl w-20 h-20 bg-gray-100 overflow-hidden ${
-                                        selectedImage === index
-                                            ? 'border-2 border-gray-400'
-                                            : ''
-                                    }`}
-                                >
-                                    <Image
-                                        src={image}
-                                        alt={`Product ${index + 1}`}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </button>
-                            ))}
-                        </div>
+                        {images.length > 1 && (
+                            <div className="flex space-x-2 overflow-x-auto pb-2">
+                                {images.map((image, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setSelectedImage(index)}
+                                        className={`relative rounded-xl w-20 h-20 flex-shrink-0 bg-gray-100 overflow-hidden ${
+                                            selectedImage === index
+                                                ? 'border-2 border-dark-primary'
+                                                : 'border border-transparent hover:border-gray-300'
+                                        }`}
+                                    >
+                                        <Image
+                                            src={image}
+                                            alt={`Product ${index + 1}`}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         <div className="pt-8">
                             <div className="flex justify-between items-center mb-4">
