@@ -63,7 +63,7 @@ export class UsersRepository {
             email: email,
             phone: phone,
             address: address,
-            birthdate: new Date(birthdate),
+            birthdate: birthdate ? new Date(birthdate) : null,
             password: hashedPassword,
             isEmailVerified: false,
             role: Role.BIDDER,

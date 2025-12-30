@@ -6,6 +6,7 @@ import {
     IsString,
     IsDateString,
     IsOptional,
+    ValidateIf,
 } from 'class-validator';
 
 export class UserSignUpDto {
@@ -34,10 +35,11 @@ export class UserSignUpDto {
     @IsString()
     address: string;
 
-    @ApiProperty()
-    @IsNotEmpty({ message: 'Birth date cannot be empty' })
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @ValidateIf((o) => o.birthdate !== '' && o.birthdate !== null)
     @IsDateString({}, { message: 'Invalid birth date format' })
-    birthdate: string;
+    birthdate?: string;
 
     @ApiProperty({ required: false })
     @IsOptional()

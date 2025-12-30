@@ -61,12 +61,13 @@ export class User extends BaseEntity {
     @ApiProperty({
         description: 'Birth date of the user',
         example: '1990-01-01',
+        required: false,
     })
     @Column({
         type: 'date',
-        nullable: false,
+        nullable: true,
     })
-    birthdate: Date;
+    birthdate?: Date;
 
     @ApiProperty({
         description: 'Email verification status',
