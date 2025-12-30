@@ -43,14 +43,16 @@ export default function CategoriesPage() {
         { key: 'name', label: 'Name' },
         { key: 'description', label: 'Description' },
         {
-            key: 'createdAt',
+            key: 'created_at',
             label: 'Created',
             render: (value: string) =>
-                new Date(value).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                }),
+                value
+                    ? new Date(value).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                      })
+                    : 'N/A',
         },
     ];
 
