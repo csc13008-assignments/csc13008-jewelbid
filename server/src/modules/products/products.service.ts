@@ -711,7 +711,7 @@ export class ProductsService {
         const product = await this.productsRepository.findById(productId);
 
         // Admin can delete any product, seller can only delete their own
-        if (userRole !== 'admin' && product.sellerId !== userId) {
+        if (userRole.toLowerCase() !== 'admin' && product.sellerId !== userId) {
             throw new ForbiddenException(
                 'Only the seller or admin can delete this product',
             );
