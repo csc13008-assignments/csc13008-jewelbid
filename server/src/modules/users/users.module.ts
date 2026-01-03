@@ -21,6 +21,6 @@ import { Product } from '../products/entities/product.model';
     ],
     controllers: [UsersController],
     providers: [UsersService, UsersRepository, UsersRatingRepository],
-    exports: [UsersService, UsersRepository],
+    exports: [UsersService, UsersRepository, UsersRatingRepository],
 })
 export class UsersModule {}

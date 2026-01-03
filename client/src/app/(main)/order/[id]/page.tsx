@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import OrderCompletion from '@/modules/orders/components/OrderCompletion';
 import { Order, ChatMessage, OrderStatus } from '@/types/order';
 import { ordersApi } from '@/lib/api/orders';
 import toast from '@/lib/toast';
+
+const CHAT_POLLING_INTERVAL = 3000; // 3 seconds
 
 export default function OrderPage() {
     const params = useParams();
@@ -18,6 +20,7 @@ export default function OrderPage() {
         role: string;
     } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // Initialize user
     useEffect(() => {
@@ -35,6 +38,16 @@ export default function OrderPage() {
         }
     }, [router]);
 
+    // Fetch chat messages (for polling)
+    const fetchChatMessages = useCallback(async (orderId: string) => {
+        try {
+            const messages = await ordersApi.getChatMessages(orderId);
+            setChatMessages(messages);
+        } catch {
+            // Silent fail for polling - don't spam console
+        }
+    }, []);
+
     // Fetch order data
     const fetchOrderData = useCallback(async () => {
         // params.id is productId from URL based on Seller Dashboard link
@@ -47,10 +60,30 @@ export default function OrderPage() {
             );
 
             if (orderData) {
+                // Fetch existing rating for this product
+                const myRating = await ordersApi.getMyRatingForProduct(
+                    orderData.productId,
+                );
+
+                // Populate order with rating info if exists
+                // Check if current user is buyer or seller and set appropriate field
+                if (myRating && currentUser) {
+                    const ratingValue =
+                        myRating.ratingType === 'Positive' ? 1 : -1;
+                    const isBuyer = orderData.buyerId === currentUser.id;
+
+                    if (isBuyer) {
+                        orderData.buyerRating = ratingValue;
+                        orderData.buyerComment = myRating.comment;
+                    } else {
+                        orderData.sellerRating = ratingValue;
+                        orderData.sellerComment = myRating.comment;
+                    }
+                }
+
                 setOrder(orderData);
-                // Fetch chat messages (mocked/stubbed for now if API missing)
-                const messages = await ordersApi.getChatMessages(orderData.id);
-                setChatMessages(messages);
+                // Fetch chat messages
+                await fetchChatMessages(orderData.id);
             } else {
                 console.log('Order not found via API');
             }
@@ -60,7 +93,7 @@ export default function OrderPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [params.id, currentUser]);
+    }, [params.id, currentUser, fetchChatMessages]);
 
     useEffect(() => {
         if (currentUser) {
@@ -68,25 +101,48 @@ export default function OrderPage() {
         }
     }, [fetchOrderData, currentUser]);
 
+    // Start chat polling when order is loaded
+    useEffect(() => {
+        if (order) {
+            // Start polling for new messages
+            pollingIntervalRef.current = setInterval(() => {
+                void fetchChatMessages(order.id);
+            }, CHAT_POLLING_INTERVAL);
+        }
+
+        // Cleanup on unmount or when order changes
+        return () => {
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+        };
+    }, [order, fetchChatMessages]);
+
     const handleUpdateOrder = async (updates: Partial<Order>) => {
         if (!order) return;
 
         try {
             let updatedOrder: Order | null = null;
 
-            if (updates.paymentProof && updates.shippingAddress) {
+            if (updates.paymentProof && updates.deliveryAddress) {
+                // First upload payment proof image to ImageKit
+                const paymentProofUrl = await ordersApi.uploadPaymentProof(
+                    updates.paymentProof,
+                );
+                // Then submit the URL to backend
                 updatedOrder = await ordersApi.submitPaymentInfo(
                     order.productId,
                     {
-                        paymentProof: updates.paymentProof,
-                        deliveryAddress: updates.shippingAddress,
+                        paymentProof: paymentProofUrl,
+                        deliveryAddress: updates.deliveryAddress,
                     },
                 );
-            } else if (updates.shippingInvoice) {
+            } else if (updates.trackingNumber) {
                 updatedOrder = await ordersApi.confirmShipment(
                     order.productId,
                     {
-                        shippingInvoice: updates.shippingInvoice,
+                        trackingNumber: updates.trackingNumber,
                     },
                 );
             } else if (updates.status === OrderStatus.COMPLETED) {
@@ -95,13 +151,24 @@ export default function OrderPage() {
                 updates.sellerRating !== undefined ||
                 updates.buyerRating !== undefined
             ) {
-                await ordersApi.submitRating(order.productId, {
-                    rating: updates.sellerRating || updates.buyerRating || 0,
-                    comment:
-                        updates.sellerComment || updates.buyerComment || '',
-                    isSeller: !!updates.sellerRating,
-                });
-                // Since mock rating doesn't return updated order, update local state
+                // Determine who we're rating
+                const isSeller = currentUser?.id === order.sellerId;
+                const toUserId = isSeller ? order.buyerId : order.sellerId;
+                const ratingValue = isSeller
+                    ? updates.sellerRating
+                    : updates.buyerRating;
+                const ratingType = ratingValue === 1 ? 'Positive' : 'Negative';
+                const comment = isSeller
+                    ? updates.sellerComment
+                    : updates.buyerComment;
+
+                await ordersApi.submitRating(
+                    toUserId,
+                    order.productId,
+                    ratingType,
+                    comment,
+                );
+                // Update local state since rating is stored separately
                 updatedOrder = { ...order, ...updates };
             }
 

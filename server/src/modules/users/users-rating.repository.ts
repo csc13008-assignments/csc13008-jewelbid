@@ -138,6 +138,22 @@ export class UsersRatingRepository {
         }
     }
 
+    async getRatingByUserAndProduct(
+        fromUserId: string,
+        productId: string,
+    ): Promise<Rating | null> {
+        try {
+            return await this.ratingRepository.findOne({
+                where: { fromUserId, productId },
+                relations: ['toUser', 'product'],
+            });
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to fetch rating:' + error,
+            );
+        }
+    }
+
     async getUserRatingStats(
         userId: string,
     ): Promise<{ positive: number; negative: number; percentage: number }> {

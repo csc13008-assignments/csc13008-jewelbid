@@ -27,7 +27,7 @@ export default function OrderCompletion({
 }: OrderCompletionProps) {
     const [paymentProof, setPaymentProof] = useState('');
     const [shippingAddress, setShippingAddress] = useState(
-        order.shippingAddress || '',
+        order.deliveryAddress || '',
     );
     const [shippingInvoice, setShippingInvoice] = useState('');
     const [rating, setRating] = useState<number>(
@@ -44,11 +44,11 @@ export default function OrderCompletion({
 
     const currentStep = (() => {
         switch (order.status) {
-            case OrderStatus.PAYMENT_PENDING:
+            case OrderStatus.PENDING_PAYMENT_INFO:
                 return 1;
-            case OrderStatus.SHIPPING_PENDING:
+            case OrderStatus.PENDING_SHIPMENT:
                 return 2;
-            case OrderStatus.DELIVERY_PENDING:
+            case OrderStatus.PENDING_DELIVERY_CONFIRMATION:
                 return 3;
             case OrderStatus.COMPLETED:
             case OrderStatus.CANCELLED:
@@ -69,8 +69,8 @@ export default function OrderCompletion({
 
             await onUpdateOrder({
                 paymentProof: base64Data,
-                shippingAddress,
-                status: OrderStatus.SHIPPING_PENDING,
+                deliveryAddress: shippingAddress,
+                status: OrderStatus.PENDING_SHIPMENT,
             });
         } catch (error: any) {
             console.error('Payment submission error:', error);
@@ -91,8 +91,8 @@ export default function OrderCompletion({
         setLoading(true);
         try {
             await onUpdateOrder({
-                shippingInvoice,
-                status: OrderStatus.DELIVERY_PENDING,
+                trackingNumber: shippingInvoice,
+                status: OrderStatus.PENDING_DELIVERY_CONFIRMATION,
             });
         } finally {
             setLoading(false);
@@ -156,7 +156,7 @@ export default function OrderCompletion({
                     Order Cancelled
                 </h2>
                 <p className="text-red-700 mb-2">
-                    <strong>Reason:</strong> {order.cancelReason}
+                    <strong>Reason:</strong> {order.cancellationReason}
                 </p>
                 {order.sellerRating && (
                     <p className="text-red-700">
@@ -353,7 +353,7 @@ export default function OrderCompletion({
                                     Shipping Address
                                 </h4>
                                 <p className="text-gray-700 whitespace-pre-line">
-                                    {order.shippingAddress}
+                                    {order.deliveryAddress}
                                 </p>
                             </div>
                             <div className="space-y-4">
@@ -403,7 +403,7 @@ export default function OrderCompletion({
                                     Tracking Information
                                 </h4>
                                 <p className="text-gray-700">
-                                    {order.shippingInvoice}
+                                    {order.trackingNumber}
                                 </p>
                             </div>
                             <div className="space-y-4">

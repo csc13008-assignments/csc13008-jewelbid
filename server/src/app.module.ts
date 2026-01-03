@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -19,6 +20,7 @@ import { UploadModule } from './modules/upload/upload.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+        ScheduleModule.forRoot(),
 
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],

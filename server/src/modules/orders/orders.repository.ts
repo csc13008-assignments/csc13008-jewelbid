@@ -8,6 +8,13 @@ export class OrdersRepository extends Repository<Order> {
         super(Order, dataSource.createEntityManager());
     }
 
+    async findById(orderId: string): Promise<Order | null> {
+        return this.findOne({
+            where: { id: orderId },
+            relations: ['product', 'seller', 'buyer'],
+        });
+    }
+
     async findByProductId(productId: string): Promise<Order | null> {
         return this.findOne({
             where: { productId },

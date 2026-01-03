@@ -34,4 +34,29 @@ export class ImageKitService {
             );
         }
     }
+
+    async uploadBase64Image(
+        base64Data: string,
+        fileName: string,
+        folder: string,
+    ): Promise<string> {
+        try {
+            // Handle base64 with or without data URL prefix
+            let fileData = base64Data;
+            if (base64Data.includes('base64,')) {
+                fileData = base64Data.split('base64,')[1];
+            }
+
+            const response = await this.imageKit.upload({
+                file: fileData,
+                fileName: fileName,
+                folder: folder,
+            });
+            return response.url;
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to upload base64 image: ' + error.message,
+            );
+        }
+    }
 }

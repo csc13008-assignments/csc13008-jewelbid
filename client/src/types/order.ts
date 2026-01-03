@@ -1,9 +1,9 @@
 export enum OrderStatus {
-    PAYMENT_PENDING = 'PAYMENT_PENDING',
-    SHIPPING_PENDING = 'SHIPPING_PENDING',
-    DELIVERY_PENDING = 'DELIVERY_PENDING',
-    COMPLETED = 'COMPLETED',
-    CANCELLED = 'CANCELLED',
+    PENDING_PAYMENT_INFO = 'Pending Payment Info',
+    PENDING_SHIPMENT = 'Pending Shipment',
+    PENDING_DELIVERY_CONFIRMATION = 'Pending Delivery Confirmation',
+    COMPLETED = 'Completed',
+    CANCELLED = 'Cancelled',
 }
 
 export interface Order {
@@ -11,17 +11,26 @@ export interface Order {
     productId: string;
     sellerId: string;
     buyerId: string;
+    finalPrice: number;
     status: OrderStatus;
     paymentProof?: string;
-    shippingAddress?: string;
-    shippingInvoice?: string;
-    sellerRating?: number; // +1 or -1
+    deliveryAddress?: string;
+    trackingNumber?: string;
+    sellerNotes?: string;
+    buyerNotes?: string;
+    cancellationReason?: string;
+    paymentInfoSubmittedAt?: Date;
+    shipmentConfirmedAt?: Date;
+    deliveryConfirmedAt?: Date;
+    completedAt?: Date;
+    cancelledAt?: Date;
+    created_at: Date;
+    updated_at: Date;
+    // Frontend-only fields for rating display (from separate Rating entity)
+    sellerRating?: number;
     buyerRating?: number;
     sellerComment?: string;
     buyerComment?: string;
-    cancelReason?: string;
-    createdAt: Date;
-    updatedAt: Date;
 }
 
 export interface ChatMessage {

@@ -224,6 +224,16 @@ The Jewelbid Team
         return await this.usersRatingRepository.getUserRatingStats(userId);
     }
 
+    async getRatingByUserAndProduct(
+        fromUserId: string,
+        productId: string,
+    ): Promise<Rating | null> {
+        return await this.usersRatingRepository.getRatingByUserAndProduct(
+            fromUserId,
+            productId,
+        );
+    }
+
     async requestUpgrade(userId: string): Promise<{ message: string }> {
         const user = await this.usersRepository.findOneById(userId);
 

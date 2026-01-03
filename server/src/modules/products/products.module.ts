@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { ProductsRepository } from './products.repository';
+import { AuctionSchedulerService } from './auction-scheduler.service';
 import { Product } from './entities/product.model';
 import { Bid } from './entities/bid.model';
 import { Watchlist } from './entities/watchlist.model';
@@ -27,7 +28,12 @@ import { OrdersModule } from '../orders/orders.module';
         OrdersModule,
     ],
     controllers: [ProductsController],
-    providers: [ProductsService, ProductsRepository, AccessControlService],
+    providers: [
+        ProductsService,
+        ProductsRepository,
+        AccessControlService,
+        AuctionSchedulerService,
+    ],
     exports: [ProductsService, ProductsRepository],
 })
 export class ProductsModule {}

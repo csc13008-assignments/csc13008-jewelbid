@@ -17,7 +17,7 @@ export class ChatService {
 
     async getMessages(orderId: string, userId: string): Promise<Message[]> {
         // Verify user is part of this order
-        const order = await this.ordersRepository.findByProductId(orderId);
+        const order = await this.ordersRepository.findById(orderId);
         if (!order) {
             throw new NotFoundException('Order not found');
         }
@@ -33,7 +33,7 @@ export class ChatService {
 
     async sendMessage(userId: string, dto: SendMessageDto): Promise<Message> {
         // Verify user is part of this order
-        const order = await this.ordersRepository.findByProductId(dto.orderId);
+        const order = await this.ordersRepository.findById(dto.orderId);
         if (!order) {
             throw new NotFoundException('Order not found');
         }
@@ -55,7 +55,7 @@ export class ChatService {
 
     async markAsRead(orderId: string, userId: string): Promise<void> {
         // Verify user is part of this order
-        const order = await this.ordersRepository.findByProductId(orderId);
+        const order = await this.ordersRepository.findById(orderId);
         if (!order) {
             throw new NotFoundException('Order not found');
         }

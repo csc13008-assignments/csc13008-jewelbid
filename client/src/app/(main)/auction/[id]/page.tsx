@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Heart, Calendar, Clock, X, Edit } from 'lucide-react';
 import { productsApi } from '@/lib/api/products';
-import { ordersApi } from '@/lib/api/orders';
 import { mapProductToAuction } from '@/stores/productsStore';
 import { Auction } from '@/types';
 import {
@@ -557,27 +556,9 @@ export default function ProductDetailPage() {
     // Order handlers
     const handleProceedToPayment = async () => {
         if (!auction) return;
-
-        try {
-            // Try to create order (may not be needed if backend auto-creates)
-            await ordersApi.createOrder(auction.id);
-            router.push(`/order/${auction.id}`);
-        } catch (error: any) {
-            console.error('Failed to create order:', error);
-
-            // If 404, the endpoint doesn't exist - order likely auto-created by backend
-            // If 409 or similar, order already exists
-            // In both cases, proceed to order page
-            const status = error?.response?.status;
-            if (status === 404 || status === 409) {
-                console.log(
-                    'Order endpoint not available or order exists, proceeding anyway...',
-                );
-                router.push(`/order/${auction.id}`);
-            } else {
-                toast.error('Failed to initialize order. Please try again.');
-            }
-        }
+        // Orders are auto-created by the backend scheduler when auction ends
+        // Just navigate to the order page
+        router.push(`/order/${auction.id}`);
     };
 
     const handleRejectBidder = async (bidderId: string, bidderName: string) => {

@@ -15,6 +15,7 @@ import { RatingBadge, Button } from '@/modules/shared/components/ui';
 import UserSidebar from '@/modules/shared/components/layout/UserSidebar';
 import { productsApi } from '@/lib/api/products';
 import { usersApi } from '@/lib/api/users';
+import { ordersApi } from '@/lib/api/orders';
 import toast from '@/lib/toast';
 
 interface WonAuction {
@@ -27,6 +28,7 @@ interface WonAuction {
     sellerId: string;
     dateWon: string;
     action: string;
+    orderStatus?: string;
 }
 
 export default function WonAuctionsPage() {
@@ -81,31 +83,43 @@ export default function WonAuctionsPage() {
 
             const mergedProducts = Array.from(allWonProductsMap.values());
 
-            const auctions: WonAuction[] = mergedProducts.map((product) => ({
-                id: product.id,
-                product: product.name,
-                productImage: product.mainImage,
-                finalPrice: formatCurrency(product.currentPrice),
-                sellerName: product.seller?.fullname || 'Unknown Seller',
-                sellerAvatar:
-                    product.seller?.profileImage || '/avatars/default.jpg',
-                sellerId: product.seller?.id || '',
-                dateWon: new Date(product.endDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
+            // Fetch order status for each product
+            const auctionsWithOrders = await Promise.all(
+                mergedProducts.map(async (product) => {
+                    const order = await ordersApi.getOrderByProduct(product.id);
+                    return {
+                        id: product.id,
+                        product: product.name,
+                        productImage: product.mainImage,
+                        finalPrice: formatCurrency(product.currentPrice),
+                        sellerName:
+                            product.seller?.fullname || 'Unknown Seller',
+                        sellerAvatar:
+                            product.seller?.profileImage ||
+                            '/avatars/default.jpg',
+                        sellerId: product.seller?.id || '',
+                        dateWon: new Date(product.endDate).toLocaleDateString(
+                            'en-US',
+                            {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                            },
+                        ),
+                        action: 'View Order',
+                        orderStatus: order?.status || 'Pending',
+                    };
                 }),
-                action: 'Rate Seller',
-            }));
+            );
 
             // Sort by date (newest first)
-            auctions.sort(
+            auctionsWithOrders.sort(
                 (a, b) =>
                     new Date(b.dateWon).getTime() -
                     new Date(a.dateWon).getTime(),
             );
 
-            setWonAuctions(auctions);
+            setWonAuctions(auctionsWithOrders);
         } catch (error) {
             console.error('Failed to fetch won auctions:', error);
             setWonAuctions([]);
@@ -294,8 +308,25 @@ export default function WonAuctionsPage() {
                                             </div>
                                             <div className="col-span-2 px-4 py-5 text-center">
                                                 <div className="flex flex-col gap-2 items-center">
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        Payment Pending
+                                                    <span
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                            auction.orderStatus ===
+                                                            'Completed'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : auction.orderStatus ===
+                                                                    'Cancelled'
+                                                                  ? 'bg-red-100 text-red-800'
+                                                                  : auction.orderStatus ===
+                                                                      'Pending Delivery Confirmation'
+                                                                    ? 'bg-purple-100 text-purple-800'
+                                                                    : auction.orderStatus ===
+                                                                        'Pending Shipment'
+                                                                      ? 'bg-yellow-100 text-yellow-800'
+                                                                      : 'bg-blue-100 text-blue-800'
+                                                        }`}
+                                                    >
+                                                        {auction.orderStatus ||
+                                                            'Pending'}
                                                     </span>
                                                     <Link
                                                         href={`/order/${auction.id}`}

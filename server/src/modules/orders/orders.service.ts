@@ -3,6 +3,9 @@ import {
     NotFoundException,
     BadRequestException,
     ForbiddenException,
+    Inject,
+    forwardRef,
+    Logger,
 } from '@nestjs/common';
 import { OrdersRepository } from './orders.repository';
 import { Order, OrderStatus } from './entities/order.model';
@@ -12,10 +15,18 @@ import {
     ConfirmDeliveryDto,
     CancelOrderDto,
 } from './dtos/order-workflow.dto';
+import { UsersRatingRepository } from '../users/users-rating.repository';
+import { RatingType } from '../users/entities/rating.model';
 
 @Injectable()
 export class OrdersService {
-    constructor(private readonly ordersRepository: OrdersRepository) {}
+    private readonly logger = new Logger(OrdersService.name);
+
+    constructor(
+        private readonly ordersRepository: OrdersRepository,
+        @Inject(forwardRef(() => UsersRatingRepository))
+        private readonly usersRatingRepository: UsersRatingRepository,
+    ) {}
 
     async getOrderByProductId(productId: string): Promise<Order> {
         const order = await this.ordersRepository.findByProductId(productId);
@@ -163,8 +174,26 @@ export class OrdersService {
         order.cancellationReason = dto.reason;
         order.cancelledAt = new Date();
 
-        // TODO: Automatically create negative rating for buyer
-        // This will be implemented when integrating with Users/Ratings module
+        // Automatically create negative rating for buyer when seller cancels
+        try {
+            await this.usersRatingRepository.createRating(
+                {
+                    toUserId: order.buyerId,
+                    productId: order.productId,
+                    ratingType: RatingType.NEGATIVE,
+                    comment: `Order cancelled by seller. Reason: ${dto.reason}`,
+                },
+                sellerId,
+            );
+            this.logger.log(
+                `Created negative rating for buyer ${order.buyerId} due to order cancellation`,
+            );
+        } catch (error) {
+            this.logger.error(
+                `Failed to create negative rating for buyer: ${error}`,
+            );
+            // Don't fail the cancellation if rating creation fails
+        }
 
         return await this.ordersRepository.save(order);
     }

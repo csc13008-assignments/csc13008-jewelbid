@@ -820,4 +820,38 @@ export class ProductsRepository {
             );
         }
     }
+
+    // Find active products that have passed their end date
+    async findEndedActiveProducts(): Promise<Product[]> {
+        try {
+            return await this.productRepository
+                .find({
+                    where: {
+                        status: ProductStatus.ACTIVE,
+                    },
+                    relations: ['seller', 'currentBidder'],
+                })
+                .then((products) =>
+                    products.filter((p) => new Date(p.endDate) < new Date()),
+                );
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to find ended active products:' + error,
+            );
+        }
+    }
+
+    // Update product status
+    async updateProductStatus(
+        productId: string,
+        status: ProductStatus,
+    ): Promise<void> {
+        try {
+            await this.productRepository.update(productId, { status });
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to update product status:' + error,
+            );
+        }
+    }
 }

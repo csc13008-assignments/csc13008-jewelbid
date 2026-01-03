@@ -218,6 +218,26 @@ export class UsersController {
         return await this.usersService.getRatingsByUser(req.user.id);
     }
 
+    @ApiOperation({
+        summary: 'Get my rating for a specific product [BIDDER, SELLER]',
+    })
+    @ApiBearerAuth('access-token')
+    @Get('ratings/product/:productId')
+    @ApiResponse({
+        status: 200,
+        description: 'Rating for product fetched successfully',
+    })
+    @UseGuards(ATAuthGuard)
+    async getMyRatingForProduct(
+        @Request() req: any,
+        @Param('productId') productId: string,
+    ) {
+        return await this.usersService.getRatingByUserAndProduct(
+            req.user.id,
+            productId,
+        );
+    }
+
     @ApiOperation({ summary: 'Request upgrade to seller [BIDDER]' })
     @ApiBearerAuth('access-token')
     @Post('upgrade-request')

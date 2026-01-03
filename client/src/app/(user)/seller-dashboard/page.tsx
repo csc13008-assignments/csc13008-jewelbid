@@ -18,6 +18,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { productsApi, BackendProduct } from '@/lib/api/products';
 import { usersApi } from '@/lib/api/users';
+import { ordersApi } from '@/lib/api/orders';
 
 interface ActiveAuction {
     id: string;
@@ -38,6 +39,7 @@ interface CompletedAuction {
     sellerId: string;
     sellerRating: number;
     dateWon: string;
+    orderStatus?: string;
 }
 
 export default function SellerDashboard() {
@@ -99,23 +101,35 @@ export default function SellerDashboard() {
                 })),
             );
 
-            setCompletedAuctions(
-                completedProducts.map((p: BackendProduct) => ({
-                    id: p.id,
-                    title: p.name,
-                    image: p.mainImage,
-                    finalPrice: p.currentPrice,
-                    sellerName: p.currentBidder?.fullname || 'Unknown Bidder',
-                    sellerAvatar: '/avatars/default.jpg',
-                    sellerId: p.currentBidder?.id || '',
-                    sellerRating: 5.0,
-                    dateWon: new Date(p.endDate).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                    }),
-                })),
+            // Fetch order status for each completed product
+            const completedAuctionsWithOrders = await Promise.all(
+                completedProducts.map(async (p: BackendProduct) => {
+                    const order = await ordersApi.getOrderByProduct(p.id);
+                    return {
+                        id: p.id,
+                        title: p.name,
+                        image: p.mainImage,
+                        finalPrice: p.currentPrice,
+                        sellerName:
+                            p.currentBidder?.fullname || 'Unknown Bidder',
+                        sellerAvatar:
+                            p.currentBidder?.profileImage ||
+                            '/avatars/default.jpg',
+                        sellerId: p.currentBidder?.id || '',
+                        sellerRating: 5.0,
+                        dateWon: new Date(p.endDate).toLocaleDateString(
+                            'en-US',
+                            {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                            },
+                        ),
+                        orderStatus: order?.status || 'Pending',
+                    };
+                }),
             );
+            setCompletedAuctions(completedAuctionsWithOrders);
         } catch (error) {
             console.error('Failed to fetch seller products:', error);
         } finally {
@@ -491,8 +505,25 @@ export default function SellerDashboard() {
                                                                         </div>
                                                                         <div className="col-span-2 px-6 py-4 flex justify-center">
                                                                             <div className="flex flex-col gap-2 items-center">
-                                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                                                    Shipping
+                                                                                <span
+                                                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                                                        auction.orderStatus ===
+                                                                                        'Completed'
+                                                                                            ? 'bg-green-100 text-green-800'
+                                                                                            : auction.orderStatus ===
+                                                                                                'Cancelled'
+                                                                                              ? 'bg-red-100 text-red-800'
+                                                                                              : auction.orderStatus ===
+                                                                                                  'Pending Delivery Confirmation'
+                                                                                                ? 'bg-purple-100 text-purple-800'
+                                                                                                : auction.orderStatus ===
+                                                                                                    'Pending Shipment'
+                                                                                                  ? 'bg-yellow-100 text-yellow-800'
+                                                                                                  : 'bg-blue-100 text-blue-800'
+                                                                                    }`}
+                                                                                >
+                                                                                    {auction.orderStatus ||
+                                                                                        'Pending'}
                                                                                 </span>
                                                                                 <Link
                                                                                     href={`/order/${auction.id}`}
