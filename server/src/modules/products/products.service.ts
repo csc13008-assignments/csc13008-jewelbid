@@ -82,7 +82,7 @@ export class ProductsService {
         );
 
         return {
-            products,
+            products: this.maskProductsBidderNames(products),
             total,
             page,
             totalPages: Math.ceil(total / limit),
@@ -131,7 +131,7 @@ export class ProductsService {
         );
 
         return {
-            products,
+            products: this.maskProductsBidderNames(products),
             total,
             page,
             totalPages: Math.ceil(total / limit),
@@ -150,9 +150,9 @@ export class ProductsService {
         ]);
 
         return {
-            topEndingSoon,
-            topBidCount,
-            topPrice,
+            topEndingSoon: this.maskProductsBidderNames(topEndingSoon),
+            topBidCount: this.maskProductsBidderNames(topBidCount),
+            topPrice: this.maskProductsBidderNames(topPrice),
         };
     }
 
@@ -185,7 +185,7 @@ export class ProductsService {
         }
 
         return {
-            products,
+            products: this.maskProductsBidderNames(products),
             total,
             page,
             totalPages: Math.ceil(total / limit),
@@ -207,9 +207,16 @@ export class ProductsService {
         const questions =
             await this.productsRepository.getProductQuestions(productId);
 
+        // Mask the currentBidder name to protect privacy
+        if (product.currentBidder?.fullname) {
+            product.currentBidder.fullname = this.maskName(
+                product.currentBidder.fullname,
+            );
+        }
+
         return {
             product,
-            relatedProducts,
+            relatedProducts: this.maskProductsBidderNames(relatedProducts),
             questions,
         };
     }
@@ -561,6 +568,17 @@ export class ProductsService {
         }
         const lastName = parts[parts.length - 1];
         return '****' + lastName;
+    }
+
+    private maskProductsBidderNames(products: Product[]): Product[] {
+        return products.map((product) => {
+            if (product.currentBidder?.fullname) {
+                product.currentBidder.fullname = this.maskName(
+                    product.currentBidder.fullname,
+                );
+            }
+            return product;
+        });
     }
 
     async checkRejection(productId: string, userId: string): Promise<boolean> {
