@@ -308,9 +308,10 @@ export default function MyBidsPage() {
                                                                                     </Link>
                                                                                     <p className="text-xs text-neutral-500 mt-1">
                                                                                         Category:{' '}
-                                                                                        {
-                                                                                            bid.category
-                                                                                        }
+                                                                                        {bid
+                                                                                            .category
+                                                                                            ?.name ||
+                                                                                            'Uncategorized'}
                                                                                     </p>
                                                                                 </div>
                                                                             </div>
