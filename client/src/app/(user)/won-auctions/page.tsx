@@ -26,6 +26,8 @@ interface WonAuction {
     sellerName: string;
     sellerAvatar: string;
     sellerId: string;
+    sellerRating: number;
+    sellerTotalReviews: number;
     dateWon: string;
     action: string;
     orderStatus?: string;
@@ -87,6 +89,16 @@ export default function WonAuctionsPage() {
             const auctionsWithOrders = await Promise.all(
                 mergedProducts.map(async (product) => {
                     const order = await ordersApi.getOrderByProduct(product.id);
+
+                    // Calculate seller rating from positive/negative ratings
+                    const positiveRatings =
+                        product.seller?.positiveRatings || 0;
+                    const negativeRatings =
+                        product.seller?.negativeRatings || 0;
+                    const totalReviews = positiveRatings + negativeRatings;
+                    const sellerRating =
+                        totalReviews > 0 ? positiveRatings / totalReviews : 1.0;
+
                     return {
                         id: product.id,
                         product: product.name,
@@ -98,6 +110,8 @@ export default function WonAuctionsPage() {
                             product.seller?.profileImage ||
                             '/avatars/default.jpg',
                         sellerId: product.seller?.id || '',
+                        sellerRating: sellerRating,
+                        sellerTotalReviews: totalReviews,
                         dateWon: new Date(product.endDate).toLocaleDateString(
                             'en-US',
                             {
@@ -286,8 +300,12 @@ export default function WonAuctionsPage() {
                                             <div className="col-span-2 px-4 py-5">
                                                 <div className="flex justify-center">
                                                     <RatingBadge
-                                                        rating={5.0}
-                                                        totalReviews={12}
+                                                        rating={
+                                                            auction.sellerRating
+                                                        }
+                                                        totalReviews={
+                                                            auction.sellerTotalReviews
+                                                        }
                                                         sellerName={
                                                             auction.sellerName
                                                         }
