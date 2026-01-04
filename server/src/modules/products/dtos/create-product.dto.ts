@@ -8,7 +8,6 @@ import {
     IsArray,
     MinLength,
     Min,
-    IsUUID,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
@@ -33,7 +32,7 @@ export class CreateProductDto {
         description: 'Category ID',
         example: 'c0000001-0000-0000-0000-000000000001',
     })
-    @IsUUID()
+    @IsString()
     categoryId: string;
 
     @ApiProperty({

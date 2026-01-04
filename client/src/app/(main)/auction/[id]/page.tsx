@@ -112,6 +112,11 @@ export default function ProductDetailPage() {
 
             const { isInWatchlist: checkWatchlist } =
                 useWatchlistStore.getState();
+
+            // Debug: Check if category is returned from API
+            console.log('Product from API:', productDetails.product);
+            console.log('Category from API:', productDetails.product.category);
+
             const auctionData = mapProductToAuction(
                 productDetails.product,
                 checkWatchlist,
@@ -750,7 +755,8 @@ export default function ProductDetailPage() {
                                             CATEGORY
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.category || 'N/A'}
+                                            {auction.product.category?.name ||
+                                                'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -1458,8 +1464,9 @@ export default function ProductDetailPage() {
                                 RELATED AUCTIONS
                             </p>
                             <p className="text-sm text-gray-500 mb-4">
-                                More {auction.product.category} items you might
-                                like
+                                More{' '}
+                                {auction.product.category?.name || 'similar'}{' '}
+                                items you might like
                             </p>
                             {relatedAuctions.length > 0 ? (
                                 <div className="grid grid-cols-1 gap-6">

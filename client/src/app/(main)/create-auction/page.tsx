@@ -132,7 +132,7 @@ export default function CreateAuctionPage() {
             const productData = {
                 name: formData.productName,
                 description: formData.description,
-                category: formData.category, // Now using category name from API
+                categoryId: formData.category, // Send category ID (UUID)
                 startingPrice: parseFloat(formData.startingPrice),
                 stepPrice: parseFloat(formData.bidIncrement),
                 buyNowPrice: formData.buyNowPrice
@@ -169,7 +169,11 @@ export default function CreateAuctionPage() {
             const errorMessage =
                 error.response?.data?.message ||
                 'Failed to create product. Please try again.';
-            toast.error(errorMessage);
+            toast.error(
+                Array.isArray(errorMessage)
+                    ? errorMessage.join(', ')
+                    : errorMessage,
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -310,10 +314,7 @@ export default function CreateAuctionPage() {
                                             Select Category
                                         </option>
                                         {categories.map((cat) => (
-                                            <option
-                                                key={cat.id}
-                                                value={cat.name}
-                                            >
+                                            <option key={cat.id} value={cat.id}>
                                                 {cat.name}
                                             </option>
                                         ))}

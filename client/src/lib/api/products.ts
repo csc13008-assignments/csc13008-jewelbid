@@ -5,7 +5,10 @@ export interface BackendProduct {
     id: string;
     name: string;
     description: string;
-    category: string;
+    category?: {
+        id: string;
+        name: string;
+    } | null;
     startingPrice: number;
     currentPrice: number;
     stepPrice: number;
@@ -84,7 +87,7 @@ export interface HomepageProductsResponse {
 export interface CreateProductRequest {
     name: string;
     description: string;
-    category: string;
+    categoryId: string;
     startingPrice: number;
     stepPrice: number;
     buyNowPrice?: number;
@@ -310,7 +313,7 @@ export const productsApi = {
         const formData = new FormData();
         formData.append('name', productData.name);
         formData.append('description', productData.description);
-        formData.append('category', productData.category);
+        formData.append('categoryId', productData.categoryId);
         formData.append('startingPrice', productData.startingPrice.toString());
         formData.append('stepPrice', productData.stepPrice.toString());
         formData.append('endDate', productData.endDate);

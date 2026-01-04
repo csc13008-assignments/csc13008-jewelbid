@@ -361,7 +361,7 @@ export class ProductsRepository {
         try {
             const product = await this.productRepository.findOne({
                 where: { id },
-                relations: ['seller', 'currentBidder'],
+                relations: ['seller', 'currentBidder', 'category'],
             });
 
             if (!product) {
