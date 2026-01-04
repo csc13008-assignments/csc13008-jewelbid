@@ -2,14 +2,23 @@ import { apiClient } from './client';
 
 export interface BackendRating {
     id: string;
-    raterId: string;
-    ratedUserId: string;
+    fromUserId: string;
+    toUserId: string;
     productId: string;
-    isPositive: boolean;
+    ratingType: 'Positive' | 'Negative'; // Backend uses enum, not boolean
     comment: string;
     created_at: string;
     updated_at: string;
-    rater?: {
+    fromUser?: {
+        // The person who gave the rating
+        id: string;
+        fullname: string;
+        profileImage: string;
+        positiveRatings?: number;
+        negativeRatings?: number;
+    };
+    toUser?: {
+        // The person who received the rating
         id: string;
         fullname: string;
         profileImage: string;

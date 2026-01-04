@@ -205,7 +205,7 @@ export class UsersController {
     }
 
     @ApiOperation({
-        summary: 'Get my ratings given to others [BIDDER, SELLER]',
+        summary: 'Get my ratings received from others [BIDDER, SELLER]',
     })
     @ApiBearerAuth('access-token')
     @Get('user/my-ratings')
@@ -215,7 +215,8 @@ export class UsersController {
     })
     @UseGuards(ATAuthGuard)
     async getMyRatings(@Request() req: any) {
-        return await this.usersService.getRatingsByUser(req.user.id);
+        // Return ratings RECEIVED by current user (not given by them)
+        return await this.usersService.getRatingsForUser(req.user.id);
     }
 
     @ApiOperation({

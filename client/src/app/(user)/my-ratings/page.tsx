@@ -44,7 +44,9 @@ export default function MyRatingsPage() {
         try {
             const data = await usersApi.getMyRatings();
 
-            const positiveCount = data.filter((r) => r.isPositive).length;
+            const positiveCount = data.filter(
+                (r) => r.ratingType === 'Positive',
+            ).length;
             const totalRatings = data.length;
             const reputationScore =
                 totalRatings > 0
@@ -57,15 +59,29 @@ export default function MyRatingsPage() {
                 totalRatings,
             });
 
-            const displayRatings: RatingDisplay[] = data.map((rating) => ({
-                id: rating.id,
-                sellerName: rating.rater?.fullname || 'Unknown User',
-                avatar: rating.rater?.profileImage || '/avatars/default.jpg',
-                rating: 5.0,
-                totalReviews: 0,
-                isPositive: rating.isPositive,
-                comment: rating.comment,
-            }));
+            const displayRatings: RatingDisplay[] = data.map((rating) => {
+                // Calculate rater's reputation
+                const raterTotalReviews =
+                    (rating.fromUser?.positiveRatings || 0) +
+                    (rating.fromUser?.negativeRatings || 0);
+                const raterRating =
+                    raterTotalReviews > 0
+                        ? ((rating.fromUser?.positiveRatings || 0) /
+                              raterTotalReviews) *
+                          5
+                        : 5.0;
+
+                return {
+                    id: rating.id,
+                    sellerName: rating.fromUser?.fullname || 'Unknown User',
+                    avatar:
+                        rating.fromUser?.profileImage || '/avatars/default.jpg',
+                    rating: raterRating,
+                    totalReviews: raterTotalReviews,
+                    isPositive: rating.ratingType === 'Positive',
+                    comment: rating.comment,
+                };
+            });
 
             setRatings(displayRatings);
         } catch (error) {
