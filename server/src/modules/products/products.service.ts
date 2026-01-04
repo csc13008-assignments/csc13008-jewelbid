@@ -2,7 +2,6 @@ import {
     Injectable,
     BadRequestException,
     ForbiddenException,
-    InternalServerErrorException,
 } from '@nestjs/common';
 import { ProductsRepository } from './products.repository';
 import { UsersRepository } from '../users/users.repository';
@@ -317,15 +316,6 @@ export class ProductsService {
 
         // Close auction
         await this.productsRepository.updateEndDate(productId, new Date());
-        // Might need to update status to SOLD or similar if supported?
-        // Logic seems to rely on End Date + Winning Bid.
-        // If Buy Now -> Create a winning bid at buyNowPrice?
-        // Or directly create Order?
-        // If we create Order, the product is effectively sold.
-        // Let's create a "winning bid" first so system consistency is maintained?
-        // Step 869 handleAutoBid creates bids.
-        // If I create a bid at buyNowPrice, handleAutoBid throws error "Use buy now feature".
-        // So I should manually insert the winning bid.
 
         // 1. Place winning bid
         await this.productsRepository.placeBid(
@@ -349,6 +339,47 @@ export class ProductsService {
             userId,
             Number(product.buyNowPrice),
         );
+
+        // 3. Send email notifications for Buy Now
+        try {
+            const buyer = await this.usersRepository.findOneById(userId);
+            const seller = await this.usersRepository.findOneById(
+                product.sellerId,
+            );
+            const formattedPrice = new Intl.NumberFormat('vi-VN').format(
+                Number(product.buyNowPrice),
+            );
+
+            // Email to buyer
+            await this.mailerService.sendMail({
+                to: buyer.email,
+                subject: `Congratulations! You purchased: ${product.name}`,
+                text: `Dear ${buyer.fullname},\n\nCongratulations! You have successfully purchased "${product.name}" using Buy Now for ${formattedPrice} VND.\n\nPlease proceed to complete your order.\n\nView your order: ${this.configService.get('FRONTEND_URL')}/order/${productId}\n\nBest regards,\nThe Jewelbid Team`,
+            });
+
+            // Email to seller
+            await this.mailerService.sendMail({
+                to: seller.email,
+                subject: `Your product was sold: ${product.name}`,
+                text: `Dear ${seller.fullname},\n\nGood news! Your product "${product.name}" has been sold through Buy Now for ${formattedPrice} VND.\n\nPlease wait for the buyer to complete the payment process.\n\nBest regards,\nThe Jewelbid Team`,
+            });
+
+            // Email to other bidders who participated in this auction
+            const allBidders =
+                await this.productsRepository.getUniqueBidders(productId);
+            const otherBidders = allBidders.filter((b) => b.id !== userId);
+
+            for (const bidder of otherBidders) {
+                await this.mailerService.sendMail({
+                    to: bidder.email,
+                    subject: `Auction ended: ${product.name}`,
+                    text: `Dear ${bidder.fullname},\n\nThe auction for "${product.name}" has ended.\n\nAnother user has purchased this item using the Buy Now option for ${formattedPrice} VND.\n\nThank you for participating! Check out other auctions on our platform.\n\nBrowse auctions: ${this.configService.get('FRONTEND_URL')}/auctions\n\nBest regards,\nThe Jewelbid Team`,
+                });
+            }
+        } catch (error) {
+            console.error('Failed to send Buy Now notification emails:', error);
+            // Don't throw - purchase was successful
+        }
 
         return updatedProduct;
     }
@@ -391,7 +422,13 @@ export class ProductsService {
                     bidAmount,
                 );
 
-            await this.sendBidNotifications(updatedProduct, userFullname, null);
+            await this.sendBidNotifications(
+                updatedProduct,
+                userFullname,
+                null,
+                userId,
+                bidAmount,
+            );
             await this.handleAutoRenewal(updatedProduct, product.id);
 
             return updatedProduct;
@@ -460,6 +497,8 @@ export class ProductsService {
                 updatedProduct,
                 userFullname,
                 currentWinningBid.bidderId,
+                userId,
+                maxBid,
             );
             await this.handleAutoRenewal(updatedProduct, product.id);
 
@@ -491,6 +530,8 @@ export class ProductsService {
             updatedProduct,
             userFullname,
             currentWinningBid.bidderId,
+            userId,
+            newPrice,
         );
         await this.handleAutoRenewal(updatedProduct, product.id);
 
@@ -523,30 +564,51 @@ export class ProductsService {
         product: Product,
         bidderName: string,
         previousBidderId?: string,
+        currentBidderId?: string,
+        bidAmount?: number,
     ): Promise<void> {
         try {
             const seller = await this.usersRepository.findOneById(
                 product.sellerId,
             );
+            const formattedPrice = new Intl.NumberFormat('vi-VN').format(
+                Number(product.currentPrice),
+            );
+
+            // Email to seller about new bid
             await this.mailerService.sendMail({
                 to: seller.email,
                 subject: `New bid on your product: ${product.name}`,
-                text: `A new bid of ${product.currentPrice} has been placed on your product "${product.name}" by ${bidderName}.`,
+                text: `A new bid of ${formattedPrice} VND has been placed on your product "${product.name}" by ${bidderName}.`,
             });
 
+            // Email to outbid user
             if (previousBidderId) {
                 const previousBidder =
                     await this.usersRepository.findOneById(previousBidderId);
                 await this.mailerService.sendMail({
                     to: previousBidder.email,
                     subject: `You have been outbid on: ${product.name}`,
-                    text: `Your bid on "${product.name}" has been outbid. Current price is ${product.currentPrice}.`,
+                    text: `Dear ${previousBidder.fullname},\n\nYour bid on "${product.name}" has been outbid. Current price is ${formattedPrice} VND.\n\nPlace a new bid: ${this.configService.get('FRONTEND_URL')}/auction/${product.id}\n\nBest regards,\nThe Jewelbid Team`,
+                });
+            }
+
+            // Email confirmation to the current bidder
+            if (currentBidderId && bidAmount) {
+                const currentBidder =
+                    await this.usersRepository.findOneById(currentBidderId);
+                const formattedBidAmount = new Intl.NumberFormat(
+                    'vi-VN',
+                ).format(bidAmount);
+                await this.mailerService.sendMail({
+                    to: currentBidder.email,
+                    subject: `Bid placed successfully: ${product.name}`,
+                    text: `Dear ${currentBidder.fullname},\n\nYour bid of ${formattedBidAmount} VND has been placed successfully on "${product.name}".\n\nYou are currently the highest bidder!\n\nView the auction: ${this.configService.get('FRONTEND_URL')}/auction/${product.id}\n\nBest regards,\nThe Jewelbid Team`,
                 });
             }
         } catch (error) {
-            throw new InternalServerErrorException(
-                'Failed to send bid notifications:' + error,
-            );
+            console.error('Failed to send bid notifications:', error);
+            // Don't throw - bid was placed successfully
         }
     }
 
@@ -686,10 +748,30 @@ export class ProductsService {
             );
         }
 
-        return await this.productsRepository.appendDescription(
+        const updatedProduct = await this.productsRepository.appendDescription(
             productId,
             additionalDescription,
         );
+
+        // Send email to all bidders about description change
+        try {
+            const bidders =
+                await this.productsRepository.getUniqueBidders(productId);
+            const seller = await this.usersRepository.findOneById(sellerId);
+
+            for (const bidder of bidders) {
+                await this.mailerService.sendMail({
+                    to: bidder.email,
+                    subject: `Product description updated: ${product.name}`,
+                    text: `Dear ${bidder.fullname},\n\nThe seller ${seller.fullname} has updated the description of the product "${product.name}" that you have placed a bid on.\n\nPlease review the updated description to ensure you're still interested in bidding.\n\nView the product: ${this.configService.get('FRONTEND_URL')}/auction/${productId}\n\nBest regards,\nThe Jewelbid Team`,
+                });
+            }
+        } catch (error) {
+            console.error('Failed to send description update emails:', error);
+            // Don't throw - description was updated successfully
+        }
+
+        return updatedProduct;
     }
 
     async rejectBidder(

@@ -503,6 +503,38 @@ export class ProductsRepository {
         }
     }
 
+    // Get unique bidders for a product (for notification purposes)
+    async getUniqueBidders(
+        productId: string,
+    ): Promise<{ id: string; email: string; fullname: string }[]> {
+        try {
+            const bids = await this.bidRepository.find({
+                where: { productId, isRejected: false },
+                relations: ['bidder'],
+            });
+
+            const uniqueBidders = new Map<
+                string,
+                { id: string; email: string; fullname: string }
+            >();
+            bids.forEach((bid) => {
+                if (bid.bidder && !uniqueBidders.has(bid.bidderId)) {
+                    uniqueBidders.set(bid.bidderId, {
+                        id: bid.bidder.id,
+                        email: bid.bidder.email,
+                        fullname: bid.bidder.fullname,
+                    });
+                }
+            });
+
+            return Array.from(uniqueBidders.values());
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to fetch unique bidders:' + error,
+            );
+        }
+    }
+
     async addToWatchlist(
         userId: string,
         productId: string,
