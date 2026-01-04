@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength, IsUUID } from 'class-validator';
+import { IsString, IsUUID } from 'class-validator';
 
 export class AskQuestionDto {
     @ApiProperty({
@@ -14,7 +14,6 @@ export class AskQuestionDto {
         example: 'Is this product authentic? Does it come with certificate?',
     })
     @IsString()
-    @MinLength(10)
     question: string;
 }
 
@@ -25,6 +24,5 @@ export class AnswerQuestionDto {
             'Yes, this product is 100% authentic and comes with GIA certificate.',
     })
     @IsString()
-    @MinLength(10)
     answer: string;
 }

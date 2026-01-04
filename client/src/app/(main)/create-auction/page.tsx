@@ -46,6 +46,21 @@ export default function CreateAuctionPage() {
     const [conditions, setConditions] = useState<FilterOption[]>([]);
     const [genders, setGenders] = useState<FilterOption[]>([]);
 
+    // Format number with dots as thousand separators (e.g., 1.000.000)
+    const formatPriceInput = (value: string): string => {
+        // Remove all non-digit characters
+        const digits = value.replace(/\D/g, '');
+        // Add dots as thousand separators
+        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    };
+
+    // Parse formatted price back to number
+    const parsePriceInput = (value: string): number => {
+        return parseInt(value.replace(/\./g, ''), 10) || 0;
+    };
+
+    const priceFields = ['startingPrice', 'bidIncrement', 'buyNowPrice'];
+
     const handleInputChange = (
         e: React.ChangeEvent<
             HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -53,6 +68,17 @@ export default function CreateAuctionPage() {
     ) => {
         const { name, value, type } = e.target;
         const checked = 'checked' in e.target ? e.target.checked : false;
+
+        // Format price fields with dots
+        if (priceFields.includes(name)) {
+            const formattedValue = formatPriceInput(value);
+            setFormData((prev) => ({
+                ...prev,
+                [name]: formattedValue,
+            }));
+            return;
+        }
+
         setFormData((prev) => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
@@ -132,11 +158,11 @@ export default function CreateAuctionPage() {
             const productData = {
                 name: formData.productName,
                 description: formData.description,
-                categoryId: formData.category, // Send category ID (UUID)
-                startingPrice: parseFloat(formData.startingPrice),
-                stepPrice: parseFloat(formData.bidIncrement),
+                categoryId: formData.category || undefined, // Optional - only send if selected
+                startingPrice: parsePriceInput(formData.startingPrice),
+                stepPrice: parsePriceInput(formData.bidIncrement),
                 buyNowPrice: formData.buyNowPrice
-                    ? parseFloat(formData.buyNowPrice)
+                    ? parsePriceInput(formData.buyNowPrice)
                     : undefined,
                 endDate: formData.endDate,
                 autoRenewal: formData.enableAutoExtension,
@@ -211,10 +237,11 @@ export default function CreateAuctionPage() {
                                 </label>
                                 <Input
                                     name="startingPrice"
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     value={formData.startingPrice}
                                     onChange={handleInputChange}
-                                    placeholder="Starting Price"
+                                    placeholder="1.000.000"
                                     className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
                                     required
                                 />
@@ -228,10 +255,11 @@ export default function CreateAuctionPage() {
                                 </label>
                                 <Input
                                     name="bidIncrement"
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     value={formData.bidIncrement}
                                     onChange={handleInputChange}
-                                    placeholder="Bid Increment"
+                                    placeholder="100.000"
                                     className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
                                     required
                                 />
@@ -243,10 +271,11 @@ export default function CreateAuctionPage() {
                                 </label>
                                 <Input
                                     name="buyNowPrice"
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     value={formData.buyNowPrice}
                                     onChange={handleInputChange}
-                                    placeholder="Buy Now Price"
+                                    placeholder="10.000.000"
                                     className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
                                 />
                             </div>
@@ -301,14 +330,13 @@ export default function CreateAuctionPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-600 mb-2">
-                                        Category *
+                                        Category
                                     </label>
                                     <select
                                         name="category"
                                         value={formData.category}
                                         onChange={handleInputChange}
                                         className="w-full border border-neutral-200 bg-neutral-50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
-                                        required
                                     >
                                         <option value="">
                                             Select Category
@@ -727,7 +755,6 @@ export default function CreateAuctionPage() {
                                         !formData.productName ||
                                         !formData.startingPrice ||
                                         !formData.bidIncrement ||
-                                        !formData.category ||
                                         !formData.endDate ||
                                         isSubmitting
                                             ? 'opacity-50 cursor-not-allowed'
@@ -738,7 +765,6 @@ export default function CreateAuctionPage() {
                                         !formData.productName ||
                                         !formData.startingPrice ||
                                         !formData.bidIncrement ||
-                                        !formData.category ||
                                         !formData.endDate ||
                                         isSubmitting
                                     }

@@ -31,9 +31,11 @@ export class CreateProductDto {
     @ApiProperty({
         description: 'Category ID',
         example: 'c0000001-0000-0000-0000-000000000001',
+        required: false,
     })
+    @IsOptional()
     @IsString()
-    categoryId: string;
+    categoryId?: string;
 
     @ApiProperty({
         description: 'Product brand',

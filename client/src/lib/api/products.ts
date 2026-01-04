@@ -87,7 +87,7 @@ export interface HomepageProductsResponse {
 export interface CreateProductRequest {
     name: string;
     description: string;
-    categoryId: string;
+    categoryId?: string;
     startingPrice: number;
     stepPrice: number;
     buyNowPrice?: number;
@@ -313,7 +313,9 @@ export const productsApi = {
         const formData = new FormData();
         formData.append('name', productData.name);
         formData.append('description', productData.description);
-        formData.append('categoryId', productData.categoryId);
+        if (productData.categoryId) {
+            formData.append('categoryId', productData.categoryId);
+        }
         formData.append('startingPrice', productData.startingPrice.toString());
         formData.append('stepPrice', productData.stepPrice.toString());
         formData.append('endDate', productData.endDate);

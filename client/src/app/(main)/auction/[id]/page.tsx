@@ -366,10 +366,6 @@ export default function ProductDetailPage() {
             toast.warning('Please login to ask a question');
             return;
         }
-        if (newQuestion.trim().length < 10) {
-            toast.warning('Question must be at least 10 characters long');
-            return;
-        }
         setIsPostingComment(true);
         try {
             await productsApi.askQuestion(auction.id, newQuestion);
@@ -456,10 +452,6 @@ export default function ProductDetailPage() {
 
     const handleSubmitReply = async (questionId: string) => {
         if (!replyText.trim()) return;
-        if (replyText.trim().length < 10) {
-            toast.warning('Answer must be at least 10 characters long');
-            return;
-        }
 
         try {
             await productsApi.answerQuestion(questionId, replyText);

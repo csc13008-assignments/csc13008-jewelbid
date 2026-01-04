@@ -35,16 +35,17 @@ export class Product extends BaseEntity {
     @ApiProperty({
         description: 'Category ID',
         example: 'c0000001-0000-0000-0000-000000000001',
+        required: false,
     })
     @Column({
         type: 'uuid',
-        nullable: false,
+        nullable: true,
     })
-    categoryId: string;
+    categoryId?: string;
 
-    @ManyToOne(() => Category, { eager: false })
+    @ManyToOne(() => Category, { eager: false, nullable: true })
     @JoinColumn({ name: 'categoryId' })
-    category: Category;
+    category?: Category;
 
     @ApiProperty({
         description: 'Product brand',
