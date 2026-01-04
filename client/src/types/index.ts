@@ -158,8 +158,10 @@ export interface User {
     email: string;
     password: string;
     name: string;
+    fullname?: string;
     username: string;
     avatar?: string;
+    profileImage?: string;
     address?: string;
     phone?: string;
     role: 'user' | 'admin' | 'bidder' | 'seller';
