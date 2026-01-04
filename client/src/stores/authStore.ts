@@ -95,6 +95,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                     isEmailVerified: true,
                     positiveRatings: 0,
                     negativeRatings: 0,
+                    profileImage: tokenPayload.profileImage || '',
                 };
                 localStorage.setItem('user', JSON.stringify(user));
 
@@ -175,6 +176,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                     isEmailVerified: true,
                     positiveRatings: 0,
                     negativeRatings: 0,
+                    profileImage: tokenPayload.profileImage || '',
                 };
                 localStorage.setItem('user', JSON.stringify(user));
 

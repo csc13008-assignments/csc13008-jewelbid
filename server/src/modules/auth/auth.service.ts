@@ -59,6 +59,7 @@ export class AuthService {
             email: user.email,
             fullname: user.fullname,
             role: user.role,
+            profileImage: user.profileImage || '',
         };
 
         const accessToken = await this.jwtService.signAsync(
@@ -191,6 +192,7 @@ export class AuthService {
                 id: payload.id,
                 fullname: user.fullname,
                 role: payload.role,
+                profileImage: user.profileImage || '',
             };
 
             const newAT = await this.jwtService.signAsync(payloadAccessToken, {

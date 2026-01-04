@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     Settings,
     Heart,
-    User,
     Trophy,
     LogOut,
     Grid3X3,
@@ -111,6 +111,16 @@ export default function UserSidebar({ className = '' }: UserSidebarProps) {
         return pathname === href;
     };
 
+    // Get user initials for fallback avatar
+    const getUserInitials = (name: string) => {
+        if (!name) return 'U';
+        const parts = name.split(' ');
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    };
+
     return (
         <div
             className={`bg-white rounded-2xl shadow-lg border border-primary/50 overflow-hidden ${className}`}
@@ -122,12 +132,27 @@ export default function UserSidebar({ className = '' }: UserSidebarProps) {
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/5 rounded-full -ml-10 -mb-10 blur-xl"></div>
 
                 <div className="flex items-center gap-4 relative z-10">
-                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-inner">
-                        <User className="w-7 h-7 text-white" />
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-inner overflow-hidden">
+                        {currentUser?.profileImage &&
+                        currentUser.profileImage.startsWith('http') ? (
+                            <Image
+                                src={currentUser.profileImage}
+                                alt={currentUser.fullname || 'User'}
+                                width={56}
+                                height={56}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <span className="text-white font-bold text-lg">
+                                {getUserInitials(
+                                    currentUser?.fullname || 'User',
+                                )}
+                            </span>
+                        )}
                     </div>
                     <div>
                         <p className="font-heading font-medium text-white text-lg tracking-wide">
-                            {currentUser?.name || 'User'}
+                            {currentUser?.fullname || 'User'}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
