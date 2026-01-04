@@ -18,6 +18,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { ImageKitService } from '../upload/imagekit.service';
 import { Product } from '../products/entities/product.model';
+import { Order } from '../orders/entities/order.model';
 
 @Injectable()
 export class UsersService {
@@ -29,6 +30,8 @@ export class UsersService {
         private readonly imageKitService: ImageKitService,
         @InjectRepository(Product)
         private readonly productRepository: Repository<Product>,
+        @InjectRepository(Order)
+        private readonly orderRepository: Repository<Order>,
     ) {}
 
     async updateProfile(
@@ -350,14 +353,35 @@ The Jewelbid Team
         if (user.role === Role.ADMIN)
             throw new BadRequestException('Cannot delete admin user');
 
-        // Check if user has any products
-        const productCount = await this.productRepository.count({
+        // Check if user has any products (as seller or current bidder)
+        const productAsSellerCount = await this.productRepository.count({
             where: { sellerId: userId },
         });
 
-        if (productCount > 0) {
+        if (productAsSellerCount > 0) {
             throw new BadRequestException(
-                `Cannot delete user. This user owns ${productCount} product(s). Please delete or transfer their products first.`,
+                `Cannot delete user. This user owns ${productAsSellerCount} product(s). Please delete or transfer their products first.`,
+            );
+        }
+
+        const productAsBidderCount = await this.productRepository.count({
+            where: { currentBidderId: userId },
+        });
+
+        if (productAsBidderCount > 0) {
+            throw new BadRequestException(
+                `Cannot delete user. This user is the current highest bidder on ${productAsBidderCount} product(s). Please wait until these auctions end or their bids are outbid.`,
+            );
+        }
+
+        // Check if user has any orders (as seller or buyer)
+        const orderCount = await this.orderRepository.count({
+            where: [{ sellerId: userId }, { buyerId: userId }],
+        });
+
+        if (orderCount > 0) {
+            throw new BadRequestException(
+                `Cannot delete user. This user has ${orderCount} order(s) associated. Please complete or cancel related orders first.`,
             );
         }
 
