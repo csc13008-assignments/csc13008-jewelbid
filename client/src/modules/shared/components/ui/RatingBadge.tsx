@@ -26,6 +26,9 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
     sellerTags,
     objectsSold,
 }) => {
+    // Debug: log the rating value being received
+    console.log('RatingBadge received:', { rating, totalReviews, sellerName });
+
     const sizeClasses = {
         sm: {
             avatar: 'w-8 h-8',
@@ -84,7 +87,7 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
                     <div
                         className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-[#5F87C1] text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
                     >
-                        {Math.round((rating / 5) * 100)}% Positive
+                        {Math.round(rating * 100)}% Positive
                     </div>
                 </div>
 
@@ -120,7 +123,7 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
                 <div
                     className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-[#5F87C1] text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
                 >
-                    {Math.round((rating / 5) * 100)}% Positive
+                    {Math.round(rating * 100)}% Positive
                 </div>
 
                 <div

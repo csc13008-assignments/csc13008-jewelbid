@@ -62,13 +62,14 @@ export const mapProductToAuction = (
                       id: product.currentBidder.id,
                       username: product.currentBidder.fullname,
                       avatar: product.currentBidder.profileImage || '',
-                      rating:
-                          product.currentBidder.positiveRatings &&
-                          product.currentBidder.negativeRatings !== undefined
-                              ? product.currentBidder.positiveRatings /
-                                (product.currentBidder.positiveRatings +
-                                    product.currentBidder.negativeRatings || 1)
-                              : 0,
+                      rating: (() => {
+                          const positive =
+                              product.currentBidder.positiveRatings || 0;
+                          const negative =
+                              product.currentBidder.negativeRatings || 0;
+                          const total = positive + negative;
+                          return total > 0 ? positive / total : 1.0;
+                      })(),
                       reviewCount:
                           (product.currentBidder.positiveRatings || 0) +
                           (product.currentBidder.negativeRatings || 0),
@@ -123,13 +124,20 @@ export const mapProductToAuction = (
             id: product.seller?.id || '',
             username: product.seller?.fullname || 'Unknown Seller',
             avatar: product.seller?.profileImage || '',
-            rating:
-                product.seller?.positiveRatings &&
-                product.seller?.negativeRatings !== undefined
-                    ? product.seller.positiveRatings /
-                      (product.seller.positiveRatings +
-                          product.seller.negativeRatings || 1)
-                    : 5.0,
+            rating: (() => {
+                const positive = product.seller?.positiveRatings || 0;
+                const negative = product.seller?.negativeRatings || 0;
+                const total = positive + negative;
+                const calculatedRating = total > 0 ? positive / total : 1.0;
+                console.log('mapProductToAuction seller rating:', {
+                    positive,
+                    negative,
+                    total,
+                    calculatedRating,
+                    sellerName: product.seller?.fullname,
+                });
+                return calculatedRating; // Default to 100% if no ratings
+            })(),
             reviewCount:
                 (product.seller?.positiveRatings || 0) +
                 (product.seller?.negativeRatings || 0),

@@ -1236,9 +1236,9 @@ export default function ProductDetailPage() {
 
                             <div className="px-6 mb-16">
                                 <RatingBadge
-                                    rating={auction.seller.rating || 4.8}
+                                    rating={auction.seller.rating ?? 1.0}
                                     totalReviews={
-                                        auction.seller.reviewCount || 12
+                                        auction.seller.reviewCount ?? 0
                                     }
                                     avatar={
                                         auction.seller.avatar ||
