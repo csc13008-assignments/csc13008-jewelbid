@@ -76,9 +76,9 @@ export class ProductsRepository {
 
             // Apply filters
             if (filters?.category) {
-                // Filter by category slug or category ID
+                // Filter by category slug or name (case-insensitive)
                 query.andWhere(
-                    '(category.slug = :category OR product.categoryId = :category)',
+                    '(LOWER(category.slug) = LOWER(:category) OR LOWER(category.name) = LOWER(:category))',
                     { category: filters.category },
                 );
             }
