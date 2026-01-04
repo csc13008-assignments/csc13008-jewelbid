@@ -60,16 +60,15 @@ export default function MyRatingsPage() {
             });
 
             const displayRatings: RatingDisplay[] = data.map((rating) => {
-                // Calculate rater's reputation
+                // Calculate rater's reputation as a percentage (0-1 scale)
                 const raterTotalReviews =
                     (rating.fromUser?.positiveRatings || 0) +
                     (rating.fromUser?.negativeRatings || 0);
                 const raterRating =
                     raterTotalReviews > 0
-                        ? ((rating.fromUser?.positiveRatings || 0) /
-                              raterTotalReviews) *
-                          5
-                        : 5.0;
+                        ? (rating.fromUser?.positiveRatings || 0) /
+                          raterTotalReviews
+                        : 1.0;
 
                 return {
                     id: rating.id,
