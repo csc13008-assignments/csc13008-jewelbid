@@ -36,7 +36,7 @@ import { UploadModule } from './modules/upload/upload.module';
                 ssl: {
                     rejectUnauthorized: false,
                 },
-                logging: ['query', 'error', 'schema', 'warn', 'info', 'log'],
+                logging: ['error'],
             }),
             inject: [ConfigService],
         }),

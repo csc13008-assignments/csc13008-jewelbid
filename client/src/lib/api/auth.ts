@@ -8,6 +8,7 @@ export interface SignUpRequest {
     phone: string;
     address: string;
     birthdate: string; // ISO format: YYYY-MM-DD
+    recaptchaToken?: string;
 }
 
 export interface SignInRequest {

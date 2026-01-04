@@ -16,6 +16,7 @@ interface AuthState {
         phone: string;
         address: string;
         birthdate: string;
+        recaptchaToken?: string;
     }) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;

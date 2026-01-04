@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Input, Button } from '@/modules/shared/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import {
@@ -21,6 +22,9 @@ export default function SignUpPage() {
     const [isVisible, setIsVisible] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
+    const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 100);
@@ -88,11 +92,21 @@ export default function SignUpPage() {
         return Object.keys(errors).length === 0;
     };
 
+    const handleRecaptchaChange = (token: string | null) => {
+        setRecaptchaToken(token);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!validateForm()) {
             toast.error('Please fix the errors in the form');
+            return;
+        }
+
+        // Validate reCAPTCHA if site key is configured
+        if (recaptchaSiteKey && !recaptchaToken) {
+            toast.error('Please complete the reCAPTCHA verification');
             return;
         }
 
@@ -104,6 +118,7 @@ export default function SignUpPage() {
                 phone: normalizePhone(formData.phone),
                 address: formData.address,
                 birthdate: '',
+                recaptchaToken: recaptchaToken || undefined,
             });
 
             toast.success('Account created! Please verify your email.');
@@ -111,6 +126,9 @@ export default function SignUpPage() {
         } catch (err) {
             console.error('Sign up error:', err);
             toast.error('Failed to create account. Please try again.');
+            // Reset reCAPTCHA on error
+            recaptchaRef.current?.reset();
+            setRecaptchaToken(null);
         }
     };
 
@@ -320,6 +338,18 @@ export default function SignUpPage() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* reCAPTCHA */}
+                            {recaptchaSiteKey && (
+                                <div className="flex justify-center">
+                                    <ReCAPTCHA
+                                        ref={recaptchaRef}
+                                        sitekey={recaptchaSiteKey}
+                                        onChange={handleRecaptchaChange}
+                                        theme="light"
+                                    />
+                                </div>
+                            )}
 
                             <Button
                                 type="submit"
