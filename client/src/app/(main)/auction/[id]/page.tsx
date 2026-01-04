@@ -408,6 +408,28 @@ export default function ProductDetailPage() {
             return;
         }
 
+        // Show confirmation popup
+        const Swal = (await import('sweetalert2')).default;
+        const result = await Swal.fire({
+            title: 'Confirm Your Bid',
+            html: `
+                <p style="margin-bottom: 16px;">Are you sure you want to set your maximum bid to:</p>
+                <p style="font-size: 24px; font-weight: bold; color: #1f2937;">${formatCurrency(amount)}</p>
+                <p style="margin-top: 16px; color: #666; font-size: 14px;">This will be your maximum automatic bid for this auction.</p>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#8b7355',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Confirm Bid',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
         setIsBidding(true);
         try {
             await productsApi.placeBid(auction.id, amount);
