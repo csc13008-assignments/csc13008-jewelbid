@@ -436,10 +436,10 @@ export class ProductsService {
 
         // Case 2: Same user trying to increase their maxBid
         if (currentWinningBid.bidderId === userId) {
-            if (
-                maxBid <=
-                (currentWinningBid.maxBid || currentWinningBid.bidAmount)
-            ) {
+            const currentMaxBid = Number(
+                currentWinningBid.maxBid || currentWinningBid.bidAmount,
+            );
+            if (maxBid <= currentMaxBid) {
                 throw new BadRequestException(
                     'Your new max bid must be higher than your current max bid',
                 );
@@ -449,7 +449,7 @@ export class ProductsService {
             await this.productsRepository.placeBid(
                 product.id,
                 userId,
-                currentWinningBid.bidAmount,
+                Number(currentWinningBid.bidAmount),
                 maxBid,
             );
 
@@ -457,9 +457,10 @@ export class ProductsService {
         }
 
         // Case 3: Tie-breaking - same maxBid as current winner
-        if (
-            maxBid === (currentWinningBid.maxBid || currentWinningBid.bidAmount)
-        ) {
+        const currentWinnerMaxBid = Number(
+            currentWinningBid.maxBid || currentWinningBid.bidAmount,
+        );
+        if (maxBid === currentWinnerMaxBid) {
             throw new BadRequestException(
                 'Another bidder has the same maximum bid and bid earlier. You need to bid higher.',
             );
@@ -467,12 +468,7 @@ export class ProductsService {
 
         // Case 4: New bidder maxBid < current winner's maxBid
         // Current winner auto-outbids at (new bidder's maxBid + stepPrice)
-        if (
-            maxBid < (currentWinningBid.maxBid || currentWinningBid.bidAmount)
-        ) {
-            const currentWinnerMaxBid =
-                currentWinningBid.maxBid || currentWinningBid.bidAmount;
-
+        if (maxBid < currentWinnerMaxBid) {
             // Current winner auto-outbids: new bidder's maxBid + step price
             // But capped at current winner's maxBid
             let newPrice = Math.min(
@@ -521,9 +517,8 @@ export class ProductsService {
         }
 
         // Case 5: New bidder maxBid > current winner's maxBid (new bidder wins!)
-        const previousWinnerMaxBid =
-            currentWinningBid.maxBid || currentWinningBid.bidAmount;
-        const previousWinnerDisplayBid = currentWinningBid.bidAmount;
+        const previousWinnerMaxBid = currentWinnerMaxBid;
+        const previousWinnerDisplayBid = Number(currentWinningBid.bidAmount);
 
         let newPrice = Math.min(
             previousWinnerMaxBid + Number(product.stepPrice),

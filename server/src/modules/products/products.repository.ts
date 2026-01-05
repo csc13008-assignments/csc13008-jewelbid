@@ -420,17 +420,32 @@ export class ProductsRepository {
 
     async getCurrentWinningBid(productId: string): Promise<Bid | null> {
         try {
-            const bids = await this.bidRepository.find({
-                where: { productId, isRejected: false },
+            // First, get the product to find current winner
+            const product = await this.productRepository.findOne({
+                where: { id: productId },
+            });
+
+            if (!product || !product.currentBidderId) {
+                // No current bidder, return null
+                return null;
+            }
+
+            // Find all bids from the current winner for this product
+            const winnerBids = await this.bidRepository.find({
+                where: {
+                    productId,
+                    bidderId: product.currentBidderId,
+                    isRejected: false,
+                },
                 order: { created_at: 'DESC' },
             });
 
-            if (bids.length === 0) return null;
+            if (winnerBids.length === 0) return null;
 
-            // Find the bid with highest maxBid (or bidAmount if maxBid is null)
-            return bids.reduce((highest, current) => {
-                const highestMax = highest.maxBid || highest.bidAmount;
-                const currentMax = current.maxBid || current.bidAmount;
+            // Find the bid with highest maxBid among the current winner's bids
+            return winnerBids.reduce((highest, current) => {
+                const highestMax = Number(highest.maxBid || highest.bidAmount);
+                const currentMax = Number(current.maxBid || current.bidAmount);
                 return currentMax > highestMax ? current : highest;
             });
         } catch (error) {
@@ -522,7 +537,7 @@ export class ProductsRepository {
 
             // Find the highest maxBid among user's bids
             const highestMaxBid = userBids.reduce((highest, current) => {
-                const currentMax = current.maxBid || current.bidAmount;
+                const currentMax = Number(current.maxBid || current.bidAmount);
                 return currentMax > highest ? currentMax : highest;
             }, 0);
 
