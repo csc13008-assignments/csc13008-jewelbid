@@ -227,6 +227,27 @@ The Jewelbid Team
         return await this.usersRatingRepository.getUserRatingStats(userId);
     }
 
+    async getPublicProfile(userId: string): Promise<{
+        id: string;
+        fullname: string;
+        profileImage: string | null;
+        positiveRatings: number;
+        negativeRatings: number;
+    }> {
+        const user = await this.usersRepository.findOneById(userId);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        return {
+            id: user.id,
+            fullname: user.fullname,
+            profileImage: user.profileImage || null,
+            positiveRatings: user.positiveRatings || 0,
+            negativeRatings: user.negativeRatings || 0,
+        };
+    }
+
     async getRatingByUserAndProduct(
         fromUserId: string,
         productId: string,

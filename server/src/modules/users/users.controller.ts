@@ -204,6 +204,16 @@ export class UsersController {
         return await this.usersService.getUserRatingStats(id);
     }
 
+    @ApiOperation({ summary: 'Get public profile of a user by ID' })
+    @Get(':id/profile')
+    @ApiResponse({
+        status: 200,
+        description: 'Public profile fetched successfully',
+    })
+    async getPublicProfile(@Param('id') id: string) {
+        return await this.usersService.getPublicProfile(id);
+    }
+
     @ApiOperation({
         summary: 'Get my ratings received from others [BIDDER, SELLER]',
     })

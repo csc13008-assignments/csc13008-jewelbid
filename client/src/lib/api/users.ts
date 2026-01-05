@@ -79,6 +79,20 @@ export const usersApi = {
         return response.data;
     },
 
+    // GET /users/:id/profile - get public profile by user ID
+    getPublicProfileById: async (
+        userId: string,
+    ): Promise<{
+        id: string;
+        fullname: string;
+        profileImage: string | null;
+        positiveRatings: number;
+        negativeRatings: number;
+    }> => {
+        const response = await apiClient.get(`/users/${userId}/profile`);
+        return response.data;
+    },
+
     // POST /users/ratings - create a new rating
     createRating: async (data: {
         ratedUserId: string;

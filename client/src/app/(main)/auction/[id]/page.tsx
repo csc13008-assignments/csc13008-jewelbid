@@ -1319,6 +1319,7 @@ export default function ProductDetailPage() {
                             </div>
 
                             <div className="px-6 mb-16">
+                                {/* Seller info - clickable for bidders to view seller profile */}
                                 <RatingBadge
                                     rating={auction.seller.rating ?? 1.0}
                                     totalReviews={
@@ -1330,7 +1331,9 @@ export default function ProductDetailPage() {
                                     }
                                     sellerName={auction.seller.username}
                                     userId={auction.seller.id}
-                                    linkToProfile={!isOwner}
+                                    linkToProfile={
+                                        !isOwner && !!auction.seller.id
+                                    }
                                     variant="horizontal"
                                     sellerTags={
                                         auction.seller.tags || 'Verified Seller'
@@ -1511,9 +1514,19 @@ export default function ProductDetailPage() {
                                                     className="flex justify-between items-center text-sm border-b border-gray-300 pb-2"
                                                 >
                                                     <div className="flex space-x-4">
-                                                        <span className="font-medium">
-                                                            {bid.bidderName}
-                                                        </span>
+                                                        {isOwner ? (
+                                                            <a
+                                                                href={`/profile/${bid.bidderId}`}
+                                                                className="font-medium text-[#5F87C1] hover:underline"
+                                                                title="View bidder profile and ratings"
+                                                            >
+                                                                {bid.bidderName}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="font-medium">
+                                                                {bid.bidderName}
+                                                            </span>
+                                                        )}
                                                         <span className="text-gray-600">
                                                             {bid.bidTime.toLocaleDateString(
                                                                 'en-US',

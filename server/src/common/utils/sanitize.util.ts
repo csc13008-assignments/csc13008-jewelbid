@@ -1,4 +1,5 @@
 const PUBLIC_USER_FIELDS = [
+    'id', // Required for profile linking
     'fullname',
     'profileImage',
     'positiveRatings',

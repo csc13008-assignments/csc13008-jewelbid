@@ -33,30 +33,18 @@ export default function PublicProfilePage() {
             setError(null);
 
             try {
-                const [statsResponse, ratingsResponse] = await Promise.all([
-                    usersApi.getUserRatingStats(userId),
+                // Fetch profile and ratings in parallel
+                const [profileResponse, ratingsResponse] = await Promise.all([
+                    usersApi.getPublicProfileById(userId),
                     usersApi.getRatingsForUser(userId),
                 ]);
 
-                // Extract user info from ratings - the profile owner is toUser
-                const firstRating = ratingsResponse[0];
-                const userInfo = firstRating?.toUser;
-
-                // Count positive/negative from actual ratings as backup
-                const positiveCount = ratingsResponse.filter(
-                    (r) => r.ratingType === 'Positive',
-                ).length;
-                const negativeCount = ratingsResponse.filter(
-                    (r) => r.ratingType === 'Negative',
-                ).length;
-
                 setProfile({
-                    id: userId,
-                    fullname: userInfo?.fullname || 'User',
-                    profileImage: userInfo?.profileImage,
-                    // Backend returns { positive, negative, percentage }
-                    positiveRatings: statsResponse.positive || positiveCount,
-                    negativeRatings: statsResponse.negative || negativeCount,
+                    id: profileResponse.id,
+                    fullname: profileResponse.fullname,
+                    profileImage: profileResponse.profileImage || undefined,
+                    positiveRatings: profileResponse.positiveRatings,
+                    negativeRatings: profileResponse.negativeRatings,
                 });
 
                 setRatings(ratingsResponse);
