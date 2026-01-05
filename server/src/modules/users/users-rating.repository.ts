@@ -114,7 +114,7 @@ export class UsersRatingRepository {
         try {
             return await this.ratingRepository.find({
                 where: { toUserId: userId },
-                relations: ['fromUser', 'product'],
+                relations: ['fromUser', 'toUser', 'product'],
                 order: { created_at: 'DESC' },
             });
         } catch (error) {

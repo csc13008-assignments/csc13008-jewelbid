@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface RatingBadgeProps {
     rating: number;
@@ -12,6 +13,8 @@ interface RatingBadgeProps {
     variant?: 'vertical' | 'horizontal';
     sellerTags?: string;
     objectsSold?: number;
+    userId?: string; // User ID for linking to profile
+    linkToProfile?: boolean; // Whether to make clickable
 }
 
 export const RatingBadge: React.FC<RatingBadgeProps> = ({
@@ -25,10 +28,9 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
     variant = 'vertical',
     sellerTags,
     objectsSold,
+    userId,
+    linkToProfile = true,
 }) => {
-    // Debug: log the rating value being received
-    console.log('RatingBadge received:', { rating, totalReviews, sellerName });
-
     const sizeClasses = {
         sm: {
             avatar: 'w-8 h-8',
@@ -52,12 +54,36 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
 
     const classes = sizeClasses[size];
 
+    // Wrapper component - either Link or div based on linkToProfile and userId
+    const Wrapper = ({
+        children,
+        className: wrapperClassName,
+    }: {
+        children: React.ReactNode;
+        className?: string;
+    }) => {
+        if (linkToProfile && userId) {
+            return (
+                <Link
+                    href={`/profile/${userId}`}
+                    className={`${wrapperClassName} cursor-pointer hover:opacity-80 transition-opacity`}
+                    title={`View ${sellerName || 'user'}'s profile`}
+                >
+                    {children}
+                </Link>
+            );
+        }
+        return <div className={wrapperClassName}>{children}</div>;
+    };
+
     if (variant === 'vertical') {
         return (
-            <div className={`flex flex-col items-center gap-2 ${className}`}>
+            <Wrapper
+                className={`flex flex-col items-center gap-2 ${className}`}
+            >
                 {sellerName && (
                     <div
-                        className={`font-medium text-gray-700 ${classes.name}`}
+                        className={`font-medium text-gray-700 ${classes.name} ${linkToProfile && userId ? 'hover:text-blue-600 hover:underline' : ''}`}
                     >
                         {sellerName}
                     </div>
@@ -94,12 +120,12 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
                 <div className={`mt-4 text-gray-600 ${classes.text}`}>
                     ({totalReviews} reviews)
                 </div>
-            </div>
+            </Wrapper>
         );
     }
 
     return (
-        <div className={`flex items-center space-x-4 ${className}`}>
+        <Wrapper className={`flex items-center space-x-4 ${className}`}>
             <div className="relative inline-block">
                 {showAvatar && (
                     <div
@@ -135,7 +161,9 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
 
             <div className="flex-1 ml-4">
                 {sellerName && (
-                    <div className={`font-medium text-xl text-gray-900 mb-1`}>
+                    <div
+                        className={`font-medium text-xl text-gray-900 mb-1 ${linkToProfile && userId ? 'hover:text-blue-600 hover:underline' : ''}`}
+                    >
                         {sellerName}
                     </div>
                 )}
@@ -150,7 +178,7 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
                     </div>
                 )}
             </div>
-        </div>
+        </Wrapper>
     );
 };
 

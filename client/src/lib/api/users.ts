@@ -31,10 +31,9 @@ export interface BackendRating {
 }
 
 export interface RatingStats {
-    positiveRatings: number;
-    negativeRatings: number;
-    totalRatings: number;
-    positivePercentage: number;
+    positive: number;
+    negative: number;
+    percentage: number;
 }
 
 export interface UpdateProfileData {
@@ -115,5 +114,38 @@ export const usersApi = {
     requestSellerUpgrade: async (): Promise<{ message: string }> => {
         const response = await apiClient.post('/users/upgrade-request');
         return response.data;
+    },
+
+    // GET /users/:id/ratings - get public profile basic info
+    getPublicProfile: async (
+        userId: string,
+    ): Promise<{
+        id: string;
+        fullname: string;
+        profileImage?: string;
+        role: string;
+        positiveRatings: number;
+        negativeRatings: number;
+        created_at: string;
+    }> => {
+        // Fetch rating stats and ratings to build profile
+        const [stats, ratings] = await Promise.all([
+            apiClient.get(`/users/${userId}/rating-stats`),
+            apiClient.get(`/users/${userId}/ratings`),
+        ]);
+
+        // Extract user info from first rating if available
+        const firstRating = ratings.data[0];
+        const userInfo = firstRating?.toUser || {};
+
+        return {
+            id: userId,
+            fullname: userInfo.fullname || 'Unknown User',
+            profileImage: userInfo.profileImage,
+            role: 'User',
+            positiveRatings: stats.data.positive || 0,
+            negativeRatings: stats.data.negative || 0,
+            created_at: firstRating?.created_at || new Date().toISOString(),
+        };
     },
 };

@@ -1299,6 +1299,8 @@ export default function ProductDetailPage() {
                                                 '/avatars/bidder1.jpg'
                                             }
                                             sellerName={highestBidder.username}
+                                            userId={highestBidder.id}
+                                            linkToProfile={!!isOwner}
                                             size="md"
                                             className="items-center"
                                         />
@@ -1321,6 +1323,8 @@ export default function ProductDetailPage() {
                                         '/avatars/seller1.jpg'
                                     }
                                     sellerName={auction.seller.username}
+                                    userId={auction.seller.id}
+                                    linkToProfile={!isOwner}
                                     variant="horizontal"
                                     sellerTags={
                                         auction.seller.tags || 'Verified Seller'
