@@ -8,6 +8,7 @@ import { CategoriesRepository } from './categories.repository';
 import { CreateCategoryDto } from './dtos/create-category.dto';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
 import { Category } from './entities/category.model';
+import { sanitizeCategories } from '../../common/utils/sanitize.util';
 
 @Injectable()
 export class CategoriesService {
@@ -45,8 +46,9 @@ export class CategoriesService {
         return await this.categoriesRepository.save(category);
     }
 
-    async findAll(): Promise<Category[]> {
-        return await this.categoriesRepository.findAllActive();
+    async findAll(): Promise<Record<string, any>[]> {
+        const categories = await this.categoriesRepository.findAllActive();
+        return sanitizeCategories(categories);
     }
 
     async findTree(): Promise<Category[]> {
@@ -161,7 +163,9 @@ export class CategoriesService {
         await this.categoriesRepository.remove(category);
     }
 
-    async getTopLevelCategories(): Promise<Category[]> {
-        return await this.categoriesRepository.findTopLevelCategories();
+    async getTopLevelCategories(): Promise<Record<string, any>[]> {
+        const categories =
+            await this.categoriesRepository.findTopLevelCategories();
+        return sanitizeCategories(categories);
     }
 }

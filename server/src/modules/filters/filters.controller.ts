@@ -1,7 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { FiltersService, AllFiltersResponse } from './filters.service';
-import { FilterOption } from './entities/filter-option.model';
+import {
+    FiltersService,
+    AllFiltersResponse,
+    SanitizedFilter,
+} from './filters.service';
 
 @ApiTags('Filters')
 @Controller('filters')
@@ -23,9 +26,8 @@ export class FiltersController {
     @ApiResponse({
         status: 200,
         description: 'Brand options fetched successfully',
-        type: [FilterOption],
     })
-    async getBrands(): Promise<FilterOption[]> {
+    async getBrands(): Promise<SanitizedFilter[]> {
         return this.filtersService.getBrands();
     }
 
@@ -34,9 +36,8 @@ export class FiltersController {
     @ApiResponse({
         status: 200,
         description: 'Material options fetched successfully',
-        type: [FilterOption],
     })
-    async getMaterials(): Promise<FilterOption[]> {
+    async getMaterials(): Promise<SanitizedFilter[]> {
         return this.filtersService.getMaterials();
     }
 
@@ -45,9 +46,8 @@ export class FiltersController {
     @ApiResponse({
         status: 200,
         description: 'Target audience options fetched successfully',
-        type: [FilterOption],
     })
-    async getTargetAudiences(): Promise<FilterOption[]> {
+    async getTargetAudiences(): Promise<SanitizedFilter[]> {
         return this.filtersService.getTargetAudiences();
     }
 
@@ -56,9 +56,8 @@ export class FiltersController {
     @ApiResponse({
         status: 200,
         description: 'Auction status options fetched successfully',
-        type: [FilterOption],
     })
-    async getAuctionStatuses(): Promise<FilterOption[]> {
+    async getAuctionStatuses(): Promise<SanitizedFilter[]> {
         return this.filtersService.getAuctionStatuses();
     }
 
@@ -67,9 +66,8 @@ export class FiltersController {
     @ApiResponse({
         status: 200,
         description: 'Era options fetched successfully',
-        type: [FilterOption],
     })
-    async getEras(): Promise<FilterOption[]> {
+    async getEras(): Promise<SanitizedFilter[]> {
         return this.filtersService.getEras();
     }
 
@@ -78,9 +76,8 @@ export class FiltersController {
     @ApiResponse({
         status: 200,
         description: 'Fineness options fetched successfully',
-        type: [FilterOption],
     })
-    async getFineness(): Promise<FilterOption[]> {
+    async getFineness(): Promise<SanitizedFilter[]> {
         return this.filtersService.getFineness();
     }
 
@@ -89,9 +86,8 @@ export class FiltersController {
     @ApiResponse({
         status: 200,
         description: 'Condition options fetched successfully',
-        type: [FilterOption],
     })
-    async getConditions(): Promise<FilterOption[]> {
+    async getConditions(): Promise<SanitizedFilter[]> {
         return this.filtersService.getConditions();
     }
 }

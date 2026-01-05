@@ -71,7 +71,7 @@ export class ProductsService {
         },
         sortBy?: string,
     ): Promise<{
-        products: Product[];
+        products: Record<string, any>[];
         total: number;
         page: number;
         totalPages: number;
@@ -85,7 +85,7 @@ export class ProductsService {
         );
 
         return {
-            products: this.maskProductsBidderNames(products),
+            products: sanitizeProducts(this.maskProductsBidderNames(products)),
             total,
             page,
             totalPages: Math.ceil(total / limit),

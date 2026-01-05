@@ -39,6 +39,8 @@ const PUBLIC_PRODUCT_FIELDS = [
 
 const PUBLIC_CATEGORY_FIELDS = ['id', 'name', 'slug', 'description'];
 
+const PUBLIC_FILTER_FIELDS = ['name', 'slug'];
+
 export function sanitizeUser<T extends Record<string, any>>(
     user: T | null | undefined,
 ): Record<string, any> | null {
@@ -79,6 +81,34 @@ export function sanitizeCategory<T extends Record<string, any>>(
         }
     }
     return sanitized;
+}
+
+export function sanitizeCategories<T extends Record<string, any>>(
+    categories: T[],
+): Record<string, any>[] {
+    return categories
+        .map((category) => sanitizeCategory(category))
+        .filter(Boolean);
+}
+
+export function sanitizeFilter<T extends Record<string, any>>(
+    filter: T | null | undefined,
+): Record<string, any> | null {
+    if (!filter) return null;
+
+    const sanitized: Record<string, any> = {};
+    for (const field of PUBLIC_FILTER_FIELDS) {
+        if (filter[field] !== undefined) {
+            sanitized[field] = filter[field];
+        }
+    }
+    return sanitized;
+}
+
+export function sanitizeFilters<T extends Record<string, any>>(
+    filters: T[],
+): Record<string, any>[] {
+    return filters.map((filter) => sanitizeFilter(filter)).filter(Boolean);
 }
 
 export function sanitizeProduct<T extends Record<string, any>>(
