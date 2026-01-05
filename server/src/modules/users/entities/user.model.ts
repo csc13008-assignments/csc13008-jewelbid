@@ -1,5 +1,6 @@
 import { Entity, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
 import { Role } from '../../auth/enums/roles.enum';
 import { BaseEntity } from '../../../common/entities/base.model';
 
@@ -31,6 +32,7 @@ export class User extends BaseEntity {
         description: 'Hashed password of the user',
         example: '$2b$10$...',
     })
+    @Exclude()
     @Column({
         type: 'varchar',
         nullable: false,

@@ -12,6 +12,10 @@ import { AskQuestionDto, AnswerQuestionDto } from './dtos/question.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { OrdersService } from '../orders/orders.service';
+import {
+    sanitizeEntityWithUsers,
+    sanitizeEntitiesWithUsers,
+} from '../../common/utils/sanitize.util';
 
 @Injectable()
 export class ProductsService {
@@ -213,9 +217,19 @@ export class ProductsService {
             );
         }
 
+        // Sanitize user data to remove sensitive fields (password, email, phone, etc.)
+        const sanitizedProduct = sanitizeEntityWithUsers(product, [
+            'seller',
+            'currentBidder',
+        ]);
+        const sanitizedRelatedProducts = sanitizeEntitiesWithUsers(
+            this.maskProductsBidderNames(relatedProducts),
+            ['seller', 'currentBidder'],
+        );
+
         return {
-            product,
-            relatedProducts: this.maskProductsBidderNames(relatedProducts),
+            product: sanitizedProduct,
+            relatedProducts: sanitizedRelatedProducts,
             questions,
         };
     }

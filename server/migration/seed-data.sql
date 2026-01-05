@@ -1,4 +1,3 @@
--- Fixed seed data with correct column names (camelCase as per TypeORM)
 INSERT INTO accounts (id, fullname, email, password, phone, address, birthdate, "isEmailVerified", role, "profileImage", created_at, updated_at) VALUES
 ('01930000-0001-7000-8000-000000000001', 'Victoria Chen', 'victoria.chen@jewelbid.com', '$2b$10$YourHashedPasswordHere1', '+84901234567', '123 Diamond Street, District 1, Ho Chi Minh City, Vietnam', '1985-03-15', true, 'Seller', 'https://i.pravatar.cc/150?img=1', NOW() - INTERVAL '365 days', NOW()),
 ('01930000-0002-7000-8000-000000000002', 'Marcus Sterling', 'marcus.sterling@luxuryjewels.com', '$2b$10$YourHashedPasswordHere2', '+84902345678', '456 Gemstone Avenue, District 3, Ho Chi Minh City, Vietnam', '1980-07-22', true, 'Seller', 'https://i.pravatar.cc/150?img=2', NOW() - INTERVAL '300 days', NOW()),
