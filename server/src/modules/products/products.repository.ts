@@ -84,29 +84,36 @@ export class ProductsRepository {
             }
 
             if (filters?.brand) {
-                query.andWhere('LOWER(product.brand) = LOWER(:brand)', {
-                    brand: filters.brand,
-                });
+                query
+                    .leftJoinAndSelect('product.brandOption', 'brandOption')
+                    .andWhere('LOWER(brandOption.slug) = LOWER(:brand)', {
+                        brand: filters.brand,
+                    });
             }
 
             if (filters?.material) {
-                query.andWhere('LOWER(product.material) = LOWER(:material)', {
-                    material: filters.material,
-                });
+                query
+                    .leftJoinAndSelect(
+                        'product.materialOption',
+                        'materialOption',
+                    )
+                    .andWhere('LOWER(materialOption.slug) = LOWER(:material)', {
+                        material: filters.material,
+                    });
             }
 
             if (filters?.targetAudience) {
-                // Convert slug format (for-men) to display format (for men)
-                const targetAudienceValue = filters.targetAudience.replace(
-                    /-/g,
-                    ' ',
-                );
-                query.andWhere(
-                    'LOWER(product.targetAudience) = LOWER(:targetAudience)',
-                    {
-                        targetAudience: targetAudienceValue,
-                    },
-                );
+                query
+                    .leftJoinAndSelect(
+                        'product.targetAudienceOption',
+                        'targetAudienceOption',
+                    )
+                    .andWhere(
+                        'LOWER(targetAudienceOption.slug) = LOWER(:targetAudience)',
+                        {
+                            targetAudience: filters.targetAudience,
+                        },
+                    );
             }
 
             if (filters?.auctionStatus) {
@@ -361,7 +368,17 @@ export class ProductsRepository {
         try {
             const product = await this.productRepository.findOne({
                 where: { id },
-                relations: ['seller', 'currentBidder', 'category'],
+                relations: [
+                    'seller',
+                    'currentBidder',
+                    'category',
+                    'brandOption',
+                    'materialOption',
+                    'targetAudienceOption',
+                    'eraOption',
+                    'finenessOption',
+                    'conditionOption',
+                ],
             });
 
             if (!product) {

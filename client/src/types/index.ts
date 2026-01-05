@@ -7,30 +7,20 @@ export interface Product {
         id: string;
         name: string;
     } | null;
-    brand?: string;
-    material?: string;
+    // Filter option relations (UUID-based)
+    brandOption?: { name: string; slug: string } | null;
+    materialOption?: { name: string; slug: string } | null;
+    targetAudienceOption?: { name: string; slug: string } | null;
+    eraOption?: { name: string; slug: string } | null;
+    finenessOption?: { name: string; slug: string } | null;
+    conditionOption?: { name: string; slug: string } | null;
     description: string;
-    // New product detail fields
-    era?: string;
-    fineness?: string;
-    condition?: string;
+    // Other product detail fields
     totalWeight?: string;
     size?: string;
     mainStoneCaratWeight?: string;
     surroundingStonesCaratWeight?: string;
-    targetAudience?: string;
     origin?: string;
-    specifications?: {
-        year?: string;
-        totalCaratWeightMainStone?: string;
-        fineness?: string;
-        totalCaratWeightSurroundingStones?: string;
-        size?: string;
-        totalWeight?: string;
-        clarity?: string;
-        origin?: string;
-        condition?: string;
-    };
 }
 
 export interface Bid {

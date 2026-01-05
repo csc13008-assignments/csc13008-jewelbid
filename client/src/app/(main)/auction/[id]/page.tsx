@@ -854,7 +854,8 @@ export default function ProductDetailPage() {
                                             ERA
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.era || 'N/A'}
+                                            {auction.product.eraOption?.name ||
+                                                'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -871,7 +872,8 @@ export default function ProductDetailPage() {
                                             FINENESS
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.fineness || 'N/A'}
+                                            {auction.product.finenessOption
+                                                ?.name || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -879,7 +881,8 @@ export default function ProductDetailPage() {
                                             CONDITION
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.condition || 'N/A'}
+                                            {auction.product.conditionOption
+                                                ?.name || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -897,7 +900,8 @@ export default function ProductDetailPage() {
                                             TARGET AUDIENCE
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.targetAudience ||
+                                            {auction.product
+                                                .targetAudienceOption?.name ||
                                                 'N/A'}
                                         </p>
                                     </div>
@@ -906,7 +910,8 @@ export default function ProductDetailPage() {
                                             MATERIAL
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.material || 'N/A'}
+                                            {auction.product.materialOption
+                                                ?.name || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
@@ -934,7 +939,8 @@ export default function ProductDetailPage() {
                                             BRAND
                                         </p>
                                         <p className="text-md">
-                                            {auction.product.brand || 'N/A'}
+                                            {auction.product.brandOption
+                                                ?.name || 'N/A'}
                                         </p>
                                     </div>
                                     <div>

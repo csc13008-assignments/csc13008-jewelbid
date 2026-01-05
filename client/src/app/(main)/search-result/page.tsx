@@ -417,7 +417,7 @@ function SearchResultContent() {
                                             className={cn(
                                                 'space-y-2 overflow-hidden transition-all duration-300 ease-in-out',
                                                 openFilters.has(section.id)
-                                                    ? 'max-h-[500px] opacity-100'
+                                                    ? 'max-h-[1000px] opacity-100 overflow-y-auto'
                                                     : 'max-h-0 opacity-0',
                                             )}
                                         >

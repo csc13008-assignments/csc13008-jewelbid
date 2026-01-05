@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.model';
 import { User } from '../../users/entities/user.model';
 import { Category } from '../../categories/entities/category.model';
+import { FilterOption } from '../../filters/entities/filter-option.model';
 
 export enum ProductStatus {
     ACTIVE = 'Active',
@@ -48,76 +49,76 @@ export class Product extends BaseEntity {
     category?: Category;
 
     @ApiProperty({
-        description: 'Product brand',
-        example: 'Cartier',
+        description: 'Brand filter option ID',
+        example: 'a1b2c3d4-1111-4aaa-8888-111111111111',
         required: false,
     })
-    @Column({
-        type: 'varchar',
-        length: 100,
-        nullable: true,
-    })
-    brand?: string;
+    @Column({ type: 'uuid', nullable: true })
+    brandId?: string;
+
+    @ManyToOne(() => FilterOption, { eager: false, nullable: true })
+    @JoinColumn({ name: 'brandId' })
+    brandOption?: FilterOption;
 
     @ApiProperty({
-        description: 'Product material',
-        example: 'Gold',
+        description: 'Material filter option ID',
+        example: 'b2c3d4e5-2222-4bbb-9999-222222222221',
         required: false,
     })
-    @Column({
-        type: 'varchar',
-        length: 100,
-        nullable: true,
-    })
-    material?: string;
+    @Column({ type: 'uuid', nullable: true })
+    materialId?: string;
+
+    @ManyToOne(() => FilterOption, { eager: false, nullable: true })
+    @JoinColumn({ name: 'materialId' })
+    materialOption?: FilterOption;
 
     @ApiProperty({
-        description: 'Target audience',
-        example: 'unisex',
+        description: 'Target audience filter option ID',
+        example: 'c3d4e5f6-3333-4ccc-aaaa-333333333335',
         required: false,
     })
-    @Column({
-        type: 'varchar',
-        length: 50,
-        nullable: true,
-    })
-    targetAudience?: string;
+    @Column({ type: 'uuid', nullable: true })
+    targetAudienceId?: string;
+
+    @ManyToOne(() => FilterOption, { eager: false, nullable: true })
+    @JoinColumn({ name: 'targetAudienceId' })
+    targetAudienceOption?: FilterOption;
 
     @ApiProperty({
-        description: 'Product era/period',
-        example: 'Art Deco',
+        description: 'Era filter option ID',
+        example: 'e5f6a7b8-5555-4eee-cccc-555555555554',
         required: false,
     })
-    @Column({
-        type: 'varchar',
-        length: 100,
-        nullable: true,
-    })
-    era?: string;
+    @Column({ type: 'uuid', nullable: true })
+    eraId?: string;
+
+    @ManyToOne(() => FilterOption, { eager: false, nullable: true })
+    @JoinColumn({ name: 'eraId' })
+    eraOption?: FilterOption;
 
     @ApiProperty({
-        description: 'Metal fineness/purity',
-        example: '18K',
+        description: 'Fineness filter option ID',
+        example: 'f6a7b8c9-6666-4fff-dddd-666666666663',
         required: false,
     })
-    @Column({
-        type: 'varchar',
-        length: 50,
-        nullable: true,
-    })
-    fineness?: string;
+    @Column({ type: 'uuid', nullable: true })
+    finenessId?: string;
+
+    @ManyToOne(() => FilterOption, { eager: false, nullable: true })
+    @JoinColumn({ name: 'finenessId' })
+    finenessOption?: FilterOption;
 
     @ApiProperty({
-        description: 'Product condition',
-        example: 'Like New',
+        description: 'Condition filter option ID',
+        example: 'a7b8c9d0-7777-4aaa-eeee-777777777771',
         required: false,
     })
-    @Column({
-        type: 'varchar',
-        length: 50,
-        nullable: true,
-    })
-    condition?: string;
+    @Column({ type: 'uuid', nullable: true })
+    conditionId?: string;
+
+    @ManyToOne(() => FilterOption, { eager: false, nullable: true })
+    @JoinColumn({ name: 'conditionId' })
+    conditionOption?: FilterOption;
 
     @ApiProperty({
         description: 'Total weight',

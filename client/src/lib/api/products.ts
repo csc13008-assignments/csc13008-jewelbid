@@ -19,13 +19,14 @@ export interface BackendProduct {
     watchlistCount: number;
     mainImage: string;
     additionalImages: string[];
-    // Product detail fields
-    brand?: string;
-    material?: string;
-    targetAudience?: string;
-    era?: string;
-    fineness?: string;
-    condition?: string;
+    // Product detail fields - Filter option relations (UUID-based)
+    brandOption?: { name: string; slug: string } | null;
+    materialOption?: { name: string; slug: string } | null;
+    targetAudienceOption?: { name: string; slug: string } | null;
+    eraOption?: { name: string; slug: string } | null;
+    finenessOption?: { name: string; slug: string } | null;
+    conditionOption?: { name: string; slug: string } | null;
+    // Other product detail fields
     totalWeight?: string;
     size?: string;
     mainStoneCaratWeight?: string;

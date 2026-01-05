@@ -9,12 +9,14 @@ const PUBLIC_PRODUCT_FIELDS = [
     'id',
     'name',
     'description',
-    'brand',
-    'material',
-    'targetAudience',
-    'era',
-    'fineness',
-    'condition',
+    // Filter option relations (new UUID-based fields)
+    'brandOption',
+    'materialOption',
+    'targetAudienceOption',
+    'eraOption',
+    'finenessOption',
+    'conditionOption',
+    // Other product fields
     'totalWeight',
     'size',
     'mainStoneCaratWeight',
@@ -133,6 +135,27 @@ export function sanitizeProduct<T extends Record<string, any>>(
     // Sanitize category
     if (sanitized.category) {
         sanitized.category = sanitizeCategory(sanitized.category);
+    }
+    // Sanitize filter option relations
+    if (sanitized.brandOption) {
+        sanitized.brandOption = sanitizeFilter(sanitized.brandOption);
+    }
+    if (sanitized.materialOption) {
+        sanitized.materialOption = sanitizeFilter(sanitized.materialOption);
+    }
+    if (sanitized.targetAudienceOption) {
+        sanitized.targetAudienceOption = sanitizeFilter(
+            sanitized.targetAudienceOption,
+        );
+    }
+    if (sanitized.eraOption) {
+        sanitized.eraOption = sanitizeFilter(sanitized.eraOption);
+    }
+    if (sanitized.finenessOption) {
+        sanitized.finenessOption = sanitizeFilter(sanitized.finenessOption);
+    }
+    if (sanitized.conditionOption) {
+        sanitized.conditionOption = sanitizeFilter(sanitized.conditionOption);
     }
 
     return sanitized;
