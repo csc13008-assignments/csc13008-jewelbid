@@ -3,7 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Heart, Calendar, Clock, X, Edit } from 'lucide-react';
+import {
+    Heart,
+    Calendar,
+    Clock,
+    X,
+    Edit,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react';
 import { productsApi } from '@/lib/api/products';
 import { mapProductToAuction } from '@/stores/productsStore';
 import { Auction } from '@/types';
@@ -782,25 +790,98 @@ export default function ProductDetailPage() {
                             </button>
                         </div>
 
-                        <div className="relative rounded-xl aspect-square bg-gray-100 overflow-hidden">
-                            <Image
-                                src={images[selectedImage] || images[0]}
-                                alt="Product"
-                                fill
-                                className="object-cover"
-                            />
+                        {/* Image Slideshow */}
+                        <div className="relative rounded-xl aspect-square bg-gray-100 overflow-hidden group">
+                            {/* Main Image with fade transition */}
+                            {images.map((image, index) => (
+                                <div
+                                    key={index}
+                                    className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
+                                        selectedImage === index
+                                            ? 'opacity-100 z-10'
+                                            : 'opacity-0 z-0'
+                                    }`}
+                                >
+                                    <Image
+                                        src={image}
+                                        alt={`Product ${index + 1}`}
+                                        fill
+                                        className="object-cover"
+                                        priority={index === 0}
+                                    />
+                                </div>
+                            ))}
+
+                            {/* Navigation Arrows */}
+                            {images.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={() =>
+                                            setSelectedImage(
+                                                (prev) =>
+                                                    (prev - 1 + images.length) %
+                                                    images.length,
+                                            )
+                                        }
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                        aria-label="Previous image"
+                                    >
+                                        <ChevronLeft className="w-6 h-6 text-gray-700" />
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setSelectedImage(
+                                                (prev) =>
+                                                    (prev + 1) % images.length,
+                                            )
+                                        }
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                        aria-label="Next image"
+                                    >
+                                        <ChevronRight className="w-6 h-6 text-gray-700" />
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Dot indicators */}
+                            {images.length > 1 && (
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
+                                    {images.map((_, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() =>
+                                                setSelectedImage(index)
+                                            }
+                                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                                selectedImage === index
+                                                    ? 'bg-white w-6'
+                                                    : 'bg-white/50 hover:bg-white/80'
+                                            }`}
+                                            aria-label={`Go to image ${index + 1}`}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Image counter */}
+                            {images.length > 1 && (
+                                <div className="absolute top-4 right-4 z-20 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                                    {selectedImage + 1} / {images.length}
+                                </div>
+                            )}
                         </div>
 
+                        {/* Thumbnail strip */}
                         {images.length > 1 && (
-                            <div className="flex space-x-2 overflow-x-auto pb-2">
+                            <div className="flex space-x-2 overflow-x-auto pb-2 mt-4">
                                 {images.map((image, index) => (
                                     <button
                                         key={index}
                                         onClick={() => setSelectedImage(index)}
-                                        className={`relative rounded-xl w-20 h-20 flex-shrink-0 bg-gray-100 overflow-hidden ${
+                                        className={`relative rounded-xl w-20 h-20 flex-shrink-0 bg-gray-100 overflow-hidden transition-all duration-300 ${
                                             selectedImage === index
-                                                ? 'border-2 border-dark-primary'
-                                                : 'border border-transparent hover:border-gray-300'
+                                                ? 'ring-2 ring-dark-primary ring-offset-2 scale-105'
+                                                : 'border border-transparent hover:border-gray-300 opacity-70 hover:opacity-100'
                                         }`}
                                     >
                                         <Image
