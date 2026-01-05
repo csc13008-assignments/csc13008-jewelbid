@@ -5,6 +5,40 @@ const PUBLIC_USER_FIELDS = [
     'negativeRatings',
 ];
 
+const PUBLIC_PRODUCT_FIELDS = [
+    'id',
+    'name',
+    'description',
+    'brand',
+    'material',
+    'targetAudience',
+    'era',
+    'fineness',
+    'condition',
+    'totalWeight',
+    'size',
+    'mainStoneCaratWeight',
+    'surroundingStonesCaratWeight',
+    'origin',
+    'startingPrice',
+    'currentPrice',
+    'stepPrice',
+    'buyNowPrice',
+    'endDate',
+    'autoRenewal',
+    'status',
+    'bidCount',
+    'mainImage',
+    'additionalImages',
+    'allowNewBidders',
+    'watchlistCount',
+    'seller',
+    'currentBidder',
+    'category',
+];
+
+const PUBLIC_CATEGORY_FIELDS = ['id', 'name', 'slug', 'description'];
+
 export function sanitizeUser<T extends Record<string, any>>(
     user: T | null | undefined,
 ): Record<string, any> | null {
@@ -31,6 +65,53 @@ export function sanitizeUserMinimal<T extends Record<string, any>>(
         positiveRatings: user.positiveRatings,
         negativeRatings: user.negativeRatings,
     };
+}
+
+export function sanitizeCategory<T extends Record<string, any>>(
+    category: T | null | undefined,
+): Record<string, any> | null {
+    if (!category) return null;
+
+    const sanitized: Record<string, any> = {};
+    for (const field of PUBLIC_CATEGORY_FIELDS) {
+        if (category[field] !== undefined) {
+            sanitized[field] = category[field];
+        }
+    }
+    return sanitized;
+}
+
+export function sanitizeProduct<T extends Record<string, any>>(
+    product: T | null | undefined,
+): Record<string, any> | null {
+    if (!product) return null;
+
+    const sanitized: Record<string, any> = {};
+    for (const field of PUBLIC_PRODUCT_FIELDS) {
+        if (product[field] !== undefined) {
+            sanitized[field] = product[field];
+        }
+    }
+
+    // Sanitize nested user relations
+    if (sanitized.seller) {
+        sanitized.seller = sanitizeUser(sanitized.seller);
+    }
+    if (sanitized.currentBidder) {
+        sanitized.currentBidder = sanitizeUser(sanitized.currentBidder);
+    }
+    // Sanitize category
+    if (sanitized.category) {
+        sanitized.category = sanitizeCategory(sanitized.category);
+    }
+
+    return sanitized;
+}
+
+export function sanitizeProducts<T extends Record<string, any>>(
+    products: T[],
+): Record<string, any>[] {
+    return products.map((product) => sanitizeProduct(product)).filter(Boolean);
 }
 
 export function sanitizeEntitiesWithUsers<T extends Record<string, any>>(

@@ -13,8 +13,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { OrdersService } from '../orders/orders.service';
 import {
-    sanitizeEntityWithUsers,
-    sanitizeEntitiesWithUsers,
+    sanitizeProduct,
+    sanitizeProducts,
 } from '../../common/utils/sanitize.util';
 
 @Injectable()
@@ -196,8 +196,8 @@ export class ProductsService {
     }
 
     async getProductDetails(productId: string): Promise<{
-        product: Product;
-        relatedProducts: Product[];
+        product: Record<string, any>;
+        relatedProducts: Record<string, any>[];
         questions: any[];
     }> {
         const product = await this.productsRepository.findById(productId);
@@ -217,14 +217,10 @@ export class ProductsService {
             );
         }
 
-        // Sanitize user data to remove sensitive fields (password, email, phone, etc.)
-        const sanitizedProduct = sanitizeEntityWithUsers(product, [
-            'seller',
-            'currentBidder',
-        ]);
-        const sanitizedRelatedProducts = sanitizeEntitiesWithUsers(
+        // Sanitize product data to keep only necessary fields
+        const sanitizedProduct = sanitizeProduct(product);
+        const sanitizedRelatedProducts = sanitizeProducts(
             this.maskProductsBidderNames(relatedProducts),
-            ['seller', 'currentBidder'],
         );
 
         return {
