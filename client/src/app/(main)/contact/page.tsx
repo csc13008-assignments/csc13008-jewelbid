@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 import Button from '@/modules/shared/components/ui/Button';
+import { isValidEmail, isValidPhone } from '@/lib/validation';
+import toast from '@/lib/toast';
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({
@@ -13,6 +15,9 @@ export default function ContactPage() {
         message: '',
     });
 
+    const [validationErrors, setValidationErrors] = useState<
+        Record<string, string>
+    >({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
 
@@ -24,10 +29,51 @@ export default function ContactPage() {
             ...prev,
             [name]: value,
         }));
+        // Clear validation error when user types
+        if (validationErrors[name]) {
+            setValidationErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
+    };
+
+    const validateForm = (): boolean => {
+        const errors: Record<string, string> = {};
+
+        if (!formData.name.trim()) {
+            errors.name = 'Full name is required';
+        }
+
+        if (!isValidEmail(formData.email)) {
+            errors.email = 'Please enter a valid email address';
+        }
+
+        if (formData.phone && !isValidPhone(formData.phone)) {
+            errors.phone = 'Please enter a valid phone number';
+        }
+
+        if (!formData.subject.trim()) {
+            errors.subject = 'Subject is required';
+        }
+
+        if (!formData.message.trim()) {
+            errors.message = 'Message is required';
+        }
+
+        setValidationErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            toast.error('Please fix the errors before submitting');
+            return;
+        }
+
         setIsSubmitting(true);
 
         // Simulate API call
@@ -36,6 +82,7 @@ export default function ContactPage() {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 console.log('Contact form submitted:', formData);
                 setSubmitSuccess(true);
+                toast.success('Message sent successfully!');
                 setFormData({
                     name: '',
                     email: '',
@@ -45,6 +92,7 @@ export default function ContactPage() {
                 });
             } catch (error) {
                 console.error('Error submitting form:', error);
+                toast.error('Failed to send message. Please try again.');
             } finally {
                 setIsSubmitting(false);
             }
@@ -174,10 +222,14 @@ export default function ContactPage() {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
-                                        required
-                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
+                                        className={`w-full px-4 py-3 bg-neutral-50 border rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all ${validationErrors.name ? 'border-red-500' : 'border-neutral-200'}`}
                                         placeholder="Enter your full name"
                                     />
+                                    {validationErrors.name && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {validationErrors.name}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -193,10 +245,14 @@ export default function ContactPage() {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        required
-                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
+                                        className={`w-full px-4 py-3 bg-neutral-50 border rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all ${validationErrors.email ? 'border-red-500' : 'border-neutral-200'}`}
                                         placeholder="Enter your email address"
                                     />
+                                    {validationErrors.email && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {validationErrors.email}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -212,9 +268,14 @@ export default function ContactPage() {
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
+                                        className={`w-full px-4 py-3 bg-neutral-50 border rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all ${validationErrors.phone ? 'border-red-500' : 'border-neutral-200'}`}
                                         placeholder="Enter your phone number"
                                     />
+                                    {validationErrors.phone && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {validationErrors.phone}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -230,10 +291,14 @@ export default function ContactPage() {
                                         name="subject"
                                         value={formData.subject}
                                         onChange={handleInputChange}
-                                        required
-                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
+                                        className={`w-full px-4 py-3 bg-neutral-50 border rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all ${validationErrors.subject ? 'border-red-500' : 'border-neutral-200'}`}
                                         placeholder="What is this regarding?"
                                     />
+                                    {validationErrors.subject && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {validationErrors.subject}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -248,11 +313,15 @@ export default function ContactPage() {
                                         name="message"
                                         value={formData.message}
                                         onChange={handleInputChange}
-                                        required
                                         rows={6}
-                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all resize-none"
+                                        className={`w-full px-4 py-3 bg-neutral-50 border rounded-xl focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all resize-none ${validationErrors.message ? 'border-red-500' : 'border-neutral-200'}`}
                                         placeholder="Tell us how we can help you..."
                                     />
+                                    {validationErrors.message && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {validationErrors.message}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <Button

@@ -152,6 +152,31 @@ export default function CreateAuctionPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate end date is in the future
+        const endDateTime = new Date(formData.endDate);
+        if (endDateTime <= new Date()) {
+            toast.error('End date must be in the future');
+            return;
+        }
+
+        // Validate buy now price > starting price (if buy now is provided)
+        const startPrice = parsePriceInput(formData.startingPrice);
+        const buyNowPriceVal = formData.buyNowPrice
+            ? parsePriceInput(formData.buyNowPrice)
+            : 0;
+        if (buyNowPriceVal > 0 && buyNowPriceVal <= startPrice) {
+            toast.error('Buy Now price must be greater than Starting price');
+            return;
+        }
+
+        // Validate bid increment > 0
+        const bidIncrementVal = parsePriceInput(formData.bidIncrement);
+        if (bidIncrementVal <= 0) {
+            toast.error('Bid increment must be greater than 0');
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -159,11 +184,9 @@ export default function CreateAuctionPage() {
                 name: formData.productName,
                 description: formData.description,
                 categoryId: formData.category || undefined, // Optional - only send if selected
-                startingPrice: parsePriceInput(formData.startingPrice),
-                stepPrice: parsePriceInput(formData.bidIncrement),
-                buyNowPrice: formData.buyNowPrice
-                    ? parsePriceInput(formData.buyNowPrice)
-                    : undefined,
+                startingPrice: startPrice,
+                stepPrice: bidIncrementVal,
+                buyNowPrice: buyNowPriceVal > 0 ? buyNowPriceVal : undefined,
                 endDate: formData.endDate,
                 autoRenewal: formData.enableAutoExtension,
                 mainImage: formData.images[0],
@@ -190,10 +213,13 @@ export default function CreateAuctionPage() {
             // Success - show toast and redirect
             toast.success('Product created successfully!');
             router.push(`/auction/${createdProduct.id}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error creating product:', error);
+            const err = error as {
+                response?: { data?: { message?: string | string[] } };
+            };
             const errorMessage =
-                error.response?.data?.message ||
+                err.response?.data?.message ||
                 'Failed to create product. Please try again.';
             toast.error(
                 Array.isArray(errorMessage)
