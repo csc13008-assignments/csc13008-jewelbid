@@ -50,6 +50,7 @@ export default function ProductDetailPage() {
     const [isUserLoading, setIsUserLoading] = useState(true);
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [additionalDescription, setAdditionalDescription] = useState('');
+    const [myMaxBid, setMyMaxBid] = useState<number | null>(null);
 
     useEffect(() => {
         const initializeUser = () => {
@@ -204,6 +205,55 @@ export default function ProductDetailPage() {
     useEffect(() => {
         void fetchAuctionData();
     }, [fetchAuctionData]);
+
+    // Polling: Refresh bid history every 5 seconds
+    useEffect(() => {
+        // Check if auction ended inline to avoid using variable before declaration
+        const auctionEnded = auction && new Date() > new Date(auction.endDate);
+        if (!params.id || auctionEnded) return;
+
+        const pollingInterval = setInterval(() => {
+            void (async () => {
+                try {
+                    const bids = await productsApi.getBidHistory(
+                        params.id as string,
+                    );
+                    const mappedBids = bids.map((b) => ({
+                        bidderId: b.bidderId || '',
+                        bidderName: b.bidderName,
+                        bidAmount: b.bidAmount,
+                        bidTime: new Date(b.bidTime),
+                    }));
+                    setBidHistory(mappedBids);
+                } catch (error) {
+                    console.error('Polling bid history failed:', error);
+                }
+            })();
+        }, 5000);
+
+        return () => clearInterval(pollingInterval);
+    }, [params.id, auction]);
+
+    // Fetch user's max bid
+    useEffect(() => {
+        const fetchMyMaxBid = async () => {
+            if (!currentUser || !params.id) {
+                setMyMaxBid(null);
+                return;
+            }
+            try {
+                const { maxBid } = await productsApi.getMyMaxBid(
+                    params.id as string,
+                );
+                setMyMaxBid(maxBid);
+            } catch (error) {
+                console.error('Failed to fetch my max bid:', error);
+                setMyMaxBid(null);
+            }
+        };
+
+        void fetchMyMaxBid();
+    }, [currentUser, params.id, bidHistory]); // Re-fetch when bid history changes
 
     const isOwner =
         auction &&
@@ -510,22 +560,44 @@ export default function ProductDetailPage() {
     };
 
     const handleBuyNow = async () => {
+        if (!currentUser) {
+            toast.error('Please login to buy');
+            router.push('/login');
+            return;
+        }
+
+        if (!auction.buyNowPrice) {
+            toast.error('Buy Now price not available');
+            return;
+        }
+
+        // Show confirmation popup (like bid confirmation)
+        const Swal = (await import('sweetalert2')).default;
+        const result = await Swal.fire({
+            title: 'Confirm Buy Now',
+            html: `
+                <p style="margin-bottom: 16px;">Are you sure you want to buy this item immediately for:</p>
+                <p style="font-size: 24px; font-weight: bold; color: #1f2937;">${formatCurrency(auction.buyNowPrice)}</p>
+                <p style="margin-top: 16px; color: #666; font-size: 14px;">This will end the auction and you will be required to complete payment.</p>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Confirm Purchase',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
         try {
-            if (!currentUser) {
-                toast.error('Please login to buy');
-                router.push('/login');
-                return;
-            }
-
-            if (!auction.buyNowPrice) {
-                toast.error('Buy Now price not available');
-                return;
-            }
-
             await productsApi.buyNow(auction.id);
             toast.success('Purchase successful! Redirecting to order page...');
 
-            // Redirect to order page (using product ID as placeholder)
+            // Redirect to order page
             setTimeout(() => {
                 router.push(`/order/${auction.id}`);
             }, 1000);
@@ -561,9 +633,12 @@ export default function ProductDetailPage() {
             setAdditionalDescription('');
             // Refresh auction data
             await fetchAuctionData();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to update description:', error);
-            const errorMessage = error?.response?.data?.message;
+            const err = error as {
+                response?: { data?: { message?: string | string[] } };
+            };
+            const errorMessage = err?.response?.data?.message;
             if (Array.isArray(errorMessage)) {
                 toast.error(errorMessage.join(', '));
             } else {
@@ -609,10 +684,11 @@ export default function ProductDetailPage() {
             toast.success(`Bidder "${bidderName}" has been rejected`);
             // Refresh auction data to show updated bids
             await fetchAuctionData();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to reject bidder:', error);
+            const err = error as { response?: { data?: { message?: string } } };
             const errorMessage =
-                error?.response?.data?.message || 'Failed to reject bidder';
+                err?.response?.data?.message || 'Failed to reject bidder';
             toast.error(errorMessage);
         }
     };
@@ -1325,6 +1401,35 @@ export default function ProductDetailPage() {
                                                 {bidError}
                                             </p>
                                         )}
+
+                                        {/* Display user's current max bid */}
+                                        {myMaxBid && (
+                                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                <div className="flex items-center gap-2">
+                                                    <svg
+                                                        className="w-4 h-4 text-blue-600"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        />
+                                                    </svg>
+                                                    <span className="text-sm text-blue-800">
+                                                        Your max bid:{' '}
+                                                        <span className="font-bold">
+                                                            {formatCurrency(
+                                                                myMaxBid,
+                                                            )}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {auction.buyNowPrice && (
@@ -1384,11 +1489,6 @@ export default function ProductDetailPage() {
                                 <div className="space-y-4">
                                     {bidHistory.length > 0 ? (
                                         bidHistory
-                                            .sort(
-                                                (a, b) =>
-                                                    b.bidTime.getTime() -
-                                                    a.bidTime.getTime(),
-                                            )
                                             .slice(
                                                 0,
                                                 showAllBids
@@ -1417,6 +1517,7 @@ export default function ProductDetailPage() {
                                                                 {
                                                                     hour: '2-digit',
                                                                     minute: '2-digit',
+                                                                    second: '2-digit',
                                                                     timeZone:
                                                                         'Asia/Bangkok',
                                                                 },

@@ -491,14 +491,45 @@ export class ProductsRepository {
 
     async getBidHistory(productId: string): Promise<Bid[]> {
         try {
-            return await this.bidRepository.find({
-                where: { productId, isRejected: false },
-                relations: ['bidder'],
-                order: { created_at: 'DESC' },
-            });
+            // Use QueryBuilder to ensure proper numeric ordering for decimal columns
+            return await this.bidRepository
+                .createQueryBuilder('bid')
+                .leftJoinAndSelect('bid.bidder', 'bidder')
+                .where('bid.productId = :productId', { productId })
+                .andWhere('bid.isRejected = :isRejected', { isRejected: false })
+                // Sort by: 1) price DESC (highest first), 2) time ASC (earlier first)
+                .orderBy('CAST(bid.bidAmount AS NUMERIC)', 'DESC')
+                .addOrderBy('bid.created_at', 'ASC')
+                .getMany();
         } catch (error) {
             throw new InternalServerErrorException(
                 'Failed to fetch bid history:' + error,
+            );
+        }
+    }
+
+    async getUserMaxBid(
+        productId: string,
+        userId: string,
+    ): Promise<number | null> {
+        try {
+            const userBids = await this.bidRepository.find({
+                where: { productId, bidderId: userId, isRejected: false },
+                order: { created_at: 'DESC' },
+            });
+
+            if (userBids.length === 0) return null;
+
+            // Find the highest maxBid among user's bids
+            const highestMaxBid = userBids.reduce((highest, current) => {
+                const currentMax = current.maxBid || current.bidAmount;
+                return currentMax > highest ? currentMax : highest;
+            }, 0);
+
+            return highestMaxBid;
+        } catch (error) {
+            throw new InternalServerErrorException(
+                'Failed to get user max bid:' + error,
             );
         }
     }

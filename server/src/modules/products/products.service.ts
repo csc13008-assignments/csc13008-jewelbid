@@ -466,13 +466,27 @@ export class ProductsService {
         }
 
         // Case 4: New bidder maxBid < current winner's maxBid
+        // Current winner auto-outbids at (new bidder's maxBid + stepPrice)
         if (
             maxBid < (currentWinningBid.maxBid || currentWinningBid.bidAmount)
         ) {
-            // Current winner still wins, but price goes up to new bidder's maxBid
-            const newPrice = maxBid;
+            const currentWinnerMaxBid =
+                currentWinningBid.maxBid || currentWinningBid.bidAmount;
 
-            // Record new bidder's bid
+            // Current winner auto-outbids: new bidder's maxBid + step price
+            // But capped at current winner's maxBid
+            let newPrice = Math.min(
+                maxBid + Number(product.stepPrice),
+                currentWinnerMaxBid,
+            );
+
+            // Tie-break: If newPrice equals new bidder's maxBid (they're tied),
+            // add 1 VND to break the tie (current winner has higher maxBid, so they should win)
+            if (newPrice === maxBid && newPrice < currentWinnerMaxBid) {
+                newPrice = maxBid + 1;
+            }
+
+            // Record new bidder's bid (they bid their max but got outbid)
             await this.productsRepository.placeBid(
                 product.id,
                 userId,
@@ -480,7 +494,7 @@ export class ProductsService {
                 maxBid,
             );
 
-            // Update current winner's displayed bid amount
+            // Update current winner's displayed bid amount to the new auto-outbid price
             await this.productsRepository.updateBidAmount(
                 currentWinningBid.id,
                 newPrice,
@@ -493,12 +507,13 @@ export class ProductsService {
                     newPrice,
                 );
 
+            // Notify the new bidder that they were outbid immediately
             await this.sendBidNotifications(
                 updatedProduct,
                 userFullname,
-                currentWinningBid.bidderId,
-                userId,
-                maxBid,
+                userId, // New bidder is the one who got outbid
+                currentWinningBid.bidderId, // Current winner remains winning
+                newPrice,
             );
             await this.handleAutoRenewal(updatedProduct, product.id);
 
@@ -506,11 +521,25 @@ export class ProductsService {
         }
 
         // Case 5: New bidder maxBid > current winner's maxBid (new bidder wins!)
-        const newPrice = Math.min(
-            (currentWinningBid.maxBid || currentWinningBid.bidAmount) +
-                Number(product.stepPrice),
+        const previousWinnerMaxBid =
+            currentWinningBid.maxBid || currentWinningBid.bidAmount;
+        const previousWinnerDisplayBid = currentWinningBid.bidAmount;
+
+        let newPrice = Math.min(
+            previousWinnerMaxBid + Number(product.stepPrice),
             maxBid,
         );
+
+        // Tie-break: If newPrice equals previous winner's displayed bid or maxBid,
+        // add 1 VND so the new winner (higher maxBid) has a distinct higher price
+        if (
+            (newPrice === previousWinnerDisplayBid ||
+                newPrice === previousWinnerMaxBid) &&
+            newPrice < maxBid
+        ) {
+            newPrice =
+                Math.max(previousWinnerDisplayBid, previousWinnerMaxBid) + 1;
+        }
 
         await this.productsRepository.placeBid(
             product.id,
@@ -648,6 +677,17 @@ export class ProductsService {
             productId,
             userId,
         );
+    }
+
+    async getUserMaxBid(
+        productId: string,
+        userId: string,
+    ): Promise<{ maxBid: number | null }> {
+        const maxBid = await this.productsRepository.getUserMaxBid(
+            productId,
+            userId,
+        );
+        return { maxBid };
     }
 
     async addToWatchlist(

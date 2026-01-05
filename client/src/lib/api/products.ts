@@ -212,6 +212,16 @@ export const productsApi = {
         return response.data;
     },
 
+    // GET /products/:id/my-max-bid - Get current user's max bid on a product
+    getMyMaxBid: async (
+        productId: string,
+    ): Promise<{ maxBid: number | null }> => {
+        const response = await apiClient.get(
+            `/products/${productId}/my-max-bid`,
+        );
+        return response.data;
+    },
+
     // GET /products with pagination and filters
     getAllProducts: async (
         page: number = 1,

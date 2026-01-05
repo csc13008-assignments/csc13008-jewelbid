@@ -238,6 +238,18 @@ export class ProductsController {
         return { isRejected };
     }
 
+    @ApiOperation({ summary: 'Get current user max bid for a product' })
+    @ApiBearerAuth('access-token')
+    @Get(':id/my-max-bid')
+    @UseGuards(ATAuthGuard)
+    @ApiResponse({
+        status: 200,
+        description: 'User max bid retrieved successfully',
+    })
+    async getUserMaxBid(@Param('id') id: string, @Request() req: any) {
+        return await this.productsService.getUserMaxBid(id, req.user.id);
+    }
+
     @ApiOperation({ summary: 'Create a new product [SELLER]' })
     @ApiBearerAuth('access-token')
     @Post()
