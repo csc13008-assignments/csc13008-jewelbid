@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Flame,
-    TrendingUp,
-    Clock,
-} from 'lucide-react';
+import { Flame, TrendingUp, Clock } from 'lucide-react';
 import { TopDealsTabsProps, TopDealsTab } from '@/types';
 import { cn } from '@/lib/utils';
 import ProductCard from '@/modules/shared/components/ui/ProductCard';
@@ -16,7 +10,6 @@ import { Button } from '@/modules/shared/components/ui';
 
 const TopDealsSection: React.FC<TopDealsTabsProps> = ({ auctions }) => {
     const [activeTab, setActiveTab] = useState<TopDealsTab>('ending-soon');
-    const [currentIndex, setCurrentIndex] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -48,30 +41,13 @@ const TopDealsSection: React.FC<TopDealsTabsProps> = ({ auctions }) => {
     };
 
     const currentAuctions = getCurrentAuctions();
-    const canGoPrevious = currentIndex > 0;
-    const canGoNext = currentIndex + 3 < currentAuctions.length;
-
-    const handlePrevious = () => {
-        if (canGoPrevious) {
-            setCurrentIndex(currentIndex - 1);
-        }
-    };
-
-    const handleNext = () => {
-        if (canGoNext) {
-            setCurrentIndex(currentIndex + 1);
-        }
-    };
 
     const handleTabChange = (tabId: TopDealsTab) => {
         setActiveTab(tabId);
-        setCurrentIndex(0);
     };
 
-    const visibleAuctions = currentAuctions.slice(
-        currentIndex,
-        currentIndex + 3,
-    );
+    // Show all 5 products
+    const visibleAuctions = currentAuctions.slice(0, 5);
 
     return (
         <section className="bg-secondary py-20 overflow-hidden">
@@ -113,47 +89,36 @@ const TopDealsSection: React.FC<TopDealsTabsProps> = ({ auctions }) => {
                     </div>
                 </div>
 
-                {/* Products Carousel */}
+                {/* Products Grid */}
                 <div
-                    className={`relative flex justify-center transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                    className={`transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                 >
-                    {/* Navigation Buttons */}
-                    <button
-                        onClick={handlePrevious}
-                        disabled={!canGoPrevious}
-                        className={cn(
-                            'absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 rounded-xl shadow-lg flex items-center justify-center transition-all duration-300',
-                            canGoPrevious
-                                ? 'bg-white hover:shadow-xl hover:-translate-x-5 text-neutral-600 border border-primary'
-                                : 'bg-neutral-100 text-neutral-300 cursor-not-allowed',
-                        )}
-                        aria-label="Previous products"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-
-                    <button
-                        onClick={handleNext}
-                        disabled={!canGoNext}
-                        className={cn(
-                            'absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 rounded-xl shadow-lg flex items-center justify-center transition-all duration-300',
-                            canGoNext
-                                ? 'bg-white hover:shadow-xl hover:translate-x-5 text-neutral-600 border border-primary'
-                                : 'bg-neutral-100 text-neutral-300 cursor-not-allowed',
-                        )}
-                        aria-label="Next products"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
-
-                    {/* Products Grid */}
-                    <div className="flex gap-8 justify-center max-w-fit">
-                        {visibleAuctions.map((auction, index) => (
+                    {/* Top row - 2 cards centered */}
+                    <div className="flex justify-center gap-8 mb-8">
+                        {visibleAuctions.slice(0, 2).map((auction, index) => (
                             <div
                                 key={auction.id}
-                                className="transition-all duration-500"
+                                className="transition-all duration-500 w-[280px]"
                                 style={{
                                     animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
+                                }}
+                            >
+                                <ProductCard
+                                    auction={auction}
+                                    onLike={(id) => console.log('Liked:', id)}
+                                    onBid={(id) => console.log('Bid on:', id)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                    {/* Bottom row - 3 cards centered */}
+                    <div className="flex justify-center gap-8">
+                        {visibleAuctions.slice(2, 5).map((auction, index) => (
+                            <div
+                                key={auction.id}
+                                className="transition-all duration-500 w-[280px]"
+                                style={{
+                                    animation: `fadeInUp 0.5s ease-out ${(index + 2) * 0.1}s both`,
                                 }}
                             >
                                 <ProductCard
