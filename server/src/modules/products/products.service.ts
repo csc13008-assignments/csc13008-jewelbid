@@ -696,12 +696,20 @@ export class ProductsService {
             askQuestionDto.question,
         );
 
-        // Send email to seller
-        await this.mailerService.sendMail({
-            to: seller.email,
-            subject: `New question on your product: ${product.name}`,
-            text: `${asker.fullname} asked: ${askQuestionDto.question}\n\nView and answer: ${this.configService.get('FRONTEND_URL')}/products/${product.id}`,
-        });
+        // Send email to seller about new question
+        try {
+            const frontendUrl = this.configService.get('FRONTEND_URL');
+            const productUrl = `${frontendUrl}/auction/${product.id}#qa`;
+
+            await this.mailerService.sendMail({
+                to: seller.email,
+                subject: `[JewelBid] New question on your product: ${product.name}`,
+                text: `Dear ${seller.fullname},\n\nYou have received a new question on your product "${product.name}".\n\n📝 Question from ${asker.fullname}:\n"${askQuestionDto.question}"\n\n👉 View and answer this question:\n${productUrl}\n\nPlease respond promptly to help potential buyers make their decision.\n\nBest regards,\nThe JewelBid Team`,
+            });
+        } catch (error) {
+            console.error('Failed to send question notification email:', error);
+            // Don't throw - question was submitted successfully
+        }
 
         return { message: 'Question submitted successfully' };
     }
