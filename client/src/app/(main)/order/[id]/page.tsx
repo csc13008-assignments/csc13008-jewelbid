@@ -162,6 +162,7 @@ export default function OrderPage() {
                     ? updates.sellerComment
                     : updates.buyerComment;
 
+                // Submit rating (one-time only, cannot be updated)
                 await ordersApi.submitRating(
                     toUserId,
                     order.productId,

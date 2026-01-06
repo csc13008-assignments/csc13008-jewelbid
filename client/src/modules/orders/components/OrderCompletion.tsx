@@ -438,70 +438,96 @@ export default function OrderCompletion({
                             <span className="text-2xl text-dark-primary font-bold">
                                 Step 4: Rate Transaction
                             </span>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium mt-2 mb-2">
-                                        Rating
-                                    </label>
-                                    <div className="flex space-x-4">
-                                        <button
-                                            onClick={() => setRating(1)}
-                                            className={`px-6 py-3 rounded-lg border-2 font-bold ${
-                                                rating === 1
-                                                    ? 'bg-green-100 border-green-500 text-green-700'
-                                                    : 'border-gray-300 text-gray-600'
-                                            }`}
-                                        >
-                                            👍 Positive (+1)
-                                        </button>
-                                        <button
-                                            onClick={() => setRating(-1)}
-                                            className={`px-6 py-3 rounded-lg border-2 font-bold ${
-                                                rating === -1
-                                                    ? 'bg-red-100 border-red-500 text-red-700'
-                                                    : 'border-gray-300 text-gray-600'
-                                            }`}
-                                        >
-                                            👎 Negative (-1)
-                                        </button>
+
+                            {/* Show completion banner if rating already submitted */}
+                            {(isSeller ? order.sellerRating : order.buyerRating) ? (
+                                <div className="mt-4">
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                                        <div className="flex items-center justify-center mb-3">
+                                            <CheckCircle className="w-12 h-12 text-green-500" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-green-800 mb-2">
+                                            Order Completed Successfully!
+                                        </h3>
+                                        <p className="text-green-700 mb-4">
+                                            Thank you for completing this transaction. Your rating has been submitted.
+                                        </p>
+                                        <div className="bg-white rounded-lg p-4 inline-block">
+                                            <p className="text-sm text-gray-600 mb-1">Your Rating:</p>
+                                            <span className={`text-lg font-bold ${
+                                                (isSeller ? order.sellerRating : order.buyerRating) === 1
+                                                    ? 'text-green-600'
+                                                    : 'text-red-600'
+                                            }`}>
+                                                {(isSeller ? order.sellerRating : order.buyerRating) === 1
+                                                    ? '👍 Positive (+1)'
+                                                    : '👎 Negative (-1)'}
+                                            </span>
+                                            {(isSeller ? order.sellerComment : order.buyerComment) && (
+                                                <p className="text-sm text-gray-600 mt-2 italic">
+                                                    "{isSeller ? order.sellerComment : order.buyerComment}"
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">
-                                        Comment (optional)
-                                    </label>
-                                    <textarea
-                                        value={comment}
-                                        onChange={(e) =>
-                                            setComment(e.target.value)
-                                        }
-                                        placeholder="Share your experience..."
-                                        rows={4}
-                                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                                    />
-                                </div>
-                                <Button
-                                    variant="muted"
-                                    size="lg"
-                                    onClick={() => void handleRatingSubmit()}
-                                    disabled={loading || rating === 0}
-                                >
-                                    {(
-                                        isSeller
-                                            ? order.sellerRating
-                                            : order.buyerRating
-                                    )
-                                        ? 'Update Rating'
-                                        : 'Submit Rating'}
-                                </Button>
-                                {(isSeller
-                                    ? order.sellerRating
-                                    : order.buyerRating) && (
-                                    <p className="text-sm text-gray-600">
-                                        You can update your rating anytime.
+                            ) : (
+                                /* Show rating form if not yet submitted */
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mt-2 mb-2">
+                                            Rating
+                                        </label>
+                                        <div className="flex space-x-4">
+                                            <button
+                                                onClick={() => setRating(1)}
+                                                className={`px-6 py-3 rounded-lg border-2 font-bold ${
+                                                    rating === 1
+                                                        ? 'bg-green-100 border-green-500 text-green-700'
+                                                        : 'border-gray-300 text-gray-600'
+                                                }`}
+                                            >
+                                                👍 Positive (+1)
+                                            </button>
+                                            <button
+                                                onClick={() => setRating(-1)}
+                                                className={`px-6 py-3 rounded-lg border-2 font-bold ${
+                                                    rating === -1
+                                                        ? 'bg-red-100 border-red-500 text-red-700'
+                                                        : 'border-gray-300 text-gray-600'
+                                                }`}
+                                            >
+                                                👎 Negative (-1)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">
+                                            Comment (optional)
+                                        </label>
+                                        <textarea
+                                            value={comment}
+                                            onChange={(e) =>
+                                                setComment(e.target.value)
+                                            }
+                                            placeholder="Share your experience..."
+                                            rows={4}
+                                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                                        />
+                                    </div>
+                                    <Button
+                                        variant="muted"
+                                        size="lg"
+                                        onClick={() => void handleRatingSubmit()}
+                                        disabled={loading || rating === 0}
+                                    >
+                                        Submit Rating
+                                    </Button>
+                                    <p className="text-sm text-amber-600">
+                                        ⚠️ Note: You cannot change your rating after submitting.
                                     </p>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
