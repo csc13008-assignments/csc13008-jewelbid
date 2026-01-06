@@ -38,6 +38,7 @@ const PUBLIC_PRODUCT_FIELDS = [
     'seller',
     'currentBidder',
     'category',
+    'created_at', // Required for NEW badge
 ];
 
 const PUBLIC_CATEGORY_FIELDS = ['id', 'name', 'slug', 'description'];
