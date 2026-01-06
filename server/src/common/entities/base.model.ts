@@ -21,8 +21,8 @@ export abstract class BaseEntity {
         example: '2024-01-01T00:00:00.000Z',
     })
     @CreateDateColumn({
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP(6)',
+        type: 'timestamptz', // Use timestamp with time zone for proper UTC handling
+        default: () => 'CURRENT_TIMESTAMP',
     })
     created_at: Date;
 
@@ -31,9 +31,9 @@ export abstract class BaseEntity {
         example: '2024-01-01T00:00:00.000Z',
     })
     @UpdateDateColumn({
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP(6)',
-        onUpdate: 'CURRENT_TIMESTAMP(6)',
+        type: 'timestamptz', // Use timestamp with time zone for proper UTC handling
+        default: () => 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP',
     })
     updated_at: Date;
 
@@ -43,7 +43,7 @@ export abstract class BaseEntity {
         required: false,
     })
     @DeleteDateColumn({
-        type: 'timestamp',
+        type: 'timestamptz', // Use timestamp with time zone for proper UTC handling
         nullable: true,
     })
     deleted_at?: Date;
