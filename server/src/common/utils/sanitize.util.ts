@@ -41,7 +41,7 @@ const PUBLIC_PRODUCT_FIELDS = [
     'created_at', // Required for NEW badge
 ];
 
-const PUBLIC_CATEGORY_FIELDS = ['id', 'name', 'slug', 'description'];
+const PUBLIC_CATEGORY_FIELDS = ['id', 'name', 'slug', 'description', 'created_at'];
 
 const PUBLIC_FILTER_FIELDS = ['name', 'slug'];
 
