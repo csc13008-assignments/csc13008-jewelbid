@@ -30,17 +30,16 @@ const isAuctionEnded = (endDate: Date): boolean => {
     return new Date().getTime() >= endDate.getTime();
 };
 
-// Threshold for considering an auction "new" (in days remaining)
-// Auctions with more than this many days left are considered new
-const NEW_AUCTION_DAYS = 3;
+// Threshold for considering an auction "new" (in minutes)
+const NEW_AUCTION_MINUTES = 10;
 
 const isNew = (createdAt?: Date): boolean => {
     if (!createdAt) return false;
     const now = new Date();
     const created = new Date(createdAt);
-    const daysSinceCreation =
-        (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
-    return daysSinceCreation <= NEW_AUCTION_DAYS;
+    const minutesSinceCreation =
+        (now.getTime() - created.getTime()) / (1000 * 60);
+    return minutesSinceCreation <= NEW_AUCTION_MINUTES;
 };
 
 const formatCurrency = (amount: number): string => {
