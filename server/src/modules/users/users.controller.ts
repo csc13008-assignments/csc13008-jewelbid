@@ -332,4 +332,17 @@ export class UsersController {
     async deleteUser(@Param('userId') userId: string) {
         return await this.usersService.deleteUser(userId);
     }
+
+    @ApiOperation({ summary: 'Reset user password [ADMIN]' })
+    @ApiBearerAuth('access-token')
+    @Post(':userId/reset-password')
+    @ApiResponse({
+        status: 200,
+        description: 'Password reset successfully and email sent to user',
+    })
+    @UseGuards(ATAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async resetUserPassword(@Param('userId') userId: string) {
+        return await this.usersService.resetUserPassword(userId);
+    }
 }

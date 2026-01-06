@@ -40,6 +40,7 @@ export default function CreateAuctionPage() {
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [brands, setBrands] = useState<FilterOption[]>([]);
     const [materials, setMaterials] = useState<FilterOption[]>([]);
     const [eras, setEras] = useState<FilterOption[]>([]);
     const [finenesses, setFinenesses] = useState<FilterOption[]>([]);
@@ -91,6 +92,7 @@ export default function CreateAuctionPage() {
             try {
                 const [
                     categoriesData,
+                    brandsData,
                     materialsData,
                     erasData,
                     finenessesData,
@@ -98,6 +100,7 @@ export default function CreateAuctionPage() {
                     gendersData,
                 ] = await Promise.all([
                     categoriesApi.getAll(),
+                    filtersApi.getBrands(),
                     filtersApi.getMaterials(),
                     filtersApi.getEras(),
                     filtersApi.getFinenesses(),
@@ -105,6 +108,7 @@ export default function CreateAuctionPage() {
                     filtersApi.getTargetAudiences(),
                 ]);
                 setCategories(categoriesData);
+                setBrands(brandsData);
                 setMaterials(materialsData);
                 setEras(erasData);
                 setFinenesses(finenessesData);
@@ -379,13 +383,42 @@ export default function CreateAuctionPage() {
                                     <label className="block text-sm font-medium text-neutral-600 mb-2">
                                         Brand
                                     </label>
-                                    <Input
+                                    <select
                                         name="brand"
                                         value={formData.brand}
                                         onChange={handleInputChange}
-                                        placeholder="e.g. Cartier, Tiffany & Co"
-                                        className="w-full rounded-xl bg-neutral-50 border-neutral-200 focus:border-dark-primary"
-                                    />
+                                        className="w-full border border-neutral-200 bg-neutral-50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-dark-primary/20 focus:border-dark-primary outline-none transition-all"
+                                    >
+                                        <option value="">Select Brand</option>
+                                        {brands.length > 0 ? (
+                                            brands.map((brand) => (
+                                                <option
+                                                    key={brand.id}
+                                                    value={brand.name}
+                                                >
+                                                    {brand.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="Cartier">
+                                                    Cartier
+                                                </option>
+                                                <option value="Tiffany & Co">
+                                                    Tiffany & Co
+                                                </option>
+                                                <option value="Van Cleef & Arpels">
+                                                    Van Cleef & Arpels
+                                                </option>
+                                                <option value="Bulgari">
+                                                    Bulgari
+                                                </option>
+                                                <option value="Other">
+                                                    Other
+                                                </option>
+                                            </>
+                                        )}
+                                    </select>
                                 </div>
 
                                 <div>

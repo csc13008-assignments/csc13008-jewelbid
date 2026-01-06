@@ -30,4 +30,13 @@ export class FiltersRepository extends Repository<FilterOption> {
             where: { slug, filterType },
         });
     }
+
+    async findByName(
+        name: string,
+        filterType: FilterType,
+    ): Promise<FilterOption | null> {
+        return this.findOne({
+            where: { name, filterType, isActive: true },
+        });
+    }
 }

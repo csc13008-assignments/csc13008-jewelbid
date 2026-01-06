@@ -409,4 +409,78 @@ The Jewelbid Team
         await this.usersRepository.deleteUser(userId);
         return { message: 'User deleted successfully' };
     }
+
+    async resetUserPassword(userId: string): Promise<{ message: string }> {
+        const user = await this.usersRepository.findOneById(userId);
+        if (!user) throw new NotFoundException('User not found');
+        if (user.role === Role.ADMIN)
+            throw new BadRequestException(
+                'Cannot reset password for admin user',
+            );
+
+        // Generate a random password (12 characters)
+        const newPassword = this.generateRandomPassword(12);
+
+        // Hash the new password and update user
+        const bcrypt = await import('bcrypt');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await this.usersRepository.updatePassword(user.email, hashedPassword);
+
+        // Send email with new password
+        const loginUrl = this.configService.get('FRONTEND_URL') + '/sign-in';
+        await this.mailerService.sendMail({
+            to: user.email,
+            subject: '[JewelBid] Your Password Has Been Reset',
+            text: `Hello ${user.fullname || 'User'},
+
+Your password has been reset by an administrator.
+
+Your new password is: ${newPassword}
+
+Please log in with this new password and change it immediately for security purposes.
+
+Login here: ${loginUrl}
+
+If you did not request this password reset, please contact our support team immediately.
+
+Best regards,
+JewelBid Team`,
+        });
+
+        return {
+            message: 'Password reset successfully and email sent to user',
+        };
+    }
+
+    private generateRandomPassword(length: number): string {
+        const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        const numbers = '0123456789';
+        const special = '!@#$%&*';
+        const allChars = uppercase + lowercase + numbers + special;
+
+        // Ensure at least one of each type
+        let password = '';
+        password += uppercase.charAt(
+            Math.floor(Math.random() * uppercase.length),
+        );
+        password += lowercase.charAt(
+            Math.floor(Math.random() * lowercase.length),
+        );
+        password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+        password += special.charAt(Math.floor(Math.random() * special.length));
+
+        // Fill the rest randomly
+        for (let i = 4; i < length; i++) {
+            password += allChars.charAt(
+                Math.floor(Math.random() * allChars.length),
+            );
+        }
+
+        // Shuffle the password
+        return password
+            .split('')
+            .sort(() => Math.random() - 0.5)
+            .join('');
+    }
 }

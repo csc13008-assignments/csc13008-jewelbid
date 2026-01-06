@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, UserCog, Check, X, Loader2, Trash2, Eye } from 'lucide-react';
+import { Users, UserCog, Check, X, Loader2, Trash2, Eye, RotateCcw } from 'lucide-react';
 import toast from '@/lib/toast';
 import Image from 'next/image';
 import DataTable from '@/modules/admin/components/DataTable';
@@ -27,6 +27,7 @@ export default function UsersPage() {
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
     const [confirmAction, setConfirmAction] = useState<
         'approve' | 'reject' | null
     >(null);
@@ -147,6 +148,13 @@ export default function UsersPage() {
                     </button>
                     {user.role !== 'Admin' && (
                         <>
+                            <button
+                                onClick={() => handleResetPassword(user)}
+                                className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                title="Reset password"
+                            >
+                                <RotateCcw className="w-4 h-4" />
+                            </button>
                             <button
                                 onClick={() => void handleChangeRole(user)}
                                 className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -284,6 +292,32 @@ export default function UsersPage() {
         }
         setSelectedUser(user);
         setShowDeleteDialog(true);
+    };
+
+    const handleResetPassword = (user: AdminUser) => {
+        setSelectedUser(user);
+        setShowResetPasswordDialog(true);
+    };
+
+    const confirmResetPassword = async () => {
+        if (!selectedUser) return;
+
+        try {
+            setSubmitting(true);
+            await adminApi.resetUserPassword(selectedUser.id);
+            toast.success(`Password reset email sent to ${selectedUser.email}`);
+            setShowResetPasswordDialog(false);
+            setSelectedUser(null);
+        } catch (error: unknown) {
+            console.error('Failed to reset password:', error);
+            const errorMessage =
+                (error as { response?: { data?: { message?: string } } })
+                    ?.response?.data?.message ||
+                'Failed to reset password. Please try again.';
+            toast.error(errorMessage);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const confirmDeleteUser = async () => {
@@ -649,6 +683,20 @@ export default function UsersPage() {
                 }}
                 type="danger"
                 confirmText={submitting ? 'Deleting...' : 'Delete'}
+            />
+
+            {/* Reset Password Confirmation */}
+            <ConfirmDialog
+                isOpen={showResetPasswordDialog}
+                title="Reset User Password?"
+                message={`This will generate a new password for "${selectedUser?.fullname}" and send it to their email (${selectedUser?.email}). The user will be required to change their password on next login.`}
+                onConfirm={() => void confirmResetPassword()}
+                onCancel={() => {
+                    setShowResetPasswordDialog(false);
+                    setSelectedUser(null);
+                }}
+                type="warning"
+                confirmText={submitting ? 'Resetting...' : 'Reset Password'}
             />
         </div>
     );

@@ -163,4 +163,10 @@ export const adminApi = {
         const response = await apiClient.delete(`/users/${userId}`);
         return response.data;
     },
+
+    // POST /users/:userId/reset-password - Reset user password [ADMIN]
+    resetUserPassword: async (userId: string): Promise<{ message: string }> => {
+        const response = await apiClient.post(`/users/${userId}/reset-password`);
+        return response.data;
+    },
 };

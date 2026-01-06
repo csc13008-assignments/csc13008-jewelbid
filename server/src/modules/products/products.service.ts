@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { ProductsRepository } from './products.repository';
 import { UsersRepository } from '../users/users.repository';
+import { FiltersRepository } from '../filters/filters.repository';
+import { FilterType } from '../filters/entities/filter-option.model';
 import { Product, ProductStatus } from './entities/product.model';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { PlaceBidDto, BidHistoryItemDto } from './dtos/bid.dto';
@@ -22,6 +24,7 @@ export class ProductsService {
     constructor(
         private readonly productsRepository: ProductsRepository,
         private readonly usersRepository: UsersRepository,
+        private readonly filtersRepository: FiltersRepository,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
         private readonly ordersService: OrdersService,
@@ -53,8 +56,71 @@ export class ProductsService {
             );
         }
 
+        // Lookup filter option IDs from names
+        const filterIds: Record<string, string | undefined> = {};
+
+        if (createProductDto.brand) {
+            const brandOption = await this.filtersRepository.findByName(
+                createProductDto.brand,
+                FilterType.BRAND,
+            );
+            filterIds.brandId = brandOption?.id;
+        }
+
+        if (createProductDto.material) {
+            const materialOption = await this.filtersRepository.findByName(
+                createProductDto.material,
+                FilterType.MATERIAL,
+            );
+            filterIds.materialId = materialOption?.id;
+        }
+
+        if (createProductDto.targetAudience) {
+            const targetAudienceOption =
+                await this.filtersRepository.findByName(
+                    createProductDto.targetAudience,
+                    FilterType.TARGET_AUDIENCE,
+                );
+            filterIds.targetAudienceId = targetAudienceOption?.id;
+        }
+
+        if (createProductDto.era) {
+            const eraOption = await this.filtersRepository.findByName(
+                createProductDto.era,
+                FilterType.ERA,
+            );
+            filterIds.eraId = eraOption?.id;
+        }
+
+        if (createProductDto.fineness) {
+            const finenessOption = await this.filtersRepository.findByName(
+                createProductDto.fineness,
+                FilterType.FINENESS,
+            );
+            filterIds.finenessId = finenessOption?.id;
+        }
+
+        if (createProductDto.condition) {
+            const conditionOption = await this.filtersRepository.findByName(
+                createProductDto.condition,
+                FilterType.CONDITION,
+            );
+            filterIds.conditionId = conditionOption?.id;
+        }
+
+        // Debug log to verify filter IDs are being looked up
+        console.log('Filter lookup results:', {
+            inputBrand: createProductDto.brand,
+            inputMaterial: createProductDto.material,
+            inputTargetAudience: createProductDto.targetAudience,
+            inputEra: createProductDto.era,
+            inputFineness: createProductDto.fineness,
+            inputCondition: createProductDto.condition,
+            resolvedFilterIds: filterIds,
+        });
+
         return await this.productsRepository.createProduct(
-            createProductDto,
+            { ...createProductDto, ...filterIds },
             sellerId,
         );
     }

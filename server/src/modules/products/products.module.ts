@@ -13,6 +13,7 @@ import { RejectedBidder } from './entities/rejected-bidder.model';
 import { UsersModule } from '../users/users.module';
 import { AccessControlService } from '../ac/ac.service';
 import { OrdersModule } from '../orders/orders.module';
+import { FiltersModule } from '../filters/filters.module';
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import { OrdersModule } from '../orders/orders.module';
         ConfigModule,
         UsersModule,
         OrdersModule,
+        FiltersModule,
     ],
     controllers: [ProductsController],
     providers: [
@@ -37,3 +39,4 @@ import { OrdersModule } from '../orders/orders.module';
     exports: [ProductsService, ProductsRepository],
 })
 export class ProductsModule {}
+
