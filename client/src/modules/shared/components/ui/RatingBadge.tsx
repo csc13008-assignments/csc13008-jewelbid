@@ -111,15 +111,19 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
                     )}
 
                     <div
-                        className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-[#5F87C1] text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
+                        className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 ${totalReviews > 0 ? 'bg-[#5F87C1]' : 'bg-gray-400'} text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
                     >
-                        {Math.round(rating * 100)}% Positive
+                        {totalReviews > 0
+                            ? `${Math.round(rating * 100)}% Positive`
+                            : 'No reviews'}
                     </div>
                 </div>
 
-                <div className={`mt-4 text-gray-600 ${classes.text}`}>
-                    ({totalReviews} reviews)
-                </div>
+                {totalReviews > 0 && (
+                    <div className={`mt-4 text-gray-600 ${classes.text}`}>
+                        ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
+                    </div>
+                )}
             </Wrapper>
         );
     }
@@ -147,16 +151,20 @@ export const RatingBadge: React.FC<RatingBadgeProps> = ({
                     </div>
                 )}
                 <div
-                    className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-[#5F87C1] text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
+                    className={`absolute -bottom-4 left-1/2 transform -translate-x-1/2 ${totalReviews > 0 ? 'bg-[#5F87C1]' : 'bg-gray-400'} text-white ${classes.badge} rounded-full shadow-md whitespace-nowrap`}
                 >
-                    {Math.round(rating * 100)}% Positive
+                    {totalReviews > 0
+                        ? `${Math.round(rating * 100)}% Positive`
+                        : 'No reviews'}
                 </div>
 
-                <div
-                    className={`absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-gray-600 ${classes.text} text-center whitespace-nowrap`}
-                >
-                    ({totalReviews} reviews)
-                </div>
+                {totalReviews > 0 && (
+                    <div
+                        className={`absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-gray-600 ${classes.text} text-center whitespace-nowrap`}
+                    >
+                        ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 ml-4">
