@@ -148,7 +148,27 @@ export class UsersRepository {
             });
             return updatedUser;
         } catch (error: any) {
-            throw new InternalServerErrorException((error as Error).message);
+            // Handle duplicate key constraint violation
+            const errorMessage = (error as Error).message || '';
+            if (
+                errorMessage.includes('duplicate key') ||
+                errorMessage.includes('unique constraint')
+            ) {
+                if (errorMessage.includes('phone')) {
+                    throw new InternalServerErrorException(
+                        'Phone number already exists. Please use a different phone number.',
+                    );
+                }
+                if (errorMessage.includes('email')) {
+                    throw new InternalServerErrorException(
+                        'Email already exists. Please use a different email.',
+                    );
+                }
+                throw new InternalServerErrorException(
+                    'This information already exists. Please use different values.',
+                );
+            }
+            throw new InternalServerErrorException(errorMessage);
         }
     }
 

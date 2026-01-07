@@ -19,7 +19,7 @@ export class UpdateProfileDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
-    @IsPhoneNumber('VN')
+    @IsString()
     phone?: string;
 
     @ApiProperty({ required: false })

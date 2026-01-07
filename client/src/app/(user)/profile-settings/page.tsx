@@ -168,10 +168,7 @@ export default function ProfileSettingsPage() {
                 if (profileData.address) {
                     formData.append('address', profileData.address);
                 }
-                if (
-                    profileData.phoneNumber &&
-                    profileData.phoneNumber.match(/^(\+84|0)\d{9,10}$/)
-                ) {
+                if (profileData.phoneNumber) {
                     formData.append('phone', profileData.phoneNumber);
                 }
 
@@ -217,9 +214,14 @@ export default function ProfileSettingsPage() {
                 toast.success('Profile updated successfully!');
                 setIsEditingProfile(false);
                 setAvatarFile(null); // Clear the file after successful upload
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error('Failed to update profile:', error);
-                toast.error('Failed to update profile');
+                const err = error as {
+                    response?: { data?: { message?: string } };
+                };
+                const errorMessage =
+                    err?.response?.data?.message || 'Failed to update profile';
+                toast.error(errorMessage);
             } finally {
                 setIsSavingProfile(false);
             }
