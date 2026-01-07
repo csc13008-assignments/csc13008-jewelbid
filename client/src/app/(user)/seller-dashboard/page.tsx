@@ -104,14 +104,28 @@ export default function SellerDashboard() {
             // Fetch order status for each completed product
             const completedAuctionsWithOrders = await Promise.all(
                 completedProducts.map(async (p: BackendProduct) => {
-                    const order = await ordersApi.getOrderByProduct(p.id);
+                    // Check if there's a winner (currentBidder exists)
+                    const hasWinner = !!p.currentBidder?.id;
+                    let orderStatus = 'No Winner';
+
+                    // Only fetch order if there's a winner
+                    if (hasWinner) {
+                        try {
+                            const order = await ordersApi.getOrderByProduct(p.id);
+                            orderStatus = order?.status || 'Pending';
+                        } catch {
+                            orderStatus = 'Pending';
+                        }
+                    }
+
                     return {
                         id: p.id,
                         title: p.name,
                         image: p.mainImage,
                         finalPrice: p.currentPrice,
-                        sellerName:
-                            p.currentBidder?.fullname || 'Unknown Bidder',
+                        sellerName: hasWinner
+                            ? p.currentBidder?.fullname || 'Unknown'
+                            : 'No bidder won',
                         sellerAvatar:
                             p.currentBidder?.profileImage ||
                             '/avatars/default.jpg',
@@ -125,7 +139,7 @@ export default function SellerDashboard() {
                                 day: 'numeric',
                             },
                         ),
-                        orderStatus: order?.status || 'Pending',
+                        orderStatus: orderStatus,
                     };
                 }),
             );
@@ -474,20 +488,26 @@ export default function SellerDashboard() {
                                                                         </div>
                                                                         <div className="col-span-3 px-6 py-4 flex justify-center">
                                                                             <div className="flex items-center gap-2">
-                                                                                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200">
-                                                                                    <Image
-                                                                                        src={
-                                                                                            auction.sellerAvatar
-                                                                                        }
-                                                                                        alt={
-                                                                                            auction.sellerName
-                                                                                        }
-                                                                                        fill
-                                                                                        className="object-cover"
-                                                                                    />
-                                                                                </div>
+                                                                                {auction.orderStatus !== 'No Winner' && (
+                                                                                    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200">
+                                                                                        <Image
+                                                                                            src={
+                                                                                                auction.sellerAvatar
+                                                                                            }
+                                                                                            alt={
+                                                                                                auction.sellerName
+                                                                                            }
+                                                                                            fill
+                                                                                            className="object-cover"
+                                                                                        />
+                                                                                    </div>
+                                                                                )}
                                                                                 <span
-                                                                                    className="text-sm font-medium text-neutral-700 truncate max-w-[100px]"
+                                                                                    className={`text-sm font-medium truncate max-w-[100px] ${
+                                                                                        auction.orderStatus === 'No Winner'
+                                                                                            ? 'text-gray-500 italic'
+                                                                                            : 'text-neutral-700'
+                                                                                    }`}
                                                                                     title={
                                                                                         auction.sellerName
                                                                                     }
@@ -514,29 +534,34 @@ export default function SellerDashboard() {
                                                                                                 'Cancelled'
                                                                                               ? 'bg-red-100 text-red-800'
                                                                                               : auction.orderStatus ===
-                                                                                                  'Pending Delivery Confirmation'
-                                                                                                ? 'bg-purple-100 text-purple-800'
+                                                                                                  'No Winner'
+                                                                                                ? 'bg-gray-100 text-gray-600'
                                                                                                 : auction.orderStatus ===
-                                                                                                    'Pending Shipment'
-                                                                                                  ? 'bg-yellow-100 text-yellow-800'
-                                                                                                  : 'bg-blue-100 text-blue-800'
+                                                                                                    'Pending Delivery Confirmation'
+                                                                                                  ? 'bg-purple-100 text-purple-800'
+                                                                                                  : auction.orderStatus ===
+                                                                                                      'Pending Shipment'
+                                                                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                                                                    : 'bg-blue-100 text-blue-800'
                                                                                     }`}
                                                                                 >
                                                                                     {auction.orderStatus ||
                                                                                         'Pending'}
                                                                                 </span>
-                                                                                <Link
-                                                                                    href={`/order/${auction.id}`}
-                                                                                >
-                                                                                    <Button
-                                                                                        variant="muted"
-                                                                                        size="sm"
-                                                                                        className="rounded-xl shadow-sm w-full text-xs"
+                                                                                {auction.orderStatus !== 'No Winner' && (
+                                                                                    <Link
+                                                                                        href={`/order/${auction.id}`}
                                                                                     >
-                                                                                        View
-                                                                                        Order
-                                                                                    </Button>
-                                                                                </Link>
+                                                                                        <Button
+                                                                                            variant="muted"
+                                                                                            size="sm"
+                                                                                            className="rounded-xl shadow-sm w-full text-xs"
+                                                                                        >
+                                                                                            View
+                                                                                            Order
+                                                                                        </Button>
+                                                                                    </Link>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     </div>
