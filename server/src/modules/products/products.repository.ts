@@ -140,6 +140,7 @@ export class ProductsRepository {
                 switch (sortBy) {
                     case 'newest':
                         query.orderBy('product.created_at', order);
+                        query.addOrderBy('product.id', 'DESC');
                         break;
                     case 'oldest':
                         query.orderBy(
