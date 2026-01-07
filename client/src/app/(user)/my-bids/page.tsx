@@ -87,11 +87,8 @@ export default function MyBidsPage() {
             const userId = JSON.parse(localStorage.getItem('user') || '{}').id;
 
             const processedBids: MyBidItem[] = products.map((product) => {
-                const now = new Date();
-                const endDate = new Date(product.endDate);
-                const isEnded =
-                    endDate.getTime() <= now.getTime() ||
-                    product.status === 'ended';
+                // Use product status to determine if auction is completed
+                const isEnded = product.status === 'Completed';
                 const isWinning = product.currentBidder?.id === userId;
 
                 let status: MyBidItem['myBidStatus'];

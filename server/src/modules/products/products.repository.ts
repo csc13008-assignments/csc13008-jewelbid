@@ -706,8 +706,10 @@ export class ProductsRepository {
 
             const uniqueProducts = new Map<string, Product>();
             bids.forEach((bid) => {
+                // Include both ACTIVE and COMPLETED products for bid history
                 if (
-                    bid.product.status === ProductStatus.ACTIVE &&
+                    (bid.product.status === ProductStatus.ACTIVE ||
+                        bid.product.status === ProductStatus.COMPLETED) &&
                     !uniqueProducts.has(bid.product.id)
                 ) {
                     uniqueProducts.set(bid.product.id, bid.product);
