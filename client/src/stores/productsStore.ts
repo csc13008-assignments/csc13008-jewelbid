@@ -125,6 +125,7 @@ export const mapProductToAuction = (
             id: product.seller?.id || '',
             username: product.seller?.fullname || 'Unknown Seller',
             avatar: product.seller?.profileImage || '',
+            objectsSold: product.seller?.objectsSold || 0,
             rating: (() => {
                 const positive = product.seller?.positiveRatings || 0;
                 const negative = product.seller?.negativeRatings || 0;

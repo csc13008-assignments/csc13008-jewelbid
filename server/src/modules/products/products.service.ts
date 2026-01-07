@@ -283,11 +283,24 @@ export class ProductsService {
             );
         }
 
+        // Get the count of completed products for this seller (successfully sold)
+        let objectsSold = 0;
+        if (product.sellerId) {
+            objectsSold = await this.productsRepository.countCompletedBySeller(
+                product.sellerId,
+            );
+        }
+
         // Sanitize product data to keep only necessary fields
         const sanitizedProduct = sanitizeProduct(product);
         const sanitizedRelatedProducts = sanitizeProducts(
             this.maskProductsBidderNames(relatedProducts),
         );
+
+        // Add objectsSold to seller info
+        if (sanitizedProduct?.seller) {
+            sanitizedProduct.seller.objectsSold = objectsSold;
+        }
 
         return {
             product: sanitizedProduct,

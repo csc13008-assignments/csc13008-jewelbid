@@ -38,6 +38,7 @@ export interface BackendProduct {
         profileImage: string;
         positiveRatings: number;
         negativeRatings: number;
+        objectsSold?: number;
     };
     currentBidderId?: string | null;
     currentBidder?: {

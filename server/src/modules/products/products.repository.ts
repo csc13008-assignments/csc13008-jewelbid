@@ -50,6 +50,12 @@ export class ProductsRepository {
         }
     }
 
+    async countCompletedBySeller(sellerId: string): Promise<number> {
+        return await this.productRepository.count({
+            where: { sellerId, status: ProductStatus.COMPLETED },
+        });
+    }
+
     async findAllActive(
         limit?: number,
         offset?: number,

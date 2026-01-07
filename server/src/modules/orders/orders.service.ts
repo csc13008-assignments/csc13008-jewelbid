@@ -221,4 +221,9 @@ export class OrdersService {
 
         return await this.ordersRepository.save(order);
     }
+
+    // Count completed orders for a seller (for "objects sold" display)
+    async countCompletedOrdersBySeller(sellerId: string): Promise<number> {
+        return await this.ordersRepository.countCompletedBySeller(sellerId);
+    }
 }

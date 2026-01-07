@@ -64,4 +64,10 @@ export class OrdersRepository extends Repository<Order> {
             order: { created_at: 'DESC' },
         });
     }
+
+    async countCompletedBySeller(sellerId: string): Promise<number> {
+        return this.count({
+            where: { sellerId, status: OrderStatus.COMPLETED },
+        });
+    }
 }
