@@ -45,6 +45,7 @@ export default function ProductDetailPage() {
     });
     const [bidError, setBidError] = useState('');
     const [isBidding, setIsBidding] = useState(false);
+    const [isBuyingNow, setIsBuyingNow] = useState(false);
     const [isPostingComment, setIsPostingComment] = useState(false);
     const [showAllBids, setShowAllBids] = useState(false);
     const [showAllComments, setShowAllComments] = useState(false);
@@ -601,17 +602,17 @@ export default function ProductDetailPage() {
             return;
         }
 
+        setIsBuyingNow(true);
         try {
             await productsApi.buyNow(auction.id);
             toast.success('Purchase successful! Redirecting to order page...');
 
-            // Redirect to order page
-            setTimeout(() => {
-                router.push(`/order/${auction.id}`);
-            }, 1000);
+            // Redirect immediately to order page
+            router.push(`/order/${auction.id}`);
         } catch (error) {
             console.error('Failed to buy now:', error);
             toast.error('Failed to complete purchase');
+            setIsBuyingNow(false);
         }
     };
 
@@ -1561,10 +1562,20 @@ export default function ProductDetailPage() {
                                                 variant="muted"
                                                 size="lg"
                                                 className="w-full font-bold text-lg"
+                                                disabled={isBuyingNow}
                                             >
-                                                Buy now for{' '}
-                                                {formatCurrency(
-                                                    auction.buyNowPrice,
+                                                {isBuyingNow ? (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                        Processing...
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        Buy now for{' '}
+                                                        {formatCurrency(
+                                                            auction.buyNowPrice,
+                                                        )}
+                                                    </>
                                                 )}
                                             </Button>
                                         </>
