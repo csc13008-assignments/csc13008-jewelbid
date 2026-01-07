@@ -327,7 +327,9 @@ export class ProductsRepository {
                 })
                 .andWhere('product.endDate > :now', { now: new Date() })
                 .leftJoinAndSelect('product.seller', 'seller')
-                .leftJoinAndSelect('product.currentBidder', 'currentBidder');
+                .leftJoinAndSelect('product.currentBidder', 'currentBidder')
+                .leftJoinAndSelect('product.category', 'category')
+                .leftJoinAndSelect('product.brandOption', 'brandOption');
 
             const sanitizedTerm = searchTerm
                 .trim()
@@ -337,11 +339,22 @@ export class ProductsRepository {
                 .map((word) => word + ':*')
                 .join(' & ');
 
+            const likeSearchTerm = `%${searchTerm.trim()}%`;
+
             if (sanitizedTerm) {
+                // Search in product name, brand name, and category name
                 query
                     .andWhere(
-                        `product.search_vector @@ to_tsquery('english', :searchQuery)`,
-                        { searchQuery: sanitizedTerm },
+                        `(
+                            product.search_vector @@ to_tsquery('english', :searchQuery)
+                            OR product.name ILIKE :likeSearch
+                            OR brandOption.name ILIKE :likeSearch
+                            OR category.name ILIKE :likeSearch
+                        )`,
+                        {
+                            searchQuery: sanitizedTerm,
+                            likeSearch: likeSearchTerm,
+                        },
                     )
                     .addSelect(
                         `ts_rank(product.search_vector, to_tsquery('english', :searchQuery))`,
@@ -353,7 +366,9 @@ export class ProductsRepository {
             }
 
             if (category) {
-                query.andWhere('product.category = :category', { category });
+                query.andWhere('product.categoryId = :categoryId', {
+                    categoryId: category,
+                });
             }
 
             if (limit) {
